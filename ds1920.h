@@ -28,3 +28,7 @@ int setDS1920Params(MLan *mlan, uchar *serial, struct ds1920_data d);
 #define ds1920temp_convert_in(a) ( (int) (((a)+0.25)*2) )
 
 #endif /* DS1920_H */
+
+/*
+ * arch-tag: 201AEEC1-13E5-11D8-A823-000393CFE6B8
+ */

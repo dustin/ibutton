@@ -23,3 +23,7 @@ int snprintf(char *s, size_t n, const char *format, ...);
 #endif
 
 #endif /* UTILITY_H */
+
+/*
+ * arch-tag: 20729E67-13E5-11D8-9BD6-000393CFE6B8
+ */

@@ -272,3 +272,7 @@ struct ds2438_data getDS2438Data(MLan *mlan, uchar *serial)
 
 	return(data);
 }
+
+/*
+ * arch-tag: 20329D8C-13E5-11D8-B85B-000393CFE6B8
+ */

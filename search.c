@@ -78,3 +78,7 @@ int main(int argc, char **argv)
 
 	return(0);
 }
+
+/*
+ * arch-tag: 205CDD06-13E5-11D8-A7E6-000393CFE6B8
+ */

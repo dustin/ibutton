@@ -129,3 +129,7 @@ saveDataPostgres(struct log_datum *p)
 	}
 }
 #endif /* HAVE_LIBPQ_FE_H */
+
+/*
+ * arch-tag: BBE5FB3C-13E5-11D8-BC82-000393CFE6B8
+ */

@@ -303,3 +303,7 @@ int findGMTOffset(void);
 
 
 #endif /* MLAN_H */
+
+/*
+ * arch-tag: 204AD731-13E5-11D8-A732-000393CFE6B8
+ */

@@ -45,3 +45,7 @@
 #define DS2438READ_SCRATCHPAD 0xbe
 
 #endif /* COMMANDS_H */
+
+/*
+ * arch-tag: 200C3FEE-13E5-11D8-9303-000393CFE6B8
+ */

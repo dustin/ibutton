@@ -133,3 +133,7 @@ get_sample(MLan *mlan, uchar *serial)
 	}
 	return(ret);
 }
+
+/*
+ * arch-tag: 200E12F8-13E5-11D8-AFE6-000393CFE6B8
+ */

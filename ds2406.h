@@ -21,3 +21,7 @@ int setDS2406Status(MLan *mlan, uchar *serial, int value);
 int setDS2406Switch(MLan *mlan, uchar *serial, int switchPort, int onoff);
 
 #endif /* DS2406_H */
+
+/*
+ * arch-tag: 202E9470-13E5-11D8-9E67-000393CFE6B8
+ */

@@ -109,3 +109,7 @@ int _ds2480_changebaud(MLan *mlan, uchar newbaud)
 
 	return(mlan->baud);
 }
+
+/*
+ * arch-tag: 203B61AE-13E5-11D8-BD00-000393CFE6B8
+ */

@@ -3,6 +3,7 @@
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
 # $Id: Makefile.in,v 1.23 2002/01/29 07:48:42 dustin Exp $
+# arch-tag: 5D00801E-13E5-11D8-B7FE-000393CFE6B8
 
 SHELL=/bin/sh
 AR=@AR@

@@ -67,3 +67,7 @@ struct data_queue *appendToRRDQueue(struct data_queue *dl, const char *datum);
 void disposeOfRRDQueue(struct data_queue *dl);
 
 #endif
+
+/*
+ * arch-tag: BBF74734-13E5-11D8-9F04-000393CFE6B8
+ */

@@ -615,3 +615,7 @@ main(int argc, char **argv)
 	}
 	/* NOT REACHED */
 }
+
+/*
+ * arch-tag: 205805D4-13E5-11D8-ADF3-000393CFE6B8
+ */

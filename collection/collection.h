@@ -32,3 +32,7 @@ extern int col_verbose;
 #define verboseprint(a, b) if(col_verbose>=a) { printf b; }
 
 #endif /* COLLECTION_H */
+
+/*
+ * arch-tag: BBEE73A9-13E5-11D8-9CB1-000393CFE6B8
+ */

@@ -22,3 +22,7 @@ void saveDataPostgres(struct log_datum *p);
 void initPostgresStore();
 
 #endif /* STORAGE_PGSQL_H */
+
+/*
+ * arch-tag: BBFBC21E-13E5-11D8-969A-000393CFE6B8
+ */

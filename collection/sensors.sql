@@ -1,6 +1,7 @@
 -- Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 --
 -- $Id: sensors.sql,v 1.2 2002/01/26 23:23:55 dustin Exp $
+-- arch-tag: CDF89BEC-13E5-11D8-B988-000393CFE6B8
 
 -- Different types of sensors
 create table sensor_types (

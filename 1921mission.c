@@ -127,3 +127,7 @@ int main(int argc, char **argv)
 
 	exit(0);
 }
+
+/*
+ * arch-tag: 1FFB7570-13E5-11D8-B9F6-000393CFE6B8
+ */

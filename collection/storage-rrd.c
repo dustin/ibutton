@@ -163,3 +163,7 @@ void saveDataRRD(struct log_datum *p)
 	freeList(args);
 }
 #endif /* HAVE_RRD_H */
+
+/*
+ * arch-tag: BBEA7658-13E5-11D8-900C-000393CFE6B8
+ */

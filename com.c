@@ -194,3 +194,7 @@ void _com_cbreak(MLan *mlan)
 	tcsendbreak(mlan->fd, 1);
 	/* mlan_debug(mlan, 2, ("Returning from break\n")); */
 }
+
+/*
+ * arch-tag: 200A752B-13E5-11D8-BF6D-000393CFE6B8
+ */

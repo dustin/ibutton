@@ -26,3 +26,7 @@ snprintf(char *s, size_t n, const char *format,...)
 	assert(strlen(s)<n);
 }
 #endif
+
+/*
+ * arch-tag: 206E5026-13E5-11D8-ABCC-000393CFE6B8
+ */

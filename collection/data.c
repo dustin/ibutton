@@ -271,3 +271,7 @@ int main(int argc, char **argv)
 	disposeOfLogEntry(entry);
 }
 #endif
+
+/*
+ * arch-tag: BBE0839E-13E5-11D8-A265-000393CFE6B8
+ */

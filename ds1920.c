@@ -202,3 +202,7 @@ getDS1920Data(MLan *mlan, uchar *serial)
 	data.valid=TRUE;
 	return(data);
 }
+
+/*
+ * arch-tag: 2011D768-13E5-11D8-B2D7-000393CFE6B8
+ */

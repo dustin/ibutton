@@ -316,3 +316,7 @@ int main(int argc, char *argv[])
 	mainloop();
 	return(0);
 }
+
+/*
+ * arch-tag: BBD6CC16-13E5-11D8-8785-000393CFE6B8
+ */

@@ -1,7 +1,5 @@
 dnl Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
 dnl
-dnl $id$
-
 dnl Let's see if the threads actually work
 AC_DEFUN(SPY_PTHREAD, [
 AC_CACHE_CHECK([for working pthreads], auth_cv_working_pthread, [

@@ -892,3 +892,7 @@ mlan_init(char *port, int baud_rate)
 
 	return (mlan);
 }
+
+/*
+ * arch-tag: 20466FD1-13E5-11D8-BE72-000393CFE6B8
+ */

@@ -47,3 +47,7 @@ int main(int argc, char **argv)
 	mlan->destroy(mlan);
 	return(0);
 }
+
+/*
+ * arch-tag: 204206D1-13E5-11D8-91CF-000393CFE6B8
+ */

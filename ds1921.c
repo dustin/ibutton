@@ -596,3 +596,7 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 	finished:
 	return(data);
 }
+
+/*
+ * arch-tag: 201EF4BC-13E5-11D8-BA49-000393CFE6B8
+ */

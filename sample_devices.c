@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.22 2002/01/29 08:40:41 dustin Exp $
+ * $Id: sample_devices.c,v 1.23 2002/01/29 08:45:57 dustin Exp $
  */
 
 #include <stdio.h>
@@ -85,20 +85,31 @@ secondsSinceLastUpdate(uchar *serial)
 		assert(p);
 		memcpy(p->serial, serial, MLAN_SERIAL_SIZE);
 		p->next=watching;
+		p->last_read=now;
 		watching=p;
 	} else {
 		rv=now-p->last_read;
 	}
 
-	/* Timestamp it */
-	assert(p);
-	p->last_read=now;
-
-	/*
 	printf("secondsSinceLastUpdate(%s) => %d\n", get_serial(serial), rv);
-	*/
 
 	return(rv);
+}
+
+static void
+updateSerial(uchar *serial)
+{
+	struct watch_list *p=NULL;
+
+	assert(serial);
+
+	/* Search for a match */
+	for(p=watching; p!=NULL
+		&& (memcmp(serial, p->serial, MLAN_SERIAL_SIZE)!=0); p=p->next);
+
+	assert(p!=NULL && memcmp(serial, p->serial, MLAN_SERIAL_SIZE)==0);
+
+	p->last_read=time(NULL);
 }
 
 /* NOTE:  The initialization may be called more than once */
@@ -363,6 +374,9 @@ dealWith(MLan *mlan, uchar *serial)
 			/* Nothing */
 			break;
 	}
+
+	/* Mark it as updated */
+	updateSerial(serial);
 
 	return(rv);
 }

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.h,v 1.7 2000/07/17 07:39:15 dustin Exp $
+ * $Id: ds1921.h,v 1.8 2000/07/20 05:02:30 dustin Exp $
  */
 
 #ifndef DS1921_H
@@ -76,7 +76,10 @@ struct ds1921_data {
 	int histogram[HISTOGRAM_SIZE];
 	/* sample data, and the number of samples */
 	int n_samples;
-	float samples[SAMPLE_SIZE];
+	struct {
+		float sample;
+		int offset;
+	} samples[SAMPLE_SIZE];
 
 	/* Temperature alarms */
 	struct temp_alarm low_alarms[ALARMSIZE];

@@ -184,16 +184,17 @@ static void decodeRegister(uchar *buffer, struct ds1921_data *d)
 	d->status.low_alarm=ds1921temp_convert_out(buffer[11]);
 	d->status.high_alarm=ds1921temp_convert_out(buffer[12]);
 
-	/* Control buffer */
-	d->status.control=buffer[14];
-	/* Status buffer */
-	d->status.status=buffer[20];
-
 	/* Minutes per sample */
 	d->status.sample_rate=buffer[13];
 
+	/* Control buffer */
+	d->status.control=buffer[14];
+
 	/* Mission delay offset (minutes until the mission starts */
 	d->status.mission_delay=(buffer[19]<<8)|(buffer[18]);
+
+	/* Status buffer */
+	d->status.status=buffer[20];
 
 	/* Mission and device counters */
 	d->status.mission_s_counter=
@@ -219,6 +220,19 @@ static void showHistogram(int h[])
 	}
 }
 
+/* Find a relative time offset */
+static int findTimeOffset(int i, struct ds1921_data d) {
+	int mod=0;
+	assert(i<SAMPLE_SIZE);
+	mod=(d.status.mission_s_counter%2048)+1;
+	if(i<mod) {
+		i+=(d.status.mission_s_counter&0xF800);
+	} else {
+		i+=((d.status.mission_s_counter-2048)&0xF800);
+	}
+	return(i);
+}
+
 static char *ds1921_sample_time(int i, struct ds1921_data d)
 {
 	static char result[80];
@@ -229,9 +243,7 @@ static char *ds1921_sample_time(int i, struct ds1921_data d)
 
 	/* Add the sample_rate times the sample we're on) */
 	t+=60*(i*d.status.sample_rate);
-
 	tmtmp=localtime(&t);
-
 	strftime(result, 80, "%Y-%m-%d %T", tmtmp);
 
 	return(result);
@@ -245,7 +257,7 @@ void printDS1921(struct ds1921_data d)
 	printf("Current time:  %s", ctime(&d.status.clock.clock));
 	/* If the mission is delayed, display the time to mission, else display
 	 * when it started. */
-	if(d.status.mission_delay) {
+	if(d.status.mission_delay>0) {
 		printf("Mission begins in %d minutes.\n", d.status.mission_delay);
 	} else {
 		if(d.status.mission_ts.clock>0) {
@@ -295,10 +307,11 @@ void printDS1921(struct ds1921_data d)
 
 	printf("Temperature samples:\n");
 	for(i=0; i<d.n_samples; i++) {
-		float temp=ctof(d.samples[i]);
+		float temp=ctof(d.samples[i].sample);
 		if(temp>-40.0) {
 			printf("\tSample %04d from %s is %.2ff (%.2fc)\n",
-				i, ds1921_sample_time(i, d), temp, d.samples[i]);
+				i, ds1921_sample_time(d.samples[i].offset, d), temp,
+				d.samples[i].sample);
 		}
 	}
 }
@@ -497,10 +510,38 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 	if(pages>64)
 		pages=64;
 	mlan->getBlock(mlan, serial, 128, pages, buffer);
-	for(i=0; i<data.status.mission_s_counter; i++) {
-		float temp=ds1921temp_convert_out(buffer[i]);
-		assert(data.n_samples<SAMPLE_SIZE);
-		data.samples[data.n_samples++]=temp;
+
+	/* Figure out how many we gotta look at */
+	if(data.status.mission_s_counter>SAMPLE_SIZE) {
+		/* OK, the counters wrapped, it gets a bit tricky now. */
+		int border;
+
+		border=(data.status.mission_s_counter%2048)+1;
+
+		/* Get the second section (the sooner data) */
+		for(i=border; i<2048; i++) {
+			float temp=ds1921temp_convert_out(buffer[i]);
+			data.samples[data.n_samples].offset=findTimeOffset(i, data);
+			data.samples[data.n_samples].sample=temp;
+			data.n_samples++;
+		}
+
+		/* Get the first section (the later data) */
+		for(i=0; i<border; i++) {
+			float temp=ds1921temp_convert_out(buffer[i]);
+			assert(data.n_samples<SAMPLE_SIZE);
+			data.samples[data.n_samples].offset=findTimeOffset(i, data);
+			data.samples[data.n_samples].sample=temp;
+			data.n_samples++;
+		}
+	} else {
+		for(i=0; i<data.status.mission_s_counter; i++) {
+			float temp=ds1921temp_convert_out(buffer[i]);
+			assert(data.n_samples<SAMPLE_SIZE);
+			data.samples[data.n_samples].offset=findTimeOffset(i, data);
+			data.samples[data.n_samples].sample=temp;
+			data.n_samples++;
+		}
 	}
 
 	getSummary(&data);

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.h,v 1.1 2000/07/13 23:44:26 dustin Exp $
+ * $Id: ds1921.h,v 1.2 2000/07/14 05:49:19 dustin Exp $
  */
 
 #ifndef DS1921_H
@@ -64,6 +64,11 @@ struct ds1921_data {
 	/* sample data, and the number of samples */
 	int n_samples;
 	float samples[SAMPLE_SIZE];
+
+	/* Textual summary */
 };
+
+struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial);
+void printDS1921(struct ds1921_data d);
 
 #endif /* DS1921_H */

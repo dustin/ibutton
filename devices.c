@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.5 2000/07/13 21:39:20 dustin Exp $
+ * $Id: devices.c,v 1.6 2000/07/14 05:49:16 dustin Exp $
  */
 
 #include <stdio.h>
@@ -15,27 +15,7 @@
 
 #include <mlan.h>
 #include <commands.h>
-
-/* Stuff for a DS1920 */
-
-float
-temp_convert_out(int in)
-{
-	return( ((float)in/2) - 0.25);
-}
-
-/*
-I'll uncomment this next time it's used.
-static int
-temp_convert_in(float in)
-{
-	float ret;
-	ret=in;
-	ret+=.25;
-	ret*=2;
-	return( (int)ret );
-}
-*/
+#include <ds1920.h>
 
 float
 ctof(float in)
@@ -43,6 +23,39 @@ ctof(float in)
 	float ret;
 	ret=(in*9/5) + 32;
 	return(ret);
+}
+
+/* Dump a block for debugging */
+void dumpBlock(uchar *buffer, int size)
+{
+	int i=0;
+	printf("Dumping %d bytes\n", size);
+	for(i=0; i<size; i++) {
+		printf("%02X ", buffer[i]);
+		if(i>0 && i%25==0) {
+			puts("");
+		}
+	}
+	puts("");
+}
+
+/* Dump a block in binary */
+void binDumpBlock(uchar *buffer, int size, int start_addr)
+{
+	int i=0;
+	printf("Dumping %d bytes in binary\n", size);
+	for(i=0; i<size; i++) {
+		printf("%04X (%02d) ", start_addr+i, i);
+		printf("%s", buffer[i]&0x80?"1":"0");
+		printf("%s", buffer[i]&0x40?"1":"0");
+		printf("%s", buffer[i]&0x20?"1":"0");
+		printf("%s", buffer[i]&0x10?"1":"0");
+		printf("%s", buffer[i]&0x08?"1":"0");
+		printf("%s", buffer[i]&0x04?"1":"0");
+		printf("%s", buffer[i]&0x02?"1":"0");
+		printf("%s", buffer[i]&0x01?"1":"0");
+		puts("");
+	}
 }
 
 /*
@@ -55,89 +68,6 @@ ftoc(float in)
 }
 */
 
-/* Get a temperature reading from a DS1920 */
-static char*
-ds1920Sample(MLan *mlan, uchar *serial)
-{
-	uchar send_block[30], tmpbyte;
-	int send_cnt=0, tsht, i;
-	float temp, tmp,cr,cpc;
-
-	assert(mlan);
-	assert(serial);
-
-	if(!mlan->access(mlan, serial)) {
-		mlan_debug(mlan, 1, ("Error reading from DS1920\n"));
-		return(FALSE);
-	}
-
-	tmpbyte=mlan->touchbyte(mlan, CONVERT_TEMPERATURE);
-	mlan_debug(mlan, 3, ("Got %02x back from touchbyte\n", tmpbyte));
-
-	if(mlan->setlevel(mlan, MODE_STRONG5) != MODE_STRONG5) {
-		mlan_debug(mlan, 1, ("Strong pull-up failed.\n") );
-		return(FALSE);
-	}
-
-	/* Wait a second */
-	sleep(1);
-
-	if(mlan->setlevel(mlan, MODE_NORMAL) != MODE_NORMAL) {
-		mlan_debug(mlan, 1, ("Disabling strong pull-up failed.\n") );
-		return(FALSE);
-	}
-
-	if(!mlan->access(mlan, serial)) {
-		mlan_debug(mlan, 1, ("Error reading from DS1920\n"));
-		return(FALSE);
-	}
-
-	/* Command to read the temperature */
-	send_block[send_cnt++] = 0xBE;
-	for(i=0; i<9; i++) {
-		send_block[send_cnt++]=0xff;
-	}
-
-	if(! (mlan->block(mlan, FALSE, send_block, send_cnt)) ) {
-		mlan_debug(mlan, 1, ("Read scratchpad failed.\n"));
-		return(FALSE);
-	}
-
-	mlan->DOWCRC=0;
-	for(i=send_cnt-9; i<send_cnt; i++)
-		mlan->dowcrc(mlan, send_block[i]);
-
-	if(mlan->DOWCRC != 0) {
-		mlan_debug(mlan, 1, ("CRC failed\n"));
-		return(FALSE);
-	}
-
-	mlan_debug(mlan, 2, ("TH=%f\n", temp_convert_out(send_block[3])) );
-	mlan_debug(mlan, 2, ("T=%f\n", temp_convert_out(send_block[1])) );
-	mlan_debug(mlan, 2, ("TL=%f\n", temp_convert_out(send_block[4])) );
-
-	/* Calculate the temperature from the scratchpad */
-	tsht = send_block[1];
-	if (send_block[2] & 0x01)
-		tsht |= -256;
-	/* tmp = (float)(tsht/2); */
-	tmp=temp_convert_out(tsht);
-	cr = send_block[7];
-	cpc = send_block[8];
-	if(cpc == 0) {
-		mlan_debug(mlan, 1, ("CPC is zero, that sucks\n"));
-		return(FALSE);
-	} else {
-		/* tmp = tmp - (float)0.25 + (cpc - cr)/cpc; */
-		tmp = tmp + (cpc - cr)/cpc;
-	}
-	mlan_debug(mlan, 2, ("Celsius:  %f\n", tmp) );
-	/* Convert to Farenheit */
-	temp=ctof(tmp);
-	sprintf(mlan->sample_buffer, "%f", temp);
-	return(mlan->sample_buffer);
-}
-
 /* abstracted sampler */
 char *
 get_sample(MLan *mlan, uchar *serial)
@@ -148,8 +78,11 @@ get_sample(MLan *mlan, uchar *serial)
 	assert(serial);
 
 	switch(serial[0]) {
-		case 0x10:
-			ret=ds1920Sample(mlan, serial);
+		case 0x10: {
+				struct ds1920_data d;
+				d=ds1920Sample(mlan, serial);
+				ret=d.reading_f;
+			}
 			break;
 	}
 	return(ret);

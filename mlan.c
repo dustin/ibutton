@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.12 2000/07/13 23:44:27 dustin Exp $
+ * $Id: mlan.c,v 1.13 2000/07/14 05:49:20 dustin Exp $
  */
 
 #include <stdio.h>
@@ -532,6 +532,67 @@ _mlan_touchbyte(MLan *mlan, int byte)
 	return(0);
 }
 
+static int
+_mlan_getblock(MLan *mlan, uchar *serial, int page, int pages, uchar *buffer)
+{
+	uchar send_block[128];
+	int header=0;
+	int send_cnt=0, atmp=0;
+	int offset=0;
+	int i=0, j=0;
+
+	assert(mlan);
+	assert(serial);
+	assert(buffer);
+
+	do {
+		/* Start back at zero */
+		send_cnt=0;
+
+		/* Clear out the send set */
+		for(i=0; i<sizeof(send_block); i++) {
+			send_block[i]=0x00;
+		}
+
+		mlan->DOWCRC=0;
+		send_block[send_cnt++] = MATCH_ROM;
+		for(i=0; i<8; i++)
+			send_block[send_cnt++] = serial[i];
+		/* Now our command */
+		send_block[send_cnt++] = READ_MEMORY;
+		/* Calculate the position of the page...each page is 0x20 bytes,
+		 * and the second byte goes first. */
+		atmp=page*0x20;
+		send_block[send_cnt++] = atmp & 0xff;
+		send_block[send_cnt++] = atmp>>8;
+		mlan->dowcrc(mlan, send_block[send_cnt-2]);
+		mlan->dowcrc(mlan, send_block[send_cnt-1]);
+		header=send_cnt;
+
+		for (i = 0; i < 34; i++)
+			send_block[send_cnt++]=0xff;
+		/* send the block */
+		if(! (mlan->block(mlan, TRUE, send_block, send_cnt)) ) {
+			printf("Error sending request for block!\n");
+			return(FALSE);
+		}
+
+		for(i=0; i<34; i++) {
+			mlan->dowcrc(mlan, send_block[header+i+1]);
+		}
+
+		/* Copy it into the return buffer */
+		for(j=offset, i=header; i<header+32; i++) {
+			buffer[j++]=send_block[i];
+		}
+
+		offset+=32;
+		pages--;
+		page++;
+	} while(pages>0);
+	return(TRUE);
+}
+
 static void
 _mlan_destroy(MLan *mlan)
 {
@@ -592,6 +653,7 @@ mlan_init(char *port, int baud_rate)
 	mlan->serialLookup = _mlan_serial_lookup;
 	mlan->registerSerial = _mlan_register_serial;
 	mlan->parseSerial = _mlan_parseSerial;
+	mlan->getBlock = _mlan_getblock;
 
 	mlan->debug = 0;
 	mlan->mode = MODSEL_COMMAND;

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.10 2000/07/13 09:53:25 dustin Exp $
+ * $Id: mlan.h,v 1.11 2000/07/14 05:49:22 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -172,7 +172,6 @@ typedef unsigned char uchar;
 
 #define MLAN_SERIAL_SIZE				8
 #define MAX_SERIAL_NUMS					200
-#define MLAN_BUFFER_SIZE				1024
 
 /* Tweaking stuff */
 
@@ -214,9 +213,6 @@ struct __mlan {
 	uchar DOWCRC;			/* more CRC stuff */
 	int ProgramAvailable;	/* Whether programming is available. */
 
-	/* Buffer for sample strings */
-	char sample_buffer[MLAN_BUFFER_SIZE];
-
 	/* Tear the thing down */
 	void (*destroy)(MLan *mlan);
 
@@ -253,6 +249,7 @@ struct __mlan {
 	char *(*serialLookup)(MLan *mlan, int which);
 	void (*registerSerial)(MLan *mlan, int id, char *value);
 	char *(*parseSerial)(MLan *mlan, char *serial, uchar *output);
+	int (*getBlock)(MLan *mlan, uchar *serial, int page, int pages, uchar *);
 
 	/* misc crap */
 	uchar (*dowcrc)(MLan *mlan, uchar x);
@@ -264,6 +261,7 @@ MLan *mlan_init(char *port, int baud_rate);
 char *get_sample(MLan *mlan, uchar *serial);
 
 float ctof(float);
-float temp_convert_out(int);
+void binDumpBlock(uchar *buffer, int size, int start_addr);
+void dumpBlock(uchar *buffer, int size);
 
 #endif /* MLAN_H */

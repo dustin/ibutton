@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.12 2001/07/28 09:02:12 dustin Exp $
+ * $Id: sample_devices.c,v 1.13 2001/08/02 21:32:22 dustin Exp $
  */
 
 #include <stdio.h>
@@ -148,11 +148,22 @@ setsignals()
 
 /* Initialize the multicast socket and addr.  */
 static void
-initMulti(const char *group, int port)
+initMulti(const char *group, int port, int mttl)
 {
+	char ttl='\0';
+
+	assert(mttl>0);
+	assert(mttl<256);
+
 	msocket=socket(AF_INET, SOCK_DGRAM, 0);
 	if(msocket<0) {
 		perror("socket");
+		exit(1);
+	}
+
+	ttl=(char)mttl;
+	if(setsockopt(msocket, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl))<0){
+		perror("set multicast ttl");
 		exit(1);
 	}
 
@@ -179,12 +190,13 @@ static void
 usage(const char *name)
 {
 	fprintf(stderr, "Usage:  %s -b busdev -l logfile -c logdir "
-		"[-m multigroup] [-p multiport]\n", name);
+		"[-m multigroup] [-p multiport] [-t multittl]\n", name);
 	fprintf(stderr, "  busdev - serial device containing the bus to poll\n");
 	fprintf(stderr, "  logfile - file to write log entries\n");
 	fprintf(stderr, "  logdir - directory to write indivual snapshots\n");
 	fprintf(stderr, "  multigroup - multicast group to announce readings\n");
 	fprintf(stderr, "  multiport - port for sending multicast [1313]\n");
+	fprintf(stderr, "  multittl - multicast TTL [0]\n");
 	fprintf(stderr,
 		"By default, if no multicast group is defined, there will be\n"
 		"no multicast announcements.\n");
@@ -198,8 +210,9 @@ getoptions(int argc, char **argv)
 	extern char *optarg;
 	char *multigroup=NULL;
 	int multiport=1313;
+	int multittl=0;
 
-	while( (c=getopt(argc, argv, "b:l:c:m:p:")) != -1) {
+	while( (c=getopt(argc, argv, "b:l:c:m:p:t:")) != -1) {
 		switch(c) {
 			case 'b':
 				busdev=optarg;
@@ -216,6 +229,9 @@ getoptions(int argc, char **argv)
 			case 'p':
 				multiport=atoi(optarg);
 				break;
+			case 't':
+				multittl=atoi(optarg);
+				break;
 			case '?':
 				usage(argv[0]);
 				break;
@@ -229,7 +245,7 @@ getoptions(int argc, char **argv)
 
 	/* If we got multicast config, initialize it */
 	if(multigroup!=NULL) {
-		initMulti(multigroup, multiport);
+		initMulti(multigroup, multiport, multittl);
 	}
 }
 

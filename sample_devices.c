@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.9 2000/11/08 05:01:33 dustin Exp $
+ * $Id: sample_devices.c,v 1.10 2001/07/28 08:13:43 dustin Exp $
  */
 
 #include <stdio.h>
@@ -13,6 +13,13 @@
 #include <sys/time.h>
 #define _BSD_SIGNALS
 #include <signal.h>
+
+/* For multicast */
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+/* Local */
 #include <mlan.h>
 #include <ds1920.h>
 
@@ -20,6 +27,12 @@
 FILE		*logfile=NULL;
 char		*logfilename=NULL;
 int			need_to_reinit=1;
+char		*busdev=NULL;
+char		*curdir=NULL;
+
+/* The multicast stuff */
+int msocket=-1;
+struct sockaddr_in maddr;
 
 /* Prototype */
 static void setsignals();
@@ -33,12 +46,12 @@ init(char *port)
 
 /* Record the current sample into a file unique to the serial number */
 static void
-record_cur(const char *dir, const char *serial, const char *value)
+record_cur(const char *serial, const char *value)
 {
 	char	fn[8192];
 	FILE	*f;
 
-	strcpy(fn, dir);
+	strcpy(fn, curdir);
 	strcat(fn, "/");
 	strcat(fn, serial);
 
@@ -132,6 +145,91 @@ setsignals()
 	signal(SIGALRM, _sigalarm);
 }
 
+/* Initialize the multicast socket and addr.  */
+static void
+initMulti(const char *group, int port)
+{
+	msocket=socket(AF_INET, SOCK_DGRAM, 0);
+	if(msocket<0) {
+		perror("socket");
+		exit(1);
+	}
+
+	memset(&maddr, 0, sizeof(maddr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = inet_addr(group);
+	addr.sin_port = htons(port);
+}
+
+/* Send a multicast message */
+static void
+msend(const char *msg)
+{
+	if(msocket>=0) {
+		if(sendto(msocket, msg, strlen(msg), 0,
+			(struct sockaddr *)&maddr, sizeof(maddr)) < 0) {
+			perror("sendto");
+		}
+	}
+}
+
+static void
+usage(const char *name)
+{
+	fprintf(stderr, "Usage:  %s -b busdev -l logfile -c logdir "
+		"[-m multigroup] [-p multiport]\n", name);
+	fprintf(stderr, "  busdev - serial device containing the bus to poll\n");
+	fprintf(stderr, "  logfile - file to write log entries\n");
+	fprintf(stderr, "  logdir - directory to write indivual snapshots\n");
+	fprintf(stderr, "  multigroup - multicast group to announce readings\n");
+	fprintf(stderr, "  multiport - port for sending multicast [1313]\n");
+	fprintf("By default, if no multicast group is defined, there will be\n"
+		"no multicast announcements.\n");
+	exit(1);
+}
+
+static void
+getoptions(int argc, const char **argv)
+{
+	int c;
+	extern char *optarg;
+	char *multigroup=NULL;
+	int multiport=1313;
+
+	while( (c=getopt(argc, argv, "b:l:c:m:")) != -1) {
+		switch(c) {
+			case 'b':
+				busdev=optarg;
+				break;
+			case 'l':
+				logfilename=optarg;
+				break;
+			case 'c':
+				curdir=optarg;
+				break;
+			case 'm':
+				multigroup=optarg;
+				break;
+			case 'p':
+				multiport=atoi(optarg);
+				break;
+			case '?':
+				usage(argv[0]);
+				break;
+		}
+	}
+
+	/* Make sure the required options are supplied */
+	if(busdev==NULL || logfilename==NULL || curdir==NULL) {
+		usage(argv[0]);
+	}
+
+	/* If we got multicast config, initialize it */
+	if(multigroup!=NULL) {
+		initMulti(multigroup, multiport);
+	}
+}
+
 /* Main */
 int
 main(int argc, char **argv)
@@ -139,26 +237,14 @@ main(int argc, char **argv)
 	uchar		list[MAX_SERIAL_NUMS][MLAN_SERIAL_SIZE];
 	int			list_count=0, i=0, failures=0;
 	int			rslt=0;
-	char		*busdev=NULL, *curdir=NULL;
 	MLan		*mlan=NULL;
 
-	/* Make sure we have enough arguments */
-	if(argc < 4) {
-		fprintf(stderr, "Too few arguments.  Usage:\n"
-			"%s busdev logfile curdirectory\n"
-			"\tbusdev:  Serial device containing the bus to poll\n"
-			"\tlogfile: Logfile to record history\n"
-			"\tcurdirectory: Directory to store current data\n",
-			argv[0]);
-		exit(1);
-	}
+	/* process the arguments */
+	getoptions(argc, argv);
 
 	/* Deal with the arguments. */
-	busdev = argv[1];
-	logfilename = argv[2];
 	logfile = fopen(logfilename, "a");
 	assert(logfile);
-	curdir = argv[3];
 	/* Set signal handlers */
 	setsignals();
 
@@ -210,14 +296,19 @@ main(int argc, char **argv)
 							get_time_str(), get_serial(list[i]),
 								"Error getting sample");
 					} else {
-						char current_sample[80];
-						fprintf(logfile, "%s\t%s\t%.2f\tl=%.2f,h=%.2f\n",
+						char data_str[8192];
+						snprintf(data_str, "%s\t%s\t%.2f\tl=%.2f,h=%.2f",
 							get_time_str(), get_serial(list[i]),
 							ctof(data.temp),
 							ctof(data.temp_low), ctof(data.temp_hi));
-						snprintf(current_sample, sizeof(current_sample),
+						/* Log it */
+						fprintf(logfile, "%s\n", data_str);
+						/* Multicast it */
+						mcast(data_str);
+						/* Now record the current */
+						snprintf(data_str, sizeof(data_str),
 							"%.2f", ctof(data.temp));
-						record_cur(curdir, get_serial(list[i]),current_sample);
+						record_cur(get_serial(list[i]),data_str);
 					}
 				} break;
 				default:

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.7 2000/07/14 06:18:18 dustin Exp $
+ * $Id: devices.c,v 1.8 2000/07/14 18:17:54 dustin Exp $
  */
 
 #include <stdio.h>
@@ -25,6 +25,15 @@ ctof(float in)
 	ret=(in*9/5) + 32;
 	return(ret);
 }
+
+float
+ftoc(float in)
+{
+	float ret;
+	ret=(in-32) * 5/9;
+	return(ret);
+}
+
 
 /* Dump a block for debugging */
 void dumpBlock(uchar *buffer, int size)

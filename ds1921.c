@@ -15,6 +15,12 @@ do1921temp_convert_out(int in)
 	return( ((float)in/2) - 40);
 }
 
+static int
+do1921temp_convert_in(float in)
+{
+	return( (in*2) + 80);
+}
+
 /* This is for the realtime clock */
 static void getTime1(uchar *buffer, struct ds1921_data *d)
 {
@@ -212,12 +218,16 @@ void printDS1921(struct ds1921_data d)
 		days[d.status.clock.day],
 		d.status.clock.year, d.status.clock.month, d.status.clock.date,
 		d.status.clock.hours, d.status.clock.minutes, d.status.clock.seconds);
-	printf("Mission start time:  %04d/%02d/%02d %02d:%02d:00\n",
-		d.status.mission_ts.year, d.status.mission_ts.month,
-		d.status.mission_ts.date,
-		d.status.mission_ts.hours, d.status.mission_ts.minutes);
+
+	/* If the mission is delayed, display the time to mission, else display
+	 * when it started. */
 	if(d.status.mission_delay) {
 		printf("Mission begins in %d minutes.\n", d.status.mission_delay);
+	} else {
+		printf("Mission start time:  %04d/%02d/%02d %02d:%02d:00\n",
+			d.status.mission_ts.year, d.status.mission_ts.month,
+			d.status.mission_ts.date,
+			d.status.mission_ts.hours, d.status.mission_ts.minutes);
 	}
 	printf("Current sample rate is one sample per %d minutes\n",
 		d.status.sample_rate);
@@ -263,6 +273,7 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	uchar buffer[64];
 	struct ds1921_data data2;
 	int year=0;
+	int control=0;
 
 	assert(mlan);
 	assert(serial);
@@ -290,21 +301,26 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	buffer[6]=((year/10)<<4) | (year%10);
 
 	/* Control data */
-	buffer[14]=CONTROL_ROLLOVER_ENABLED|CONTROL_MISSION_ENABLED
+	control=data.status.control;
+	buffer[14]=control|CONTROL_MISSION_ENABLED
 		|CONTROL_MEMORY_CLR_ENABLED;
 
-	printf("Mission delay is %d minutes\n", data.status.mission_delay);
 	buffer[19]=(data.status.mission_delay>>8);
 	buffer[18]=(data.status.mission_delay & 0xFF);
-	printf("Mission delay is %02X %02X\n", buffer[18], buffer[19]);
 
 	/* Set the sample rate */
 	buffer[13]=data.status.sample_rate;
 
+	/* Low threshold */
+	buffer[11]=do1921temp_convert_in(data.status.low_alarm);
+	buffer[12]=do1921temp_convert_in(data.status.high_alarm);
+
+	/*
 	printf("This is the mission data:\n");
 	binDumpBlock(buffer, 16, 0x200);
 	decodeRegister(buffer, &data2);
 	printDS1921(data2);
+	*/
 
 	/* Send it on */
 	if(mlan->writeScratchpad(mlan, serial, 16, 32, buffer)!=TRUE) {
@@ -322,7 +338,7 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 		return(FALSE);
 	}
 
-	buffer[14]=CONTROL_ROLLOVER_ENABLED|CONTROL_MISSION_ENABLED;
+	buffer[14]=control|CONTROL_MISSION_ENABLED;
 
 	/* OK, turn it on! */
 	if(mlan->writeScratchpad(mlan, serial, 16, 32, buffer)!=TRUE) {

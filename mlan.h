@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.12 2000/07/14 09:46:48 dustin Exp $
+ * $Id: mlan.h,v 1.13 2000/07/14 18:17:57 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -264,6 +264,7 @@ MLan *mlan_init(char *port, int baud_rate);
 char *get_sample(MLan *mlan, uchar *serial);
 
 float ctof(float);
+float ftoc(float);
 void binDumpBlock(uchar *buffer, int size, int start_addr);
 void dumpBlock(uchar *buffer, int size);
 

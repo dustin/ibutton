@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	printf("\n");
 
 	s=get_sample(mlan, serial);
-	if( s[0] != 0x00 ) {
+	if( s != NULL ) {
 		printf("\tTemperature reading:  %s\n", s);
 	}
 

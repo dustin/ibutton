@@ -43,6 +43,7 @@ int main(int argc, char **argv)
 
 	if(mlan->ds2480detect(mlan)!=TRUE) {
 		printf("Found no DS2480\n");
+		exit(-1);
 	}
 
 	rslt=mlan->first(mlan, TRUE, only_alarming);
@@ -66,7 +67,7 @@ int main(int argc, char **argv)
 		if(do_sample) {
 			char *s=NULL;
 			s=get_sample(mlan, list[i]);
-			if( s[0] != 0x00) {
+			if( s != NULL) {
 				printf("\tStatus reading:  %s\n", s);
 			}
 		}

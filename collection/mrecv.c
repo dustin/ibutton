@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mrecv.c,v 1.7 2002/01/25 10:08:17 dustin Exp $
+ * $Id: mrecv.c,v 1.9 2002/01/25 23:16:18 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -56,7 +56,7 @@ static pthread_mutex_t queue_mutex;
 #endif
 
 #define RRD_CREATE_STRING "create %s -s 60 -b now-5minutes " \
-	"DS:temp:GAUGE:300:-10:50 " \
+	"DS:temp:GAUGE:900:-10:50 " \
 	"RRA:AVERAGE:0.5:5:210240 " \
 	"RRA:MIN:0.5:5:210240 " \
 	"RRA:MAX:0.5:5:210240 " \
@@ -162,20 +162,21 @@ doFlush()
 	struct rrd_queue *tmpqueue=NULL;
 	int i=0;
 
-	assert(queue!=NULL);
+	/* Only do this if there's anything in the queue */
+	if(queue!=NULL) {
+		/* First, lock and take the current queue away. */
+		LOCK_QUEUE
+		tmpqueue=queue;
+		queue=NULL;
+		UNLOCK_QUEUE
 
-	/* First, lock and take the current queue away. */
-	LOCK_QUEUE
-	tmpqueue=queue;
-	queue=NULL;
-	UNLOCK_QUEUE
+		/* Now, work on it */
+		for(i=0, p=tmpqueue->list; p!=NULL; i++, p=p->next) {
+			saveData(p);
+		}
 
-	/* Now, work on it */
-	for(i=0, p=tmpqueue->list; p!=NULL; i++, p=p->next) {
-		saveData(p);
+		disposeOfRRDQueue(tmpqueue);
 	}
-
-	disposeOfRRDQueue(tmpqueue);
 }
 
 #ifdef WORKING_PTHREAD

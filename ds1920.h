@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1920.h,v 1.2 2000/07/14 19:35:32 dustin Exp $
+ * $Id: ds1920.h,v 1.3 2000/07/16 21:35:25 dustin Exp $
  */
 
 #ifndef DS1920_H
@@ -20,8 +20,11 @@ struct ds1920_data {
 	char reading_c[80];
 };
 
-struct ds1920_data ds1920Sample(MLan *, uchar *);
+struct ds1920_data getDS1920Data(MLan *, uchar *);
 void printDS1920(struct ds1920_data);
 int setDS1920Params(MLan *mlan, uchar *serial, struct ds1920_data d);
+
+#define ds1920temp_convert_out(a) ( ((float)(a)/2.0) - 0.25)
+#define ds1920temp_convert_in(a) ( (int) (((a)+0.25)*2) )
 
 #endif /* DS1920_H */

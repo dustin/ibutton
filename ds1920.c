@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1920.c,v 1.4 2000/07/15 07:37:11 dustin Exp $
+ * $Id: ds1920.c,v 1.5 2000/07/16 21:35:24 dustin Exp $
  */
 
 #include <stdio.h>
@@ -16,22 +16,6 @@
 #include <mlan.h>
 #include <commands.h>
 #include <ds1920.h>
-
-static float
-ds1920temp_convert_out(int in)
-{
-	return( ((float)in/2) - 0.25);
-}
-
-static int
-ds1920temp_convert_in(float in)
-{
-	float ret;
-	ret=in;
-	ret+=.25;
-	ret*=2;
-	return( (int)ret );
-}
 
 void
 printDS1920(struct ds1920_data d)
@@ -110,7 +94,7 @@ setDS1920Params(MLan *mlan, uchar *serial, struct ds1920_data d)
 
 /* Get a temperature reading from a DS1920 */
 struct ds1920_data
-ds1920Sample(MLan *mlan, uchar *serial)
+getDS1920Data(MLan *mlan, uchar *serial)
 {
 	uchar send_block[30], tmpbyte;
 	int send_cnt=0, tsht, i;

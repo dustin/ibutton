@@ -294,7 +294,8 @@ int main(int argc, char **argv)
 	} else {
 		dev="/dev/tty00";
 	}
-	mlan=mlan_init(dev, PARMSET_9600);
+	/* mlan=mlan_init(dev, PARMSET_9600); */
+	mlan=mlan_init(dev, PARMSET_115200);
 
 	assert(mlan);
 	mlan->debug=0;

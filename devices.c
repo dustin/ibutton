@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.12 2000/07/15 23:12:38 dustin Exp $
+ * $Id: devices.c,v 1.13 2000/07/16 21:35:22 dustin Exp $
  */
 
 #include <stdio.h>
@@ -109,7 +109,7 @@ get_sample(MLan *mlan, uchar *serial)
 	switch(serial[0]) {
 		case 0x10: {
 				struct ds1920_data d;
-				d=ds1920Sample(mlan, serial);
+				d=getDS1920Data(mlan, serial);
 				if(d.valid) {
 					assert(strlen(d.reading_f)<sizeof(buffer));
 					strcpy(buffer, d.reading_f);

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.h,v 1.5 2000/07/14 21:48:56 dustin Exp $
+ * $Id: ds1921.h,v 1.6 2000/07/16 21:35:28 dustin Exp $
  */
 
 #ifndef DS1921_H
@@ -107,5 +107,9 @@ struct ds1921_data {
 struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial);
 void printDS1921(struct ds1921_data d);
 int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data);
+
+/* Temperature conversions */
+#define ds1921temp_convert_out(a) ( ((float)(a)/2) - 40)
+#define ds1921temp_convert_in(a) ( ((a)*2) + 80)
 
 #endif /* DS1921_H */

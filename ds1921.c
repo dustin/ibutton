@@ -8,19 +8,6 @@
 #include <mlan.h>
 #include <ds1921.h>
 
-
-static float
-do1921temp_convert_out(int in)
-{
-	return( ((float)in/2) - 40);
-}
-
-static int
-do1921temp_convert_in(float in)
-{
-	return( (in*2) + 80);
-}
-
 /* This is for the realtime clock */
 static void getTime1(uchar *buffer, struct ds1921_data *d)
 {
@@ -153,8 +140,8 @@ static void decodeRegister(uchar *buffer, struct ds1921_data *d)
 	getTime2(buffer+21, d);
 
 	/* Low and high alarm values */
-	d->status.low_alarm=do1921temp_convert_out(buffer[11]);
-	d->status.high_alarm=do1921temp_convert_out(buffer[12]);
+	d->status.low_alarm=ds1921temp_convert_out(buffer[11]);
+	d->status.high_alarm=ds1921temp_convert_out(buffer[12]);
 
 	/* Control buffer */
 	d->status.control=buffer[14];
@@ -182,8 +169,8 @@ static void showHistogram(int h[])
 
 		float temp, temp2;
 		
-		temp=do1921temp_convert_out(i<<2);
-		temp2=do1921temp_convert_out((i+1)<<2);
+		temp=ds1921temp_convert_out(i<<2);
+		temp2=ds1921temp_convert_out((i+1)<<2);
 
 		if(h[i]>0) {
 			printf("%.2f to %.2f:  %d\n", ctof(temp), ctof(temp2), h[i]);
@@ -404,8 +391,8 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	*/
 
 	/* Low threshold */
-	buffer[11]=do1921temp_convert_in(data.status.low_alarm);
-	buffer[12]=do1921temp_convert_in(data.status.high_alarm);
+	buffer[11]=ds1921temp_convert_in(data.status.low_alarm);
+	buffer[12]=ds1921temp_convert_in(data.status.high_alarm);
 
 	/* Set the sample rate */
 	buffer[13]=data.status.sample_rate;
@@ -490,7 +477,7 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 		pages=64;
 	mlan->getBlock(mlan, serial, 128, pages, buffer);
 	for(i=0; i<data.status.mission_s_counter; i++) {
-		float temp=do1921temp_convert_out(buffer[i]);
+		float temp=ds1921temp_convert_out(buffer[i]);
 		assert(data.n_samples<SAMPLE_SIZE);
 		data.samples[data.n_samples++]=temp;
 	}

@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 
 	/* OK, now let's look it up again */
 	recall(mlan, serial);
-	data=ds1920Sample(mlan, serial);
+	data=getDS1920Data(mlan, serial);
 	printDS1920(data);
 
 	mlan->destroy(mlan);

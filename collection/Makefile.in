@@ -14,7 +14,7 @@ PROGO=mrecv.o
 CC=@CC@
 
 mrecv: $(OBJ) mrecv.o
-	$(CC) -o $@ data.o mrecv.o $(LDFLAGS) $(RRDLIB)
+	$(CC) -o $@ data.o mrecv.o ../utility.o $(LDFLAGS) $(RRDLIB)
 
 clean:
 	rm -f $(OBJ) $(PROGO) $(PROGS)

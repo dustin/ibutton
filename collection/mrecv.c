@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mrecv.c,v 1.4 2002/01/24 10:33:26 dustin Exp $
+ * $Id: mrecv.c,v 1.5 2002/01/25 00:24:10 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -14,7 +14,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifdef HAVE_RRD_H
 #include <rrd.h>
+#endif /* HAVE_RRD_H */
 
 #include "data.h"
 
@@ -32,6 +34,7 @@ static struct rrd_queue *queue=NULL;
 
 static void saveDataRRD()
 {
+#ifdef HAVE_RRD_H
 	char **keys=NULL;
 	char **vals=NULL;
 	char **args=NULL;
@@ -86,6 +89,9 @@ static void saveDataRRD()
 	freeList(keys);
 	freeList(vals);
 	freeList(args);
+#else /* HAVE_RRD_H */
+	printf("ERROR:  RRD not found at build time.\n");
+#endif /* HAVE_RRD_H */
 }
 
 static void saveData() {

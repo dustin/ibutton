@@ -204,13 +204,21 @@ static char *ds1921_sample_time(int i, struct ds1921_data d)
 	tm.tm_mday=d.status.mission_ts.date;
 	tm.tm_mon=d.status.mission_ts.month-1;
 	tm.tm_year=d.status.mission_ts.year-1900;
+	tm.tm_isdst=-1;
+	tm.tm_zone="UTC";
 
 	t=mktime(&tm);
 
 	/* Add the sample_rate times the sample we're on) */
 	t+=60*(i*d.status.sample_rate);
 
-	gmtime_r(&t, &tm);
+	/* I have to use localtime because gmtime won't give me the time in
+	 * UTC.  I have no idea why. */
+	localtime_r(&t, &tm);
+	/* It sucks I have to keep doing the following */
+	tm.tm_zone="UTC";
+	tm.tm_isdst=-1;
+	tm.tm_gmtoff=0;
 
 	strftime(result, 80, "%F %T", &tm);
 
@@ -222,7 +230,7 @@ void printDS1921(struct ds1921_data d)
 	int i;
 	char *days[]={
 		NULL, "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday",
-			"Friday", "Saturday", NULL
+			"Friday" "Saturday", NULL
 	};
 	/* Display what we've got */
 	printf("Current time:  %s, %04d/%02d/%02d %02d:%02d:%02d\n",

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.17 2002/01/30 01:40:19 dustin Exp $
+dnl $Id: configure.in,v 1.18 2002/01/30 05:11:54 dustin Exp $
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(mlan.c)
 
@@ -43,6 +43,13 @@ AC_ARG_WITH(postgresql, [  --with-postgresql       path to postgresql installati
 			AC_MSG_RESULT(not found)
 		fi
 	])
+
+AC_ARG_WITH(pthreads, [  --with-pthreads         path to pthreads installation],
+	[if test -d $withval/include && test -d $withval/lib
+	then
+		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		LDFLAGS="$LDFLAGS -L$withval/lib"
+	fi])
 
 dnl I needed these for something, might as well not include them if they
 dnl don't exist.

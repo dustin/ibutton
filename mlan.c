@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.20 2001/12/10 08:23:10 dustin Exp $
+ * $Id: mlan.c,v 1.21 2002/01/27 02:06:34 dustin Exp $
  */
 
 #include <stdio.h>
@@ -24,7 +24,7 @@ extern void     _com_cbreak(MLan * mlan);
 extern int      _ds2480_detect(MLan * mlan);
 extern int      _ds2480_changebaud(MLan * mlan, uchar newbaud);
 
-static int initialized=0;
+static int _table_initialized=0;
 static char **serial_table;
 
 static          uchar
@@ -390,22 +390,39 @@ _mlan_init_table(void)
 	assert(serial_table);
 
 	/* These are things we know */
+	assert(serial_table[0x01] == NULL);
 	serial_table[0x01]=strdup("DS1990 Serial Number iButton");
+	assert(serial_table[0x02] == NULL);
 	serial_table[0x02]=strdup("DS1991 Multi-key iButton");
+	assert(serial_table[0x04] == NULL);
 	serial_table[0x04]=strdup("DS1992/1993/1994 Memory iButton");
+	assert(serial_table[0x09] == NULL);
 	serial_table[0x09]=strdup("DS9097u 1-wire to RS232 converter");
+	assert(serial_table[0x0a] == NULL);
 	serial_table[0x0a]=strdup("DS1995 64kbit Memory iButton");
+	assert(serial_table[0x0b] == NULL);
 	serial_table[0x0b]=strdup("DS1985 16kbit Add-only iButton");
+	assert(serial_table[0x0c] == NULL);
 	serial_table[0x0c]=strdup("DS1986 64kbit Memory iButton");
+	assert(serial_table[0x0f] == NULL);
 	serial_table[0x0f]=strdup("DS1986 64kbit Add-only iButton");
+	assert(serial_table[0x10] == NULL);
 	serial_table[0x10]=strdup("DS1820/1920 Temperature Sensor");
+	assert(serial_table[0x12] == NULL);
 	serial_table[0x12]=strdup("DS2407 2 Channel Switch");
+	assert(serial_table[0x14] == NULL);
 	serial_table[0x14]=strdup("DS1971 256-bit EEPROM iButton");
+	assert(serial_table[0x18] == NULL);
 	serial_table[0x18]=strdup("DS1962/1963 Monetary iButton");
+	assert(serial_table[0x1a] == NULL);
 	serial_table[0x1a]=strdup("DS1963L Monetary iButton");
+	assert(serial_table[0x21] == NULL);
 	serial_table[0x21]=strdup("DS1921 Thermochron");
+	assert(serial_table[0x26] == NULL);
 	serial_table[0x26]=strdup("DS2438 Battery Monitor/Humidity Sensor");
+	assert(serial_table[0x23] == NULL);
 	serial_table[0x23]=strdup("DS1973 4kbit EEPROM iButton");
+	assert(serial_table[0x96] == NULL);
 	serial_table[0x96]=strdup("DS199550-400 Java Button");
 }
 
@@ -760,7 +777,7 @@ mlan_init(char *port, int baud_rate)
 
 	assert(port);
 
-	if(initialized==0) {
+	if(_table_initialized==0) {
 		_mlan_init_table();
 	}
 

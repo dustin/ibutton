@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.16 2001/12/24 08:03:10 dustin Exp $
+# $Id: Makefile.in,v 1.17 2001/12/24 09:07:09 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -18,6 +18,15 @@ PROGS=search lookup sample_devices slew 1921dump 1921mission \
 	1920 storage 2406 2438 @GUILESTUFF@
 PROGO=search.o lookup.o sample_devices.o slew.o
 CC=@CC@
+
+# Lint stuff
+LINT=@LINT@
+LINTFLAGS=$(CPPFLAGS) -v -x -u
+LINTS=com.ln ds2480.ln mlan.ln devices.ln ds1920.ln ds1921.ln ds2406.ln \
+	ds2438.ln
+# /Lint stuff
+
+.SUFFIXES: .c .o .l .a .ln
 
 all: $(PROGS)
 
@@ -71,3 +80,9 @@ distclean: clean
 
 clean:
 	rm -f $(OBJ) mlan.a $(PROGS) $(PROGO)
+
+lint: $(LINTS)
+	$(LINT) $(LINTFLAGS) $(LINTS)
+
+.c.ln: $<
+	$(LINT) $(LINTFLAGS) -c $<

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlanscm.c,v 1.1 2001/12/08 11:26:58 dustin Exp $
+ * $Id: mlanscm.c,v 1.2 2001/12/08 12:06:57 dustin Exp $
  */
 
 #include <stdio.h>
@@ -126,6 +126,9 @@ static SCM mlan_access(SCM mlan_smob, SCM serial)
 
 	mlan=mlan_getmlan(mlan_smob, "mlan-access");
 
+	SCM_ASSERT(SCM_NIMP(serial) && SCM_STRINGP(serial), serial,
+		SCM_ARG1, "mlan-access");
+
 	serial_str=gh_scm2newstr(serial, NULL);
 	mlan->parseSerial(mlan, serial_str, ser);
 	free(serial_str);
@@ -236,6 +239,42 @@ static SCM mlan_block(SCM mlan_smob, SCM do_reset, SCM bytes)
 	return(rv);
 }
 
+static SCM mlan_getblock(SCM mlan_smob, SCM serial, SCM page, SCM pages)
+{
+	MLan *mlan=NULL;
+	char *serial_str;
+	SCM rv=SCM_EOL;
+	uchar ser[MLAN_SERIAL_SIZE];
+	uchar buffer[256*32];
+	int i=0;
+
+	/* Check types */
+	SCM_ASSERT(SCM_INUMP(page), page, SCM_ARG3, "mlan-getblock");
+	SCM_ASSERT(SCM_INUMP(pages), pages, SCM_ARG4, "mlan-getblock");
+
+	/* Check the size */
+	SCM_ASSERT( (32*SCM_INUM(pages)) < sizeof(buffer),
+		pages, "pages must be less than 256", "mlan-getblock");
+
+	/* Get the MLan thing */
+	mlan=mlan_getmlan(mlan_smob, "mlan-getblock");
+
+	/* Parse the serial */
+	SCM_ASSERT(SCM_NIMP(serial) && SCM_STRINGP(serial), serial,
+		SCM_ARG2, "mlan-access");
+	serial_str=gh_scm2newstr(serial, NULL);
+	mlan->parseSerial(mlan, serial_str, ser);
+	free(serial_str);
+
+	mlan->getBlock(mlan, ser, SCM_INUM(page), SCM_INUM(pages), buffer);
+
+	for(i=32*SCM_INUM(pages); i>=0; i--) {
+		rv=gh_cons(gh_int2scm(buffer[i]), rv);
+	}
+
+	return(rv);
+}
+
 void init_mlan_type()
 {
 	mlan_tag=scm_make_smob_type("mlan", sizeof(MLan));
@@ -251,6 +290,7 @@ void init_mlan_type()
 	scm_make_gsubr("mlan-setlevel", 2, 0, 0, mlan_setlevel);
 	scm_make_gsubr("mlan-msdelay", 2, 0, 0, mlan_msdelay);
 	scm_make_gsubr("mlan-block", 3, 0, 0, mlan_block);
+	scm_make_gsubr("mlan-getblock", 4, 0, 0, mlan_getblock);
 }
 
 static void inner_main(int argc, char **argv)

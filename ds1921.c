@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.c,v 1.23 2001/08/29 09:27:53 dustin Exp $
+ * $Id: ds1921.c,v 1.24 2001/12/08 12:06:55 dustin Exp $
  */
 #include <stdio.h>
 #include <assert.h>
@@ -220,7 +220,7 @@ static void showHistogram(int h[])
 		temp2=ds1921temp_convert_out((i+1)<<2);
 
 		if(h[i]>0) {
-			printf("%.2f to %.2f:  %d\n", ctof(temp), ctof(temp2), h[i]);
+			printf("%.2f to %.2f:  %d\n", temp, temp2, h[i]);
 		}
 	}
 }
@@ -279,8 +279,8 @@ void printDS1921(struct ds1921_data d)
 	printf("Mission control info:\n");
 	showControl(d.status.control);
 
-	printf("Low alarm:  %.2f\n", ctof(d.status.low_alarm));
-	printf("High alarm:  %.2f\n", ctof(d.status.high_alarm));
+	printf("Low alarm:  %.2f\n", d.status.low_alarm);
+	printf("High alarm:  %.2f\n", d.status.high_alarm);
 
 	printf("Mission samples counter:  %d\n", d.status.mission_s_counter);
 	printf("Device samples counter:  %d\n", d.status.device_s_counter);
@@ -312,7 +312,7 @@ void printDS1921(struct ds1921_data d)
 
 	printf("Temperature samples:\n");
 	for(i=0; i<d.n_samples; i++) {
-		float temp=ctof(d.samples[i].sample);
+		float temp=d.samples[i].sample;
 		if(temp>-40.0) {
 			printf("\tSample %04d from %s is %.2ff (%.2fc)\n",
 				i, ds1921_sample_time(d.samples[i].offset, d), temp,

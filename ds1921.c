@@ -34,7 +34,8 @@ static void getTime1(uchar *buffer, struct ds1921_data *d)
 	seconds= (buffer[0]&0x0f) + (10* ((buffer[0]&0x70) >> 4) );
 	minutes=(buffer[1]&0x0f) + (10* ((buffer[1]&0x70) >> 4) );
 	/* Hours is in the third byte */
-	hours=(buffer[2]&0x0f) + (10* ( (buffer[2]&0x10) >>4));
+	hours=(buffer[2]&0x0f) + (10* ( (buffer[2]&0x10) >>4))
+		+ (10* (buffer[2]&0x20) >>6);
 	/* Day of the week is the last three bits of the fourth byte */
 	day=buffer[3]&0x07;
 	/* Date is the fifth byte */
@@ -209,7 +210,7 @@ static char *ds1921_sample_time(int i, struct ds1921_data d)
 	/* Add the sample_rate times the sample we're on) */
 	t+=60*(i*d.status.sample_rate);
 
-	localtime_r(&t, &tm);
+	gmtime_r(&t, &tm);
 
 	strftime(result, 80, "%F %T", &tm);
 
@@ -346,7 +347,6 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	data.status.clock.seconds=tm.tm_sec;
 	data.status.clock.minutes=tm.tm_min;
 	data.status.clock.hours=tm.tm_hour;
-	data.status.clock.hours|=0x40; /* 24-hour mode */
 	data.status.clock.date=tm.tm_mday;
 	data.status.clock.month=tm.tm_mon+1;
 	data.status.clock.year=tm.tm_year+1900;
@@ -356,8 +356,23 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 		| (data.status.clock.seconds%10);
 	buffer[1]= ((data.status.clock.minutes/10)<<4)
 		| (data.status.clock.minutes%10);
-	buffer[2]= ((data.status.clock.hours/10)<<4)
+
+	buffer[2]=(data.status.clock.hours%10);
+	if(data.status.clock.hours>=10) {
+		if(data.status.clock.hours==10) {
+			buffer[2]|=0x10;
+		} else if(data.status.clock.hours==20) {
+			buffer[2]|=0x40;
+		} else {
+			buffer[2]|=0x50;
+		}
+	}
+
+	/*
+	((data.status.clock.hours/10)<<4)
 		| (data.status.clock.hours%10);
+	*/
+
 	buffer[3]=data.status.clock.day;
 	buffer[4]= ((data.status.clock.date/10)<<4)
 		| (data.status.clock.date%10);

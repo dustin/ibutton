@@ -12,6 +12,8 @@
 #include <commands.h>
 #include <ds1921.h>
 
+#define START_PAGE 0
+
 #define DATA_SIZE 512
 #define START_DATA 3
 
@@ -38,7 +40,7 @@ void putBlock(MLan *mlan, uchar *serial, uchar *buffer,
 	assert(pages<256);
 	assert(size<=pages*32);
 
-	for(page=startpage; page<pages && j<size+START_DATA; page++) {
+	for(page=startpage; page<startpage+pages && j<size+START_DATA; page++) {
 		uchar pagedata[32];
 		memset(pagedata, 0x00, sizeof(pagedata));
 		/* j continues from last time */
@@ -64,7 +66,7 @@ void erase(MLan *mlan, uchar *serial)
 	assert(serial);
 
 	memset(buffer, 0x00, sizeof(buffer));
-	putBlock(mlan, serial, buffer, 0, 16, 512);
+	putBlock(mlan, serial, buffer, START_PAGE, 16, 512);
 }
 
 void putFile(MLan *mlan, uchar *serial, char *file)
@@ -115,7 +117,7 @@ void putFile(MLan *mlan, uchar *serial, char *file)
 
 	buffer[2]=mlan->DOWCRC;
 
-	putBlock(mlan, serial, buffer, 0, 16, size);
+	putBlock(mlan, serial, buffer, START_PAGE, 16, size);
 }
 
 void getFile(MLan *mlan, uchar *serial, char *file)
@@ -130,7 +132,7 @@ void getFile(MLan *mlan, uchar *serial, char *file)
 	assert(serial);
 	assert(file);
 
-	for(i=0; i<16 && j<size; i++) {
+	for(i=START_PAGE; i<START_PAGE+16 && j<size; i++) {
 
 		memset(buffer, 0x00, sizeof(buffer));
 		/* Read the page */
@@ -189,7 +191,7 @@ void dumpData(MLan *mlan, uchar *serial)
 	assert(mlan);
 	assert(serial);
 
-	for(i=0; i<16; i++) {
+	for(i=START_PAGE; i<START_PAGE+16; i++) {
 
 		memset(buffer, 0x00, sizeof(buffer));
 		/* Read the page */

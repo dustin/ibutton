@@ -9,38 +9,12 @@
 #include <commands.h>
 #include <ds1921.h>
 
-struct ds1921_data getMissionData()
+static void showUsage(char *cmd)
 {
-	time_t t;
-	struct tm tm;
-	struct ds1921_data data;
-
-	memset(&data, 0x00, sizeof(data));
-
-	/* Set the time */
-	t=time(NULL);
-	gmtime_r(&t, &tm);
-	data.status.clock.seconds=tm.tm_sec;
-	data.status.clock.minutes=tm.tm_min;
-	data.status.clock.hours=tm.tm_hour;
-	data.status.clock.date=tm.tm_mday;
-	data.status.clock.month=tm.tm_mon+1;
-	data.status.clock.year=tm.tm_year+1900;
-	data.status.clock.day=tm.tm_wday+1;
-
-	/* One minute sample rate */
-	data.status.sample_rate=1;
-
-	data.status.mission_delay=0;
-
-	data.status.low_alarm=ftoc(40);
-	data.status.high_alarm=ftoc(60);
-
-	/* Various control stuff we want to use in this mission */
-	data.status.control=CONTROL_HI_ALARM_ENABLED|CONTROL_LOW_ALARM_ENABLED|
-		CONTROL_ROLLOVER_ENABLED;
-
-	return(data);
+	fprintf(stderr, "Usage:  %s [-r] [-s sample_rate] [-d mission_delay]\n"
+		"\t\t[-l low_alert] [-h high_alert] serial_number\n",
+			cmd);
+	fprintf(stderr, "Temperature is given in degrees farenheight.\n");
 }
 
 int main(int argc, char **argv)
@@ -48,12 +22,84 @@ int main(int argc, char **argv)
 	MLan *mlan=NULL;
 	uchar serial[MLAN_SERIAL_SIZE];
 	char *serial_in=NULL, *dev=NULL;
+	struct ds1921_data data;
+	char *tmp, temp;
+	char *cmd;
 
-	if(argc<2) {
+	extern char *optarg;
+	extern int optind;
+	int ch=0;
+
+	cmd=argv[0];
+
+	/* Prepare data */
+	memset(&data, 0x00, sizeof(data));
+
+	/* Defaults */
+	data.status.low_alarm=ftoc(-40);
+	data.status.high_alarm=ftoc(185);
+	data.status.sample_rate=15;
+
+	/* Parse the arguments */
+	while( (ch=getopt(argc, argv, "s:d:l:h:r")) != -1) {
+		switch(ch) {
+			case 'r':
+				/* Enable rollover */
+				data.status.control|=CONTROL_ROLLOVER_ENABLED;
+				break;
+			case 's':
+				/* Set the sample rate */
+				data.status.sample_rate=atoi(optarg);
+				if(data.status.sample_rate<1) {
+					fprintf(stderr, "Invalid sample rate:  %s\n", optarg);
+					showUsage(cmd);
+				}
+				break;
+			case 'd':
+				/* Set the delay */
+				data.status.mission_delay=atoi(optarg);
+				if(data.status.mission_delay<0) {
+					fprintf(stderr, "Invalid mission delay:  %s\n", optarg);
+					showUsage(cmd);
+				}
+				break;
+			case 'l':
+				/* Set the low temperature */
+				temp=strtod(optarg, &tmp);
+				if(tmp==optarg) {
+					fprintf(stderr, "Invalid low temperature:  %s\n", optarg);
+					showUsage(cmd);
+				}
+				data.status.low_alarm=ftoc(temp);
+				data.status.control|=CONTROL_HI_ALARM_ENABLED;
+				break;
+			case 'h':
+				/* Set the low temperature */
+				temp=strtod(optarg, &tmp);
+				if(tmp==optarg) {
+					fprintf(stderr, "Invalid high temperature:  %s\n", optarg);
+					showUsage(cmd);
+				}
+				data.status.high_alarm=ftoc(temp);
+				data.status.control|=CONTROL_LOW_ALARM_ENABLED;
+				break;
+			case '?':
+				showUsage(cmd);
+				break;
+		}
+	}
+
+	/* Adjust */
+	argc-=optind;
+	argv+=optind;
+
+	/* The serial number should be the first thing in argv now. */
+	if(argc<1) {
 		fprintf(stderr, "Need a serial number.\n");
+		showUsage(cmd);
 		exit(1);
 	}
-	serial_in=argv[1];
+	serial_in=argv[0];
 
 	if(getenv("MLAN_DEVICE")) {
 		dev=getenv("MLAN_DEVICE");
@@ -61,7 +107,6 @@ int main(int argc, char **argv)
 		dev="/dev/tty00";
 	}
 	mlan=mlan_init(dev, PARMSET_9600);
-
 	assert(mlan);
 	mlan->debug=0;
 
@@ -72,9 +117,9 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	ds1921_mission(mlan, serial, getMissionData());
+	ds1921_mission(mlan, serial, data);
 
-	printf("Done!\n");
+	printf("Missioned!\n");
 
 	mlan->destroy(mlan);
 

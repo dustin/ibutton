@@ -323,17 +323,28 @@ static void getSummary(struct ds1921_data *d)
 int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 {
 	uchar buffer[64];
-	struct ds1921_data data2;
 	int year=0;
 	int control=0;
+	time_t t;
+	struct tm tm;
 
 	assert(mlan);
 	assert(serial);
 	/* Make sure it's a 1921 */
 	assert(serial[0] == 0x21);
 
-	memset(&data2, 0x00, sizeof(data2));
 	memset(&buffer, 0x00, sizeof(buffer));
+
+	/* Set the time */
+	t=time(NULL);
+	gmtime_r(&t, &tm);
+	data.status.clock.seconds=tm.tm_sec;
+	data.status.clock.minutes=tm.tm_min;
+	data.status.clock.hours=tm.tm_hour;
+	data.status.clock.date=tm.tm_mday;
+	data.status.clock.month=tm.tm_mon+1;
+	data.status.clock.year=tm.tm_year+1900;
+	data.status.clock.day=tm.tm_wday+1;
 
 	buffer[0]= ((data.status.clock.seconds/10)<<4)
 		| (data.status.clock.seconds%10);
@@ -368,13 +379,6 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	/* Low threshold */
 	buffer[11]=do1921temp_convert_in(data.status.low_alarm);
 	buffer[12]=do1921temp_convert_in(data.status.high_alarm);
-
-	/*
-	printf("This is the mission data:\n");
-	binDumpBlock(buffer, 16, 0x200);
-	decodeRegister(buffer, &data2);
-	printDS1921(data2);
-	*/
 
 	/* Send it on */
 	if(mlan->writeScratchpad(mlan, serial, 16, 32, buffer)!=TRUE) {

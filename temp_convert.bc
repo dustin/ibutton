@@ -1,0 +1,15 @@
+# Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
+#
+# $Id: temp_convert.bc,v 1.1 2002/01/29 08:05:34 dustin Exp $
+#
+# For those who need conversions, here are bc functions.
+
+scale=5
+
+define ftoc(a) {
+  return( (a-32)*5/9);
+}
+
+define ctof(a) {
+  return( (a*9/5) +32);
+}

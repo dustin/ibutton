@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.c,v 1.29 2002/01/30 05:39:43 dustin Exp $
+ * $Id: ds1921.c,v 1.30 2002/01/30 09:22:08 dustin Exp $
  */
 #include <stdio.h>
 #include <assert.h>
@@ -506,19 +506,28 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 	memset(&buffer, 0x00, sizeof(buffer));
 
 	/* Register data is at 16 */
-	mlan->getBlock(mlan, serial, 16, 1, buffer);
+	if(mlan->getBlock(mlan, serial, 16, 1, buffer)!=TRUE) {
+		fprintf(stderr, "mlan->getBlock failed at registers.\n");
+		goto finished;
+	}
 	decodeRegister(buffer, &data);
-	if(data.status.control&STATUS_UNUSED) {
-		/* Invalid data */
+	if(data.status.clock.clock<0) {
+		fprintf(stderr, "Invalid register data.\n");
 		goto finished;
 	}
 
 	/* Temperature alarms are at 17 */
-	mlan->getBlock(mlan, serial, 17, 3, buffer);
+	if(mlan->getBlock(mlan, serial, 17, 3, buffer)!=TRUE) {
+		fprintf(stderr, "mlan->getBlock failed at alarms.\n");
+		goto finished;
+	}
 	decodeAlarms(buffer, &data);
 
 	/* Histogram is at 64 */
-	mlan->getBlock(mlan, serial, 64, 4, buffer);
+	if(mlan->getBlock(mlan, serial, 64, 4, buffer)!=TRUE) {
+		fprintf(stderr, "mlan->getBlock failed at histogram.\n");
+		goto finished;
+	}
 	for(j=0, i=0; j<HISTOGRAM_SIZE; i+=2) {
 		int n;
 		n=buffer[i+1];
@@ -533,7 +542,10 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 	pages=(data.status.mission_s_counter/32)+1;
 	if(pages>64)
 		pages=64;
-	mlan->getBlock(mlan, serial, 128, pages, buffer);
+	if(mlan->getBlock(mlan, serial, 128, pages, buffer)!=TRUE) {
+		fprintf(stderr, "mlan->getBlock failed at samples.\n");
+		goto finished;
+	}
 
 	/* Figure out how many we gotta look at */
 	if(data.status.mission_s_counter>SAMPLE_SIZE) {

@@ -1,7 +1,7 @@
 #!./mlanscm -s
 !#
 ; Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
-; $Id: 1921.scm,v 1.1 2001/12/10 08:11:19 dustin Exp $
+; $Id: 1921.scm,v 1.2 2002/01/30 09:22:12 dustin Exp $
 
 ; Temperature conversion for 1921's
 (define (ds1921-convert-out x)
@@ -11,6 +11,7 @@
 (define mlan-conn #f)
 (define mlan-rv #f)
 
+; (define device "212C870000402504")
 (define device "2183110000C034BB")
 
 (define (mlan-test-dev a)
@@ -33,6 +34,8 @@
   )
 
 ; do my test
+(mlan-test)
+(mlan-reset mlan-conn)
 (mlan-lookup-test)
 (display mlan-rv)
 (display "\n")

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.18 2002/01/29 19:19:04 dustin Exp $
+ * $Id: devices.c,v 1.19 2002/01/30 09:22:07 dustin Exp $
  */
 
 #include <stdio.h>
@@ -49,7 +49,9 @@ void dumpBlock(uchar *buffer, int size)
 
 	assert(buffer);
 	/* This thing would look really funny if a line had fewer than 16 bytes */
+	/*
 	assert( (size%16)==0 );
+	*/
 
 	printf("Dumping %d bytes\n", size);
 	for(line=0; line*16<size; line++) {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.25 2002/01/30 06:31:02 dustin Exp $
+ * $Id: mlan.c,v 1.26 2002/01/30 09:22:10 dustin Exp $
  */
 
 #include <stdio.h>
@@ -465,7 +465,7 @@ static int
 _mlan_block(MLan *mlan, int doreset, uchar *buf, int len)
 {
 	uchar sendpacket[80];
-	int sendlen=0, pos=0, i=0, crcblocks=0;
+	int sendlen=0, pos=0, i=0;
 
 	assert(mlan);
 	assert(buf);
@@ -487,24 +487,13 @@ _mlan_block(MLan *mlan, int doreset, uchar *buf, int len)
 	pos=sendlen;
 	for(i=0; i<len; i++) {
 		sendpacket[sendlen++]=buf[i];
-		if(buf[i]==MODE_COMMAND) {
+		if(buf[i]==MODE_COMMAND)
 			sendpacket[sendlen++] = buf[i];
-		} else if(buf[i]==0xff) {
-			crcblocks++;
-		}
 	}
 
 	if(mlan->write(mlan, sendlen, sendpacket)) {
 		if(mlan->read(mlan, len, buf) == len) {
-			mlan->DOWCRC=0;
-			for(i=sendlen-crcblocks; i<sendlen; i++) {
-				mlan->dowcrc(mlan, sendpacket[i]);
-			}
-			if(mlan->DOWCRC==0) {
-				return(TRUE);
-			} else {
-				mlan_debug(mlan, 2, ("mlan_block: CRC failed\n"));
-			}
+			return(TRUE);
 		}
 	}
 
@@ -762,8 +751,34 @@ _mlan_getblock(MLan *mlan, uchar *serial, int page, int pages, uchar *buffer)
 			return(FALSE);
 		}
 
+		mlan->DOWCRC=0;
 		for(i=0; i<34; i++) {
-			mlan->dowcrc(mlan, send_block[header+i+1]);
+			mlan->dowcrc(mlan, send_block[send_cnt-34]);
+		}
+		if(mlan->DOWCRC!=0) {
+			/* dumpBlock(send_block, send_cnt); */
+			/*
+			fprintf(stderr, "CRC FAILURE (got 0x%x on page 0x%x, 0x%x pages)\n",
+				mlan->DOWCRC, page, pages);
+			*/
+
+			/* Scan for a good CRC */
+			/*
+			for(i=0; i<send_cnt; i++) {
+				int j=0;
+				mlan->DOWCRC=0;
+				for(j=0; j<send_cnt-i; j++) {
+					mlan->dowcrc(mlan, send_block[i+j]);
+					if(j>=31 && mlan->DOWCRC==0) {
+						fprintf(stderr, "CRC is 0 at %d (-%d) length %d\n",
+							i, j, (send_cnt-i));
+					}
+				}
+			}
+			*/
+
+			/* Return false here if we care */
+			/* return(FALSE); */
 		}
 
 		/* Copy it into the return buffer */

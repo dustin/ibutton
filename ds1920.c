@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1920.c,v 1.3 2000/07/14 19:35:30 dustin Exp $
+ * $Id: ds1920.c,v 1.4 2000/07/15 07:37:11 dustin Exp $
  */
 
 #include <stdio.h>
@@ -37,8 +37,8 @@ void
 printDS1920(struct ds1920_data d)
 {
 	printf("Temp:  %.2fc (%.2ff)\n", d.temp, ctof(d.temp));
-	printf("High alarm:  %.2fc (%.2ff)\n", d.temp_hi, ctof(d.temp_hi));
 	printf("Low alarm:  %.2fc (%.2ff)\n", d.temp_low, ctof(d.temp_low));
+	printf("High alarm:  %.2fc (%.2ff)\n", d.temp_hi, ctof(d.temp_hi));
 }
 
 int
@@ -46,6 +46,7 @@ setDS1920Params(MLan *mlan, uchar *serial, struct ds1920_data d)
 {
 	uchar send_buffer[16];
 	int send_cnt=0;
+	int i=0;
 
 	assert(mlan);
 	assert(serial);
@@ -73,11 +74,17 @@ setDS1920Params(MLan *mlan, uchar *serial, struct ds1920_data d)
 		return(FALSE);
 	}
 
-	/* OK, request the copy */
+	/* OK, request the copy, I do a MATCH_ROM on this one, because it works
+	 * now.*/
 	send_cnt=0;
+	send_buffer[send_cnt++] = MATCH_ROM;
+	for(i=0; i<MLAN_SERIAL_SIZE; i++) {
+		send_buffer[send_cnt++]=serial[i];
+	}
+
 	send_buffer[send_cnt++] = DS1920COPY_SCRATCHPAD;
 	mlan_debug(mlan, 3, ("Copying DS1920 scratchpad.\n"));
-	if(! (mlan->block(mlan, FALSE, send_buffer, send_cnt))) {
+	if(! (mlan->block(mlan, TRUE, send_buffer, send_cnt))) {
 		printf("Error copying scratchpad.\n");
 		return(FALSE);
 	}
@@ -90,7 +97,7 @@ setDS1920Params(MLan *mlan, uchar *serial, struct ds1920_data d)
 	}
 
 	/* Give it some time to think */
-	mlan->msDelay(mlan, 20);
+	mlan->msDelay(mlan, 500);
 
 	/* Turn off the hose */
 	mlan_debug(mlan, 3, ("Disabling strong pull-up.\n"));

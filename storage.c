@@ -126,7 +126,7 @@ void getFile(MLan *mlan, uchar *serial, char *file)
 	uchar buffer[33];
 	int i=0, j=0, k=0, size=512;
 	int fd=-1;
-	int crc;
+	int crc=0;
 
 	assert(mlan);
 	assert(serial);

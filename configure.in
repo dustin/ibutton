@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.14 2002/01/27 01:50:12 dustin Exp $
+dnl $Id: configure.in,v 1.15 2002/01/30 00:11:31 dustin Exp $
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(mlan.c)
 
@@ -120,7 +120,7 @@ AC_STRUCT_TM
 
 dnl Checks for library functions.
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS(getopt vsprintf vsnprintf snprintf sprintf strerror)
+AC_CHECK_FUNCS(getopt vsprintf vsnprintf snprintf sprintf strerror utime)
 
 CFLAGS="$CFLAGS $CPPFLAGS"
 

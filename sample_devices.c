@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.28 2002/01/29 23:57:10 dustin Exp $
+ * $Id: sample_devices.c,v 1.29 2002/01/30 00:11:33 dustin Exp $
  */
 
 #include <stdio.h>
@@ -143,14 +143,17 @@ init(char *port)
 
 /* Record the current sample into a file unique to the serial number */
 static void
-record_cur(const char *serial, const char *value)
+record_cur(const char *serial, const char *value, time_t update_time)
 {
 	char	fn[8192];
+	struct utimbuf tvp;
 	FILE	*f;
 
 	strcpy(fn, curdir);
 	strcat(fn, "/");
 	strcat(fn, serial);
+
+	assert(strlen(fn)<sizeof(fn));
 
 	f=fopen(fn, "w");
 	if(f==NULL) {
@@ -159,6 +162,11 @@ record_cur(const char *serial, const char *value)
 	}
 	fprintf(f, "%s\n", value);
 	fclose(f);
+
+	tvp.actime=time(NULL);
+	tvp.modtime=update_time;
+
+	utime(fn, &tvp);
 }
 
 /* Get the time for the record. */
@@ -420,7 +428,7 @@ dealWith(MLan *mlan, uchar *serial)
 				/* Now record the current */
 				snprintf(data_str, sizeof(data_str),
 					"%.2f", data.temp);
-				record_cur(get_serial(serial),data_str);
+				record_cur(get_serial(serial), data_str, time(NULL));
 			}
 			/* Mark it as updated */
 			updateSerial(serial, time(NULL));
@@ -432,6 +440,8 @@ dealWith(MLan *mlan, uchar *serial)
 			if(data.valid==TRUE) {
 				time_t last_update=timeOfLastUpdate(serial);
 				time_t last_record=0;
+				float last_reading=0;
+				char data_str[8192];
 				/*
 				printf("Got the data, preparing to write it out.\n");
 				*/
@@ -443,7 +453,6 @@ dealWith(MLan *mlan, uchar *serial)
 				for(i=0; i<data.n_samples; i++) {
 					/* Only send data we haven't seen */
 					if(data.samples[i].timestamp>last_update) {
-						char data_str[8192];
 						snprintf(data_str, sizeof(data_str),
 							"%s\t%s\t%.2f\ts=%d,r=%d",
 							get_time_str(data.samples[i].timestamp),
@@ -456,9 +465,12 @@ dealWith(MLan *mlan, uchar *serial)
 						msend(data_str);
 					}
 					last_record=data.samples[i].timestamp;
+					last_reading=data.samples[i].sample;
 				}
 				/* Mark it as updated */
 				updateSerial(serial, last_record);
+				snprintf(data_str, sizeof(data_str), "%.2f", last_reading);
+				record_cur(get_serial(serial), data_str, last_record);
 				/*
 				printf("Finished writing the data.\n");
 				*/

@@ -15,6 +15,7 @@ static void showUsage(char *cmd)
 		"\t\t[-l low_alert] [-h high_alert] serial_number\n",
 			cmd);
 	fprintf(stderr, "Temperature is given in degrees farenheit.\n");
+	exit(-1);
 }
 
 int main(int argc, char **argv)
@@ -97,7 +98,6 @@ int main(int argc, char **argv)
 	if(argc<1) {
 		fprintf(stderr, "Need a serial number.\n");
 		showUsage(cmd);
-		exit(1);
 	}
 	serial_in=argv[0];
 

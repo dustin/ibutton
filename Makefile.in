@@ -9,10 +9,14 @@ AR=@AR@
 RANLIB=@RANLIB@
 GUILECONF=@GUILECONF@
 
+TOPDIR=@top_srcdir@
+
 DEFS=@DEFS@
-CFLAGS=-I. -Imymalloc @CFLAGS@ @GUILEINC@ $(DEFS)
+CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mymalloc @CFLAGS@ @GUILEINC@ $(DEFS)
 LDFLAGS=@LDFLAGS@ @LIBS@
 RRDLIB=@RRDLIB@
+
+VPATH=$(TOPDIR):.
 
 OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o ds2406.o ds2438.o \
 	utility.o mymalloc/mymalloc.o
@@ -70,8 +74,9 @@ mlan.a: $(OBJ) mlan.h
 	$(AR) rc $@ $(OBJ)
 	$(RANLIB) $@
 
-mymalloc/mymalloc.o: mymalloc/mymalloc.c
-	cd mymalloc && $(CC) $(CFLAGS) -c -o mymalloc.o mymalloc.c
+mymalloc/mymalloc.o: @top_srcdir@/mymalloc/mymalloc.c
+	-mkdir mymalloc
+	$(CC) $(CFLAGS) -c -o mymalloc/mymalloc.o $(TOPDIR)/mymalloc/mymalloc.c
 
 com.o: mlan.h ds1920.h ds1921.h
 

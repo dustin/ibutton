@@ -2,8 +2,11 @@ SHELL=/bin/sh
 AR=@AR@
 RANLIB=@RANLIB@
 
+TOPDIR=@top_srcdir@
+VPATH=$(TOPDIR):@srcdir@:.
+
 DEFS=@DEFS@
-CFLAGS=-I. -I.. -I../mymalloc @CFLAGS@ $(DEFS)
+CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/collection -I$(TOPDIR)/mymalloc @CFLAGS@ $(DEFS)
 LDFLAGS=@LDFLAGS@ @LIBS@
 RRDLIB=@RRDLIB@
 POSTGRESLIB=@POSTGRESLIB@

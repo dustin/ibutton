@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.6 2001/12/24 08:03:15 dustin Exp $
+dnl $Id: configure.in,v 1.7 2001/12/24 08:12:11 dustin Exp $
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(mlan.c)
 
@@ -18,8 +18,16 @@ DYNLIBS=0
 NEEDUNDERSCORE=0
 MAKESO=:
 
-CPPFLAGS="$CPPFLAGS -I/usr/local/include"
-LDFLAGS="$LDFLAGS -L/usr/local/lib"
+dnl I needed these for something, might as well not include them if they
+dnl don't exist.
+if test -d /usr/local/include
+then
+	CPPFLAGS="$CPPFLAGS -I/usr/local/include"
+fi
+if test -d /usr/local/lib
+then
+	LDFLAGS="$LDFLAGS -L/usr/local/lib"
+fi
 
 dnl What we on, boys?
 echo "Checking out your OS..."
@@ -42,8 +50,7 @@ case "$OS" in
 	fi
 	;;
     'netbsd')
-	echo "NetBSD!  One of my favs, setting -Wall"
-	CFLAGS="$CFLAGS -Wall -Werror"
+	echo "NetBSD!  One of my favs."
 	;;
     'solaris')
 	echo "Solaris?!?  Oh, alright..."
@@ -73,6 +80,12 @@ case "$OS" in
 	fi
 	;;
 esac
+
+if test "$GCC" = "yes"
+then
+	echo "GCC, setting -Wall and -Werror"
+	CPPFLAGS="$CPPFLAGS -Wall -Werror"
+fi
 
 dnl If there's guile, build the guile stuff.
 if test "$GUILECONF" = ""

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.15 2001/10/04 05:48:07 dustin Exp $
+ * $Id: sample_devices.c,v 1.16 2001/12/24 08:12:13 dustin Exp $
  */
 
 #include <stdio.h>
@@ -78,7 +78,7 @@ get_time_str()
 	/* Get some better precisioned time */
 	gettimeofday(&tv, &tz);
 
-	tp = localtime(&tv.tv_sec);
+	tp = localtime((time_t *)&tv.tv_sec);
 	seconds = tp->tm_sec+(double)tv.tv_usec/1000000;
 	sprintf(str, "%.4d/%.2d/%.2d %.2d:%.2d:%s%.6f",
 		tp->tm_year + 1900,

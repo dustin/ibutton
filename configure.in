@@ -103,6 +103,7 @@ dnl Solaris stuff
 AC_CHECK_LIB(socket, socket)
 AC_CHECK_LIB(nsl, gethostbyname)
 AC_CHECK_LIB(pthread, pthread_create)
+AC_CHECK_LIB(m, pow)
 RRDLIB=""
 AC_CHECK_LIB(rrd, rrd_update,
 	[RRDLIB="-lrrd"

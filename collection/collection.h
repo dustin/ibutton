@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: collection.h,v 1.1 2002/01/26 08:24:36 dustin Exp $
+ * $Id: collection.h,v 1.2 2002/01/26 23:39:45 dustin Exp $
  */
 
 #ifndef COLLECTION_H
@@ -23,6 +23,8 @@
 #ifndef MLAN_GROUP
 # define MLAN_GROUP "225.0.0.37"
 #endif /* MLAN_GROUP */
+
+#define COLLECTOR_VERSION "1.0"
 
 extern int col_verbose;
 

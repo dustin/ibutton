@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: collector.c,v 1.5 2002/01/26 10:08:42 dustin Exp $
+ * $Id: collector.c,v 1.6 2002/01/26 23:39:46 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -255,6 +255,16 @@ int main(int argc, char *argv[])
 	int multiport=MLAN_PORT;
 	int c=0;
 	extern char *optarg;
+
+	fprintf(stderr, "iButton data collector v " COLLECTOR_VERSION "\n");
+	fprintf(stderr, "\tOptions:  "
+#ifdef HAVE_LIBPQ_FE_H
+		"postgresql "
+#endif /* HAVE_LIBPQ_FE_H */
+#ifdef HAVE_RRD_H
+		"rrd "
+#endif /* HAVE_RRD_H */
+		"\n");
 
 	/* Clear out the config */
 #ifdef HAVE_LIBPQ_FE_H

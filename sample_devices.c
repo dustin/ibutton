@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.17 2002/01/27 01:50:16 dustin Exp $
+ * $Id: sample_devices.c,v 1.18 2002/01/27 02:20:31 dustin Exp $
  */
 
 #include <stdio.h>
@@ -299,15 +299,22 @@ main(int argc, char **argv)
 			/* Wait a second */
 			sleep(1);
 		}
-		alarm(5);
-		rslt=mlan->first(mlan, TRUE, FALSE);
-		list_count=0;
-		while(rslt) {
-			/* Copy the serial number into our list */
-			mlan->copySerial(mlan, list[list_count++]);
-			/* Grab the next device */
+		/* Try three times to get a list of devices.  I don't know why this
+		 * doesn't work the first time, but whatever.  */
+		for(i=0; i<3 && list_count==0; i++) {
+			log_error("Trying to get a list of devices.");
 			alarm(5);
-			rslt = mlan->next(mlan, TRUE, FALSE);
+			rslt=mlan->first(mlan, TRUE, FALSE);
+			list_count=0;
+			while(rslt) {
+				/* Copy the serial number into our list */
+				mlan->copySerial(mlan, list[list_count++]);
+				/* Don't go too far */
+				assert(list_count<sizeof(list)-1);
+				/* Grab the next device */
+				alarm(5);
+				rslt = mlan->next(mlan, TRUE, FALSE);
+			}
 		}
 		failures=0;
 		/* Loop through the list and gather samples */

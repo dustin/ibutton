@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.4 2000/07/13 07:26:18 dustin Exp $
+ * $Id: sample_devices.c,v 1.5 2000/07/15 23:05:39 dustin Exp $
  */
 
 #include <stdio.h>
@@ -18,6 +18,7 @@
 /* Globals because I have to move it out of the way in a signal handler */
 FILE		*logfile=NULL;
 char		*logfilename=NULL;
+int			need_to_reinit=1;
 
 /* Prototype */
 static void setsignals();
@@ -29,11 +30,11 @@ init(char *port)
 	return(mlan_init(port, PARMSET_9600));
 }
 
-/* Uninitializer */
 static void
-teardown(MLan *mlan)
+log_error(char *str)
 {
-	mlan->destroy(mlan);
+	fprintf(stderr, str);
+	fflush(stderr);
 }
 
 /* Record the current sample into a file unique to the serial number */
@@ -102,9 +103,11 @@ void
 _sighup(int sig)
 {
 	char logfiletmp[1024];
+	log_error("Got SIGHUP\n");
 	if(logfile != NULL) {
 		fclose(logfile);
 	}
+	need_to_reinit=1;
 	assert(strlen(logfilename) < 1000);
 	sprintf(logfiletmp, "%s.old", logfilename);
 	rename(logfilename, logfiletmp);
@@ -113,10 +116,19 @@ _sighup(int sig)
 	setsignals();
 }
 
+void
+_sigalarm(int sig)
+{
+	log_error("Got SIGALRM\n");
+	need_to_reinit=1;
+	setsignals();
+}
+
 static void
 setsignals()
 {
 	signal(SIGHUP, _sighup);
+	signal(SIGALRM, _sigalarm);
 }
 
 /* Main */
@@ -150,28 +162,49 @@ main(int argc, char **argv)
 	/* Set signal handlers */
 	setsignals();
 
-	if( (mlan=init(busdev)) == NULL ) {
-		fprintf(stderr, "Unable to initialize 9097, not a good start.\n");
-		exit(1);
-	}
-
 	/* Loop forever */
 	for(;;) {
+		/* If we need to reinitialize the bus, do so */
+		if(need_to_reinit) {
+			if(mlan) {
+				mlan->destroy(mlan);
+			}
+			mlan=NULL;
+
+			while(mlan==NULL) {
+				log_error("(re)initializing the 1wire bus.\n");
+				mlan=init(busdev);
+				if(mlan==NULL) {
+					log_error("Init failed, sleeping...\n");
+					fprintf(stderr, "Reinit failed, sleeping...\n");
+					sleep(15);
+				} else {
+					log_error("Initialization successful.\n");
+					need_to_reinit=0;
+				}
+			}
+		}
+		alarm(5);
 		rslt=mlan->first(mlan, TRUE, FALSE);
 		list_count=0;
 		while(rslt) {
 			/* Copy the serial number into our list */
 			mlan->copySerial(mlan, list[list_count++]);
 			/* Grab the next device */
+			alarm(5);
 			rslt = mlan->next(mlan, TRUE, FALSE);
 		}
+		fprintf(stderr, "Count is %d\n", list_count);
+		fflush(stderr);
 		failures=0;
 		/* Loop through the list and gather samples */
 		for(i=0; i<list_count; i++) {
+			sample_str=NULL;
 			switch(list[i][0]) {
 				case 0x10:
+					alarm(5);
 					sample_str=get_sample(mlan, list[i]);
-					if(sample_str==NULL) {
+					if(sample_str[0]==0x00) {
 						failures++;
 						sample_str="Error getting sample";
 					}
@@ -188,14 +221,19 @@ main(int argc, char **argv)
 			}
 		}
 
+		alarm(0);
+
 		if(failures>0) {
-			teardown(mlan);
-			fprintf(stderr, "Reinitializing\n");
 			/* Wait five seconds before reopening the device. */
-			sleep(5);
-			while( (mlan=init(busdev)) == NULL)
-				sleep(1);
+			log_error("There were failures, requesting reinitialization.\n");
+			need_to_reinit=1;
 		}
+
+		if(list_count==0) {
+			log_error("Didn't find any devices, reinitializing.\n");
+			need_to_reinit=1;
+		}
+
 		/* Wait a while before the next sample */
 		sleep(59);
 	}

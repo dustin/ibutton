@@ -44,7 +44,8 @@ int main(int argc, char **argv)
 					break;
 				}
 			}
-			if( (s=get_sample(mlan, sn)) != NULL) {
+			s=get_sample(mlan, sn);
+			if( s[0] != 0x00) {
 				printf("Sample was %s\n", s);
 				break;
 			}

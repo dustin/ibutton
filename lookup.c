@@ -39,7 +39,8 @@ int main(int argc, char **argv)
 	}
 	printf("\n");
 
-	if( (s=get_sample(mlan, serial)) != NULL) {
+	s=get_sample(mlan, serial);
+	if( s[0] != 0x00 ) {
 		printf("\tTemperature reading:  %s\n", s);
 	}
 

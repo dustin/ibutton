@@ -65,7 +65,8 @@ int main(int argc, char **argv)
 
 		if(do_sample) {
 			char *s=NULL;
-			if( (s=get_sample(mlan, list[i])) != NULL) {
+			s=get_sample(mlan, list[i]);
+			if( s[0] != 0x00) {
 				printf("\tStatus reading:  %s\n", s);
 			}
 		}

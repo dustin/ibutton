@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.10 2000/07/15 10:45:47 dustin Exp $
+ * $Id: devices.c,v 1.11 2000/07/15 23:05:36 dustin Exp $
  */
 
 #include <stdio.h>
@@ -98,22 +98,31 @@ ftoc(float in)
 char *
 get_sample(MLan *mlan, uchar *serial)
 {
-	char *ret=NULL;
+	static char buffer[80];
+	chat *ret=NULL;
 
 	assert(mlan);
 	assert(serial);
+
+	memset(buffer, 0x00, sizeof(ret));
 
 	switch(serial[0]) {
 		case 0x10: {
 				struct ds1920_data d;
 				d=ds1920Sample(mlan, serial);
-				ret=d.reading_f;
+				if(d.valid) {
+					assert(strlen(d.reading_f)<sizeof(ret));
+					strcpy(ret, d.reading_f);
+					ret=buffer;
+				}
 			}
 			break;
 		case 0x21: {
 				struct ds1921_data d;
 				d=getDS1921Data(mlan, serial);
-				ret=d.summary;
+				assert(strlen(d.summary)<sizeof(ret));
+				strcpy(ret, d.summary);
+				ret=buffer;
 		}
 	}
 	return(ret);

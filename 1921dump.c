@@ -69,6 +69,9 @@ void dumpRaw(struct ds1921_data d)
 	printf("current_time=%d\n", (int)d.status.clock.clock);
 	printf("mission_delay=%d\n", d.status.mission_delay);
 	printf("mission_start=%d\n", (int)d.status.mission_ts.clock);
+	printf("min_sample_time=%d\n",
+		(int)d.status.mission_ts.clock+
+			(d.status.sample_rate*60*d.samples[0].offset));
 	printf("sample_rate=%d\n", d.status.sample_rate);
 	rawStatus(d.status.status);
 	rawControl(d.status.control);

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlanscm.c,v 1.9 2001/12/11 08:26:06 dustin Exp $
+ * $Id: mlanscm.c,v 1.10 2002/01/30 08:18:13 dustin Exp $
  */
 
 #include <stdio.h>
@@ -349,6 +349,18 @@ SCM mlan_parse_serial(SCM mlan_smob, SCM serial)
 	return(rv);
 }
 
+static SCM mlan_reset(SCM mlan_smob)
+{
+	MLan *mlan=NULL;
+	int rv=0;
+	/* Get the MLan thing */
+	mlan=mlan_getmlan(mlan_smob, "mlan-reset");
+	/* Do the touch */
+	rv=mlan->reset(mlan);
+	/* Return the value of the touch */
+	return(gh_int2scm(rv));
+}
+
 void init_mlan_type()
 {
 	mlan_tag=scm_make_smob_type("mlan", sizeof(MLan));
@@ -368,6 +380,7 @@ void init_mlan_type()
 	MAKE_SUB("mlan-block", 3, 0, 0, mlan_block);
 	MAKE_SUB("mlan-getblock", 4, 0, 0, mlan_getblock);
 	MAKE_SUB("mlan-parse-serial", 2, 0, 0, mlan_parse_serial);
+	MAKE_SUB("mlan-reset", 1, 0, 0, mlan_reset);
 
 	/* Constants */
 	gh_define("mlan-mode-normal", gh_int2scm(0x00));

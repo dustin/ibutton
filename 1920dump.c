@@ -14,6 +14,7 @@ int main(int argc, char **argv)
 	MLan *mlan=NULL;
 	uchar serial[MLAN_SERIAL_SIZE];
 	char *serial_in=NULL, *dev=NULL;
+	struct ds1920_data data;
 
 	if(argc<2) {
 		fprintf(stderr, "Need a serial number.\n");
@@ -38,9 +39,8 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	printDS1920(ds1920Sample(mlan, serial));
-
-	printf("Done!\n");
+	data=ds1920Sample(mlan, serial);
+	printDS1920(data);
 
 	mlan->destroy(mlan);
 

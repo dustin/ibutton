@@ -346,6 +346,7 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	data.status.clock.seconds=tm.tm_sec;
 	data.status.clock.minutes=tm.tm_min;
 	data.status.clock.hours=tm.tm_hour;
+	data.status.clock.hours|=0x40; /* 24-hour mode */
 	data.status.clock.date=tm.tm_mday;
 	data.status.clock.month=tm.tm_mon+1;
 	data.status.clock.year=tm.tm_year+1900;

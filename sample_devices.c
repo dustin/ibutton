@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.31 2002/01/30 00:38:05 dustin Exp $
+ * $Id: sample_devices.c,v 1.32 2002/01/30 00:46:21 dustin Exp $
  */
 
 #include <stdio.h>
@@ -77,12 +77,16 @@ getSerialFileTimestamp(uchar *serial)
 	char	fn[8192];
 	struct stat sb;
 	time_t rv=0;
+	char *string_ser=NULL;
 
+	assert(serial);
+
+	string_ser=get_serial(serial);
 	assert(serial);
 
 	strcpy(fn, curdir);
 	strcat(fn, "/");
-	strcat(fn, serial);
+	strcat(fn, string_ser);
 
 	assert(strlen(fn)<sizeof(fn));
 
@@ -90,6 +94,10 @@ getSerialFileTimestamp(uchar *serial)
 	if(stat(fn, &sb)==0) {
 		rv=sb.st_mtime;
 	}
+
+	/*
+	printf("getSerialFileTimestamp(%s) => %d\n", fn, rv);
+	*/
 
 	return(rv);
 }
@@ -124,7 +132,9 @@ secondsSinceLastUpdate(uchar *serial)
 	int rv=0;
 
 	rv=(time(NULL) - timeOfLastUpdate(serial));
+	/*
 	printf("secondsSinceLastUpdate(%s) => %d\n", get_serial(serial), rv);
+	*/
 
 	return(rv);
 }
@@ -485,7 +495,7 @@ dealWith(MLan *mlan, uchar *serial)
 							"%s\t%s\t%.2f\ts=%d,r=%d",
 							get_time_str(data.samples[i].timestamp),
 							get_serial(serial), data.samples[i].sample,
-							data.status.mission_ts.clock,
+							(int)data.status.mission_ts.clock,
 							data.status.sample_rate);
 						/* Log it */
 						fprintf(logfile, "%s\n", data_str);

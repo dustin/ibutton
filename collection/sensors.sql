@@ -1,6 +1,6 @@
 -- Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 --
--- $Id: sensors.sql,v 1.1 2002/01/26 07:48:59 dustin Exp $
+-- $Id: sensors.sql,v 1.2 2002/01/26 23:23:55 dustin Exp $
 
 -- Different types of sensors
 create table sensor_types (
@@ -42,3 +42,14 @@ create index samples_byid on samples(sensor_id);
 create unique index samples_bytimeid on samples(ts, sensor_id);
 grant insert on samples to tempload;
 grant select on samples to nobody;
+
+-- View of the data
+create view sample_view as
+	select samples.ts, sensors.sensor_id, sensors.serial,
+			sensors.name, samples.sample as c,
+			(samples.sample*9/5)+32 as f
+		from samples, sensors
+		where
+			samples.sensor_id = sensors.sensor_id
+;
+grant select on sample_view to nobody;

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: com.c,v 1.6 1999/12/07 10:15:02 dustin Exp $
+ * $Id: com.c,v 1.7 1999/12/09 04:58:36 dustin Exp $
  */
 
 #include <stdio.h>
@@ -38,7 +38,7 @@ void _com_setbaud(MLan *mlan, int new_baud)
 		case PARMSET_9600:
 			mlan_debug(mlan, 3, ("Setting baud to 9600\n") );
 			speed = B9600;
-			mlan->usec_per_byte = 833;
+			mlan->usec_per_byte = 860;
 			break;
 #ifdef B19200
 		case PARMSET_19200:
@@ -64,7 +64,7 @@ void _com_setbaud(MLan *mlan, int new_baud)
 		default:
 			mlan_debug(mlan, 3, ("Setting baud to 9600\n") );
 			speed = B9600;
-			mlan->usec_per_byte = 833;
+			mlan->usec_per_byte = 860;
 	}
 
 	/* Set both in and out */
@@ -97,7 +97,7 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 	assert(outbuf);
 	
 	/* Flush before we write */
-	mlan->flush(mlan);
+	/* mlan->flush(mlan); */
 
 	mlan_debug(mlan, 2, ("Calling write(%d)\n", outlen));
 
@@ -117,10 +117,10 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 			rv += tmp;
 		} else {
 			if(errno==EAGAIN) {
-				mlan->msDelay(mlan, 5);
+				mlan->msDelay(mlan, 10);
 				errno=0;
 			} else {
-				perror("write");
+				perror("mlan->write");
 				break;
 			}
 		}
@@ -136,15 +136,15 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 
 int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 {
-	int rv=0, i;
-	time_t start, current;
+	int rv=0, i=0;
+	time_t start=0, current=0;
 
 	assert(mlan);
 
 	mlan_debug(mlan, 2, ("Calling read(%d)\n", inlen));
 
 	/* Give it some time... */
-	usleep(mlan->usec_per_byte * (inlen+5) + 800);
+	usleep(mlan->usec_per_byte * (inlen+5) + 1000);
 
 	start=time(NULL);
 	while(rv<inlen) {
@@ -156,10 +156,21 @@ int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 		} else {
 			if(errno==EAGAIN) {
 				mlan_debug(mlan, 4, ("EAGAIN while doing read\n"));
-				mlan->msDelay(mlan, 5);
+				mlan->msDelay(mlan, 10);
 				errno=0;
 			} else {
-				perror("read");
+				fprintf(stderr, "On byte %d of %d\n", rv, inlen);
+				if(rv<inlen && errno==0) {
+					/* This is a strange condition */
+					perror("mlan->read short");
+				} else {
+					perror("mlan->read");
+				}
+				printf("Read:  ");
+				for(i=0; i<rv; i++) {
+					printf("%02x ", inbuf[i]);
+				}
+				printf("\n");
 				break;
 			}
 		}

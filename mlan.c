@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.9 1999/12/08 09:54:33 dustin Exp $
+ * $Id: mlan.c,v 1.10 1999/12/09 04:58:38 dustin Exp $
  */
 
 #include <stdio.h>
@@ -103,7 +103,7 @@ static void
 msDelay(MLan *mlan, int t)
 {
 	assert(mlan);
-	mlan_debug(mlan, 3, ("Sleeping %dms\n", t) );
+	mlan_debug(mlan, 2, ("Sleeping %dms\n", t) );
 	usleep(t * 1000);
 }
 

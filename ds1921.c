@@ -17,8 +17,6 @@ static void getTime1(uchar *buffer, struct ds1921_data *d)
 	assert(buffer);
 	assert(d);
 
-	binDumpBlock(buffer, 7, 0);
-
 	/* Minutes and seconds are calculated the same way, and are the second
 	 * and first bytes respectively. */
 	seconds= (buffer[0]&0x0f) + (10* ((buffer[0]&0x70) >> 4) );

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.18 2002/01/27 02:20:31 dustin Exp $
+ * $Id: sample_devices.c,v 1.19 2002/01/27 02:24:01 dustin Exp $
  */
 
 #include <stdio.h>
@@ -302,7 +302,7 @@ main(int argc, char **argv)
 		/* Try three times to get a list of devices.  I don't know why this
 		 * doesn't work the first time, but whatever.  */
 		for(i=0; i<3 && list_count==0; i++) {
-			log_error("Trying to get a list of devices.");
+			log_error("Trying to get a list of devices.\n");
 			alarm(5);
 			rslt=mlan->first(mlan, TRUE, FALSE);
 			list_count=0;

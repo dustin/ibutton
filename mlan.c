@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.22 2002/01/27 02:09:48 dustin Exp $
+ * $Id: mlan.c,v 1.23 2002/01/27 02:23:58 dustin Exp $
  */
 
 #include <stdio.h>
@@ -25,7 +25,7 @@ extern int      _ds2480_detect(MLan * mlan);
 extern int      _ds2480_changebaud(MLan * mlan, uchar newbaud);
 
 static int _table_initialized=0;
-static char **serial_table;
+static char **serial_table=NULL;
 
 static          uchar
 dowcrc(MLan * mlan, uchar x)
@@ -386,6 +386,8 @@ _copy_serial(MLan *mlan, uchar *dest)
 static void
 _mlan_init_table(void)
 {
+	assert(serial_table==NULL);
+
 	serial_table = (char **)calloc(256, sizeof(char *));
 	assert(serial_table);
 

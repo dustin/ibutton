@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.19 2002/01/27 01:50:08 dustin Exp $
+# $Id: Makefile.in,v 1.20 2002/01/27 02:23:57 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -23,7 +23,7 @@ CC=@CC@
 
 # Lint stuff
 LINT=@LINT@
-LINTFLAGS=$(CPPFLAGS) -v -x -u
+LINTFLAGS=-I. @GUILEINC@ $(DEFS) -v -x -u
 LINTS=com.ln ds2480.ln mlan.ln devices.ln ds1920.ln ds1921.ln ds2406.ln \
 	ds2438.ln
 # /Lint stuff

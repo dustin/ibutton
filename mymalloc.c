@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 1998  Dustin Sallings
  *
- * $Id: mymalloc.c,v 1.2 2002/01/27 02:13:27 dustin Exp $
+ * $Id: mymalloc.c,v 1.3 2002/01/27 02:24:00 dustin Exp $
  */
 
 #include <stdio.h>
@@ -29,6 +29,17 @@ static int *_mem_stats = NULL;
 
 void    _mdebug_dump(void);
 
+static void
+_init_memories()
+{
+	if (memories == NULL) {
+		memories = calloc(NUM_MEMBUCKETS, sizeof(struct memories *));
+		assert(memories);
+		_mem_stats = calloc(NUM_MEMBUCKETS, sizeof(int));
+		assert(_mem_stats);
+	}
+}
+
 static int 
 _getmemindex(void *p)
 {
@@ -50,12 +61,8 @@ _register_mem(void *p, size_t size, char *file, int line)
 	m->file = file;
 	m->line = line;
 
-	if (memories == NULL) {
-		memories = calloc(NUM_MEMBUCKETS, sizeof(struct memories *));
-		assert(memories);
-		_mem_stats = calloc(NUM_MEMBUCKETS, sizeof(int));
-		assert(_mem_stats);
-	}
+	_init_memories();
+
 	index = _getmemindex(p);
 
 	/* Gather statistics */
@@ -77,6 +84,7 @@ _lookup_mem(void *p)
 	struct memories *c;
 	int     index;
 	index = _getmemindex(p);
+	assert(memories);
 	for (c = memories[index]; c && c->p != p; c = c->next);
 	return (c);
 }
@@ -88,6 +96,7 @@ _unregister_mem(void *p)
 	int     index;
 
 	index = _getmemindex(p);
+	assert(memories);
 
 	/* Special case for first thingy */
 	if (memories[index]->p == p) {
@@ -113,6 +122,10 @@ _mdebug_dump(void)
 {
 	struct memories *c;
 	int     i, count = 0, min, max, avg, empty;
+
+	_init_memories();
+
+	assert(memories);
 
 	for (i = 0; i < NUM_MEMBUCKETS; i++) {
 		for (c = memories[i]; c; c = c->next) {

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.2 1999/12/09 02:04:00 dustin Exp $
+# $Id: Makefile.in,v 1.3 1999/12/09 02:04:57 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -12,8 +12,8 @@ DEFS=@DEFS@
 CFLAGS=-I. @CFLAGS@ $(DEFS)
 
 OBJ=com.o ds2480.o mlan.o devices.o
-PROGS=search lookup
-PROGO=search.o lookup.o
+PROGS=search lookup sample_devices
+PROGO=search.o lookup.o sample_devices.o
 CC=@CC@
 
 all: search lookup sample_devices

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: storage-rrd.c,v 1.1 2002/01/26 08:24:43 dustin Exp $
+ * $Id: storage-rrd.c,v 1.2 2002/01/26 08:38:02 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -24,8 +24,6 @@
 #include "collection.h"
 #include "storage-rrd.h"
 #include "../utility.h"
-
-static struct rrd_queue *queue=NULL;
 
 #define RRD_CREATE_STRING "create %s -s 60 -b now-5minutes " \
 	"DS:temp:GAUGE:900:-10:50 " \
@@ -90,8 +88,8 @@ void saveDataRRD(struct data_list *p)
 	int rv=0;
 	extern int optind;
 
-	snprintf(buf, sizeof(buf), "update %s.rrd %d:%f", p->serial,
-		p->timestamp, p->reading);
+	snprintf(buf, sizeof(buf), "update %s.rrd %lu:%f", p->serial,
+		(unsigned long)p->timestamp, p->reading);
 
 	verboseprint(2, ("RRD update query:  %s\n", buf));
 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.7 2002/01/29 21:36:08 dustin Exp $
+ * $Id: data.c,v 1.8 2002/01/29 21:39:45 dustin Exp $
  */
 
 #include <stdio.h>
@@ -135,7 +135,6 @@ appendToRRDQueue(struct data_queue *dl, char *datum)
 	struct data_queue *p=NULL;
 	struct data_queue *newe=NULL;
 
-	assert(dl);
 	assert(datum);
 
 	/* Seek to the end of the list */

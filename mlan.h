@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.14 2000/07/19 21:56:01 dustin Exp $
+ * $Id: mlan.h,v 1.15 2001/12/10 08:23:12 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -187,6 +187,7 @@ typedef struct __mlan MLan;
 
 struct __mlan {
 	int debug;		/* Debug Level */
+	char *port;		/* The device we opened */
 	int fd;			/* File descriptor holding the 1-wire protocol. */
 
 	/* Status stuff */

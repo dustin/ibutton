@@ -73,5 +73,8 @@ int main(int argc, char **argv)
 		}
 	}
 
+	/* Clean up */
+	mlan->destroy(mlan);
+
 	return(0);
 }

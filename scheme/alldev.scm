@@ -1,6 +1,6 @@
-; (define (l) (load "test.scm"))
+; (define (l) (load "alldev.scm"))
 ; Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
-; $Id: alldev.scm,v 1.1 2001/12/10 08:11:20 dustin Exp $
+; $Id: alldev.scm,v 1.2 2001/12/10 08:23:16 dustin Exp $
 (load "1920.scm")
 
 (define ds-serial-table '(
@@ -37,7 +37,7 @@
   (let ((l (assq (get-type x) ds-serial-table)))
 	(if l
 	  (cdr l)
-	  "Unknown device")))
+	  (throw 'unknowndev "Unknown device"))))
 
 ; This will abstractly get the MLAN data for a given serial on a given
 ; connection.

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlanscm.c,v 1.4 2001/12/10 07:08:31 dustin Exp $
+ * $Id: mlanscm.c,v 1.5 2001/12/10 08:23:13 dustin Exp $
  */
 
 #include <stdio.h>
@@ -63,7 +63,9 @@ static int print_mlan(SCM mlan_smob, SCM port, scm_print_state *pstate)
 	MLan *mlan=(MLan *)SCM_CDR(mlan_smob);
 
 	sprintf(fdstring, "%d", mlan->fd);
-	scm_puts("#<mlan ", port);
+	scm_puts("#<mlan dev=", port);
+	scm_puts(mlan->port, port);
+	scm_puts(", fd=", port);
 	scm_puts(fdstring, port);
 	scm_puts(">", port);
 

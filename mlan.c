@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.19 2001/08/29 09:27:55 dustin Exp $
+ * $Id: mlan.c,v 1.20 2001/12/10 08:23:10 dustin Exp $
  */
 
 #include <stdio.h>
@@ -745,6 +745,10 @@ _mlan_destroy(MLan *mlan)
 		if(close(mlan->fd) < 0) {
 			perror("close");
 		}
+		/* Free our copy of the port */
+		if(mlan->port!=NULL) {
+			free(mlan->port);
+		}
 	}
 	free(mlan);
 }
@@ -820,6 +824,8 @@ mlan_init(char *port, int baud_rate)
 		/* Short-circuit on failure */
 		return (NULL);
 	}
+	/* Save the port */
+	mlan->port=strdup(port);
 	/* Set the baud rate */
 	mlan->setbaud(mlan, baud_rate);
 

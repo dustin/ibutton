@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.30 2002/01/30 00:14:54 dustin Exp $
+ * $Id: sample_devices.c,v 1.31 2002/01/30 00:38:05 dustin Exp $
  */
 
 #include <stdio.h>
@@ -13,6 +13,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #define _BSD_SIGNALS
 #include <signal.h>
 
@@ -71,6 +72,29 @@ get_serial(uchar *serial)
 }
 
 static time_t
+getSerialFileTimestamp(uchar *serial)
+{
+	char	fn[8192];
+	struct stat sb;
+	time_t rv=0;
+
+	assert(serial);
+
+	strcpy(fn, curdir);
+	strcat(fn, "/");
+	strcat(fn, serial);
+
+	assert(strlen(fn)<sizeof(fn));
+
+	/* If we can stat it, use the mtime */
+	if(stat(fn, &sb)==0) {
+		rv=sb.st_mtime;
+	}
+
+	return(rv);
+}
+
+static time_t
 timeOfLastUpdate(uchar *serial)
 {
 	struct watch_list *p=NULL;
@@ -88,6 +112,7 @@ timeOfLastUpdate(uchar *serial)
 		memcpy(p->serial, serial, MLAN_SERIAL_SIZE);
 		p->next=watching;
 		watching=p;
+		p->last_read=getSerialFileTimestamp(serial);
 	}
 
 	return(p->last_read);
@@ -99,9 +124,7 @@ secondsSinceLastUpdate(uchar *serial)
 	int rv=0;
 
 	rv=(time(NULL) - timeOfLastUpdate(serial));
-	/*
 	printf("secondsSinceLastUpdate(%s) => %d\n", get_serial(serial), rv);
-	*/
 
 	return(rv);
 }

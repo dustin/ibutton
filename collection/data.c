@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.10 2002/01/29 22:48:07 dustin Exp $
+ * $Id: data.c,v 1.11 2002/01/29 23:07:17 dustin Exp $
  */
 
 #include <stdio.h>
@@ -86,15 +86,13 @@ struct log_datum *parseLogEntry(const char *line)
 	/* Split the fields */
 	fields=split(line, "\t;");
 	if(listLength(fields)<3) {
-		fprintf(stderr, "Not enough data fields in multicast packet:\n\t%s\n",
-			line);
+		rv->errorMsg="Not enough data fields in multicast packet.";
 		goto finished;
 	}
 	/* Split the time */
 	ta=split(fields[0], ": /.");
 	if(listLength(ta)<6) {
-		fprintf(stderr, "Not enough data fields in time field:  %s\n",
-			fields[0]);
+		rv->errorMsg="Not enough data fields in time field.";
 		goto finished;
 	}
 
@@ -110,14 +108,26 @@ struct log_datum *parseLogEntry(const char *line)
 
 	rv->tv.tv_sec=mktime(&t);
 	if(rv->tv.tv_sec<0) {
-		fprintf(stderr, "Time data made no sense:  %d/%d/%d %d:%d:%d\n",
-			t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
+		rv->errorMsg="Time data makes no sense.";
 		goto finished;
 	}
 	rv->tv.tv_usec=(float)(atoi(ta[6]))/1000000.0;
 
 	rv->serial=strdup(fields[1]);
 	assert(rv->serial);
+	/* Verify the length of the serial number */
+	if(strlen(rv->serial)!=(MLAN_SERIAL_SIZE*2)) {
+		rv->errorMsg="Invalid serial number.";
+		goto finished;
+	}
+	/* Verify the content of the serial number */
+	for(i=0; i<strlen(rv->serial); i++) {
+		if(!isxdigit(rv->serial[i])) {
+			rv->errorMsg="Invalid serial number.";
+			goto finished;
+		}
+	}
+
 	rv->reading=atof(fields[2]);
 
 	parseSerial(rv->serial, serial);
@@ -176,7 +186,9 @@ void disposeOfLogEntry(struct log_datum *entry)
 	/* Mark it as invalid */
 	entry->isValid=0;
 
-	free(entry->serial);
+	if(entry->serial) {
+		free(entry->serial);
+	}
 	free(entry);
 }
 
@@ -190,7 +202,7 @@ logDatumPrint(struct log_datum *p)
 	printf("Device specific:\n");
 	switch(p->type) {
 		case DEVICE_1920:
-			printf("\tLow temperature:  %f\n\tHigh Temperature:  %f\n",
+			printf("\tLow threshold:   %f\n\tHigh threshold:  %f\n",
 				p->dev.dev_1920.low, p->dev.dev_1920.high);
 			break;
 		case DEVICE_1921:

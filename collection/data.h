@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings
  *
- * $Id: data.h,v 1.8 2002/01/29 22:42:22 dustin Exp $
+ * $Id: data.h,v 1.9 2002/01/29 23:07:18 dustin Exp $
  */
 
 #ifndef DATA_H
@@ -42,6 +42,8 @@ struct log_datum {
 	union dev_specific dev;
 
 	int isValid:2;
+	/* If isValid is false, there'll be an error here describing why. */
+	char *errorMsg;
 };
 
 struct data_queue {

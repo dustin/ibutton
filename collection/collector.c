@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: collector.c,v 1.9 2002/01/29 22:42:19 dustin Exp $
+ * $Id: collector.c,v 1.10 2002/01/29 23:07:16 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -103,6 +103,9 @@ doFlush()
 			assert(tmp); /* Should always return something */
 			if(tmp->isValid == 1) {
 				saveData(tmp);
+			} else {
+				fprintf(stderr, "Error parsing ``%s'': %s\n",
+					p->line, tmp->errorMsg);
 			}
 			disposeOfLogEntry(tmp);
 		}

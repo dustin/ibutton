@@ -6,8 +6,8 @@
 #include <time.h>
 
 #include <mlan.h>
-#include <commands.h>
 #include <ds1921.h>
+
 
 static float
 do1921temp_convert_out(int in)
@@ -277,6 +277,8 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 
 	assert(mlan);
 	assert(serial);
+	/* Make sure it's a 1921 */
+	assert(serial[0] == 0x21);
 
 	memset(&data2, 0x00, sizeof(data2));
 	memset(&buffer, 0x00, sizeof(buffer));
@@ -359,12 +361,14 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 	uchar buffer[8192];
 	int i=0, j=0, pages=0;
 
+	assert(mlan);
+	assert(serial);
+	/* Make sure it's a 1921 */
+	assert(serial[0] == 0x21);
+
 	/* Zero it out */
 	memset(&data, 0x00, sizeof(data));
 	memset(&buffer, 0x00, sizeof(buffer));
-
-	/* Make sure it's a 1921 */
-	assert(serial[0] == 0x21);
 
 	/* Register data is at 16 */
 	mlan->getBlock(mlan, serial, 16, 1, buffer);

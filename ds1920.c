@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1920.c,v 1.2 2000/07/14 06:18:19 dustin Exp $
+ * $Id: ds1920.c,v 1.3 2000/07/14 19:35:30 dustin Exp $
  */
 
 #include <stdio.h>
@@ -21,6 +21,84 @@ static float
 ds1920temp_convert_out(int in)
 {
 	return( ((float)in/2) - 0.25);
+}
+
+static int
+ds1920temp_convert_in(float in)
+{
+	float ret;
+	ret=in;
+	ret+=.25;
+	ret*=2;
+	return( (int)ret );
+}
+
+void
+printDS1920(struct ds1920_data d)
+{
+	printf("Temp:  %.2fc (%.2ff)\n", d.temp, ctof(d.temp));
+	printf("High alarm:  %.2fc (%.2ff)\n", d.temp_hi, ctof(d.temp_hi));
+	printf("Low alarm:  %.2fc (%.2ff)\n", d.temp_low, ctof(d.temp_low));
+}
+
+int
+setDS1920Params(MLan *mlan, uchar *serial, struct ds1920_data d)
+{
+	uchar send_buffer[16];
+	int send_cnt=0;
+
+	assert(mlan);
+	assert(serial);
+
+	/* Make sure it's a ds1920 */
+	assert(serial[0] == 0x10);
+
+	/* Zero */
+	memset(&send_buffer, 0x00, sizeof(send_buffer));
+
+	/* We're going to do this send manually since we can't send to a page. */
+
+	/* Access the device */
+	if(!mlan->access(mlan, serial)) {
+		mlan_debug(mlan, 1, ("Error reading from DS1920\n"));
+		return(FALSE);
+	}
+
+	send_buffer[send_cnt++]=DS1920WRITE_SCRACTHPAD;
+	send_buffer[send_cnt++]=ds1920temp_convert_in(d.temp_hi);
+	send_buffer[send_cnt++]=ds1920temp_convert_in(d.temp_low);
+	mlan_debug(mlan, 3, ("Writing DS1920 scratchpad.\n"));
+	if(! (mlan->block(mlan, FALSE, send_buffer, send_cnt))) {
+		printf("Error writing to scratchpad!\n");
+		return(FALSE);
+	}
+
+	/* OK, request the copy */
+	send_cnt=0;
+	send_buffer[send_cnt++] = DS1920COPY_SCRATCHPAD;
+	mlan_debug(mlan, 3, ("Copying DS1920 scratchpad.\n"));
+	if(! (mlan->block(mlan, FALSE, send_buffer, send_cnt))) {
+		printf("Error copying scratchpad.\n");
+		return(FALSE);
+	}
+
+	/* Give it some power */
+	mlan_debug(mlan, 3, ("Strong pull-up.\n"));
+	if(mlan->setlevel(mlan, MODE_STRONG5) != MODE_STRONG5) {
+		printf("Strong pull-up failed.\n");
+		return(FALSE);
+	}
+
+	/* Give it some time to think */
+	mlan->msDelay(mlan, 20);
+
+	/* Turn off the hose */
+	mlan_debug(mlan, 3, ("Disabling strong pull-up.\n"));
+	if(mlan->setlevel(mlan, MODE_NORMAL) != MODE_NORMAL) {
+		printf("Disabling strong pull-up failed.\n");
+		return(FALSE);
+	}
+	return(TRUE);
 }
 
 /* Get a temperature reading from a DS1920 */
@@ -45,7 +123,7 @@ ds1920Sample(MLan *mlan, uchar *serial)
 		return(data);
 	}
 
-	tmpbyte=mlan->touchbyte(mlan, CONVERT_TEMPERATURE);
+	tmpbyte=mlan->touchbyte(mlan, DS1920CONVERT_TEMPERATURE);
 	mlan_debug(mlan, 3, ("Got %02x back from touchbyte\n", tmpbyte));
 
 	if(mlan->setlevel(mlan, MODE_STRONG5) != MODE_STRONG5) {
@@ -53,8 +131,8 @@ ds1920Sample(MLan *mlan, uchar *serial)
 		return(data);
 	}
 
-	/* Wait a second */
-	sleep(1);
+	/* Wait a half a second */
+	mlan->msDelay(mlan, 500);
 
 	if(mlan->setlevel(mlan, MODE_NORMAL) != MODE_NORMAL) {
 		mlan_debug(mlan, 1, ("Disabling strong pull-up failed.\n") );
@@ -67,7 +145,7 @@ ds1920Sample(MLan *mlan, uchar *serial)
 	}
 
 	/* Command to read the temperature */
-	send_block[send_cnt++] = 0xBE;
+	send_block[send_cnt++] = DS1920READ_SCRATCHPAD;
 	for(i=0; i<9; i++) {
 		send_block[send_cnt++]=0xff;
 	}
@@ -86,11 +164,16 @@ ds1920Sample(MLan *mlan, uchar *serial)
 		return(data);
 	}
 
-	mlan_debug(mlan, 2, ("TH=%f\n", ds1920temp_convert_out(send_block[3])) );
-	mlan_debug(mlan, 2, ("T=%f\n", ds1920temp_convert_out(send_block[1])) );
-	mlan_debug(mlan, 2, ("TL=%f\n", ds1920temp_convert_out(send_block[4])) );
+	/* Store the high and low values */
+	data.temp_hi=ds1920temp_convert_out(send_block[3]);
+	data.temp_low=ds1920temp_convert_out(send_block[4]);
 
-	/* Calculate the temperature from the scratchpad */
+	mlan_debug(mlan, 2, ("TH=%f\n", data.temp_hi));
+	mlan_debug(mlan, 2, ("T=%f\n",  ds1920temp_convert_out(send_block[1])) );
+	mlan_debug(mlan, 2, ("TL=%f\n", data.temp_low));
+
+	/* Calculate the temperature from the scratchpad, get a more accurate
+	 * reading. */
 	tsht = send_block[1];
 	if (send_block[2] & 0x01)
 		tsht |= -256;

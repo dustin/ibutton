@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.19 2002/01/27 02:24:01 dustin Exp $
+ * $Id: sample_devices.c,v 1.20 2002/01/27 02:53:00 dustin Exp $
  */
 
 #include <stdio.h>
@@ -35,14 +35,29 @@ char		*curdir=NULL;
 int msocket=-1;
 struct sockaddr_in maddr;
 
-/* Prototype */
+/* Prototypes */
 static void setsignals();
+static void log_error(char *str);
 
 /* NOTE:  The initialization may be called more than once */
 static MLan *
 init(char *port)
 {
-	return(mlan_init(port, PARMSET_9600));
+	MLan *m=NULL;
+
+	m=mlan_init(port, PARMSET_9600);
+
+	if(m!=NULL) {
+		if(m->ds2480detect(m)!=TRUE) {
+			log_error("Did not detect DS2480.\n");
+			m->destroy(m);
+			m=NULL;
+		}
+	} else {
+		log_error("Failed to open device.\n");
+	}
+
+	return(m);
 }
 
 /* Record the current sample into a file unique to the serial number */
@@ -301,20 +316,17 @@ main(int argc, char **argv)
 		}
 		/* Try three times to get a list of devices.  I don't know why this
 		 * doesn't work the first time, but whatever.  */
-		for(i=0; i<3 && list_count==0; i++) {
-			log_error("Trying to get a list of devices.\n");
+		list_count=0;
+		alarm(5);
+		rslt=mlan->first(mlan, TRUE, FALSE);
+		while(rslt) {
+			/* Copy the serial number into our list */
+			mlan->copySerial(mlan, list[list_count++]);
+			/* Don't go too far */
+			assert(list_count<sizeof(list)-1);
+			/* Grab the next device */
 			alarm(5);
-			rslt=mlan->first(mlan, TRUE, FALSE);
-			list_count=0;
-			while(rslt) {
-				/* Copy the serial number into our list */
-				mlan->copySerial(mlan, list[list_count++]);
-				/* Don't go too far */
-				assert(list_count<sizeof(list)-1);
-				/* Grab the next device */
-				alarm(5);
-				rslt = mlan->next(mlan, TRUE, FALSE);
-			}
+			rslt = mlan->next(mlan, TRUE, FALSE);
 		}
 		failures=0;
 		/* Loop through the list and gather samples */

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: storage-pgsql.c,v 1.2 2002/01/26 08:40:33 dustin Exp $
+ * $Id: storage-pgsql.c,v 1.3 2002/01/26 10:08:43 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -69,6 +69,13 @@ getPostgresConnection()
 		proceed=YES;
 	}
 	return(proceed);
+}
+
+void
+initPostgresStore()
+{
+	memset(&pg_config, 0x00, sizeof(pg_config));
+	pg_config.dbport="5432";
 }
 
 void

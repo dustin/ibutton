@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: collector.c,v 1.3 2002/01/26 08:40:31 dustin Exp $
+ * $Id: collector.c,v 1.5 2002/01/26 10:08:42 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -231,7 +231,7 @@ usage(char *prog)
 {
 	fprintf(stderr, "Usage:  %s [-m multigroup] [-p multiport] [-v] ", prog);
 #ifdef HAVE_LIBPQ_FE_H
-	fprintf(stderr, "[-H db_host] [-P db_port]\n\t[-D db_name] [-U db_user] "
+	fprintf(stderr, "[-H db_host]\n\t[-P db_port] [-D db_name] [-U db_user] "
 					"[-A db_pass] [-O db_options]");
 #endif /* HAVE_LIBPQ_FE_H */
 	fprintf(stderr, "\n");
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
 
 	/* Clear out the config */
 #ifdef HAVE_LIBPQ_FE_H
-	memset(&pg_config, 0x00, sizeof(pg_config));
+	initPostgresStore();
 #endif /* HAVE_LIBPQ_FE_H */
 
 	/* Deal with the arguments here */

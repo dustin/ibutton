@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.9 2002/01/29 22:42:21 dustin Exp $
+ * $Id: data.c,v 1.10 2002/01/29 22:48:07 dustin Exp $
  */
 
 #include <stdio.h>
@@ -124,8 +124,8 @@ struct log_datum *parseLogEntry(const char *line)
 	rv->type=(short)serial[0];
 
 	/* Grab extra arguments and split them */
-	if(listLength(ta)>6) {
-		extra=split(ta[7], "=,");
+	if(listLength(fields)>3) {
+		extra=split(fields[3], "=,");
 	}
 
 	/* Do device-specific-stuff here */

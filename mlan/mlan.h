@@ -36,6 +36,7 @@ typedef unsigned char uchar;
 #endif
 
 /* The devices */
+#define DEVICE_UNKNOWN 0x00
 #define DEVICE_1990 0x01
 #define DEVICE_1991 0x02
 #define DEVICE_1992 0x04

@@ -116,23 +116,27 @@ struct log_datum *parseLogEntry(const char *line)
 
 	rv->serial=strdup(fields[1]);
 	assert(rv->serial);
-	/* Verify the length of the serial number */
+
+	/* Unknown device by default */
+	rv->type=DEVICE_UNKNOWN;
+
+	/* Figure out if this is a known device and set its classification */
 	if(strlen(rv->serial)!=(MLAN_SERIAL_SIZE*2)) {
-		rv->errorMsg="Invalid serial number.";
-		goto finished;
-	}
-	/* Verify the content of the serial number */
-	for(i=0; i<strlen(rv->serial); i++) {
-		if(!isxdigit((int)rv->serial[i])) {
-			rv->errorMsg="Invalid serial number.";
-			goto finished;
+		int snvalid=1;
+		/* Verify the content of the serial number */
+		for(i=0; snvalid != 0 && i<strlen(rv->serial); i++) {
+			if(!isxdigit((int)rv->serial[i])) {
+				snvalid=0;
+			}
 		}
+		if(snvalid == 1) {
+			parseSerial(rv->serial, serial);
+			rv->type=(short)serial[0];
+		}
+
 	}
 
 	rv->reading=atof(fields[2]);
-
-	parseSerial(rv->serial, serial);
-	rv->type=(short)serial[0];
 
 	/* Grab extra arguments and split them */
 	if(listLength(fields)>3) {

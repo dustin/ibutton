@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mrecv.c,v 1.3 2002/01/24 10:10:27 dustin Exp $
+ * $Id: mrecv.c,v 1.4 2002/01/24 10:33:26 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -73,8 +73,8 @@ static void saveDataRRD()
 	optind=0;
 	rv=rrd_update(listLength(args), args);
 	if(rv<0 || rrd_test_error()) {
-		puts(buf);
 		int i=0;
+		puts(buf);
 		printf("ERROR:  %s\n", rrd_get_error());
 		for(i=0; i<listLength(args); i++) {
 			printf("\targs[%d]=``%s''\n", i, args[i]);

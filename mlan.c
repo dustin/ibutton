@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.24 2002/01/29 19:19:07 dustin Exp $
+ * $Id: mlan.c,v 1.25 2002/01/30 06:31:02 dustin Exp $
  */
 
 #include <stdio.h>
@@ -465,7 +465,7 @@ static int
 _mlan_block(MLan *mlan, int doreset, uchar *buf, int len)
 {
 	uchar sendpacket[80];
-	int sendlen=0, pos=0, i=0;
+	int sendlen=0, pos=0, i=0, crcblocks=0;
 
 	assert(mlan);
 	assert(buf);
@@ -487,13 +487,24 @@ _mlan_block(MLan *mlan, int doreset, uchar *buf, int len)
 	pos=sendlen;
 	for(i=0; i<len; i++) {
 		sendpacket[sendlen++]=buf[i];
-		if(buf[i]==MODE_COMMAND)
+		if(buf[i]==MODE_COMMAND) {
 			sendpacket[sendlen++] = buf[i];
+		} else if(buf[i]==0xff) {
+			crcblocks++;
+		}
 	}
 
 	if(mlan->write(mlan, sendlen, sendpacket)) {
 		if(mlan->read(mlan, len, buf) == len) {
-			return(TRUE);
+			mlan->DOWCRC=0;
+			for(i=sendlen-crcblocks; i<sendlen; i++) {
+				mlan->dowcrc(mlan, sendpacket[i]);
+			}
+			if(mlan->DOWCRC==0) {
+				return(TRUE);
+			} else {
+				mlan_debug(mlan, 2, ("mlan_block: CRC failed\n"));
+			}
 		}
 	}
 

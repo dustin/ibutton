@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.3 1999/12/07 05:37:28 dustin Exp $
+ * $Id: mlan.c,v 1.4 1999/12/07 08:04:19 dustin Exp $
  */
 
 #include <stdio.h>
@@ -101,8 +101,6 @@ _mlan_setlevel(MLan *mlan, int newlevel)
 			/* Stop pulse command */
 			sendpacket[sendlen++] = MODE_STOP_PULSE;
 
-			mlan->flush(mlan);
-
 			if(mlan->write(mlan, sendlen, sendpacket)) {
 				if(mlan->read(mlan, 1, readbuffer)==1) {
 					if((readbuffer[0] & 0xE0) == 0xE0) {
@@ -127,7 +125,6 @@ _mlan_setlevel(MLan *mlan, int newlevel)
 						SPEEDSEL_PULSE | BITPOL_12V;
 			}
 
-			mlan->flush(mlan);
 			if(mlan->write(mlan, sendlen, sendpacket)) {
 				if(mlan->read(mlan, 1, readbuffer) == 1) {
 					if((readbuffer[0] & 0x81) == 0) {
@@ -159,7 +156,8 @@ _mlan_touchreset(MLan *mlan)
 
 	sendpacket[sendlen++] = (uchar)(CMD_COMM | FUNCTSEL_RESET | mlan->speed);
 
-	mlan->flush(mlan);
+	mlan_debug(mlan, 3, ("Reset sending %x (%x | %x | %x)\n",
+		sendpacket[0], CMD_COMM, FUNCTSEL_RESET, mlan->speed) );
 
 	if( mlan->write(mlan, sendlen, sendpacket)) {
 		if( mlan->read(mlan, 1, readbuffer) == 1) {
@@ -192,7 +190,7 @@ static int
 _mlan_next(MLan * mlan, int DoReset, int OnlyAlarmingDevices)
 {
 	int             i, TempLastDiscrepancy, pos;
-	uchar           TempSerialNum[8];
+	uchar           TempSerialNum[MLAN_SERIAL_SIZE];
 	uchar           readbuffer[20], sendpacket[40];
 	int             sendlen = 0;
 
@@ -201,6 +199,7 @@ _mlan_next(MLan * mlan, int DoReset, int OnlyAlarmingDevices)
 		mlan->LastDiscrepancy = 0;
 		mlan->LastDevice = FALSE;
 		mlan->LastFamilyDiscrepancy = 0;
+		return(FALSE);
 	}
 	/* Reset the wire if requested */
 	if (DoReset) {
@@ -262,9 +261,6 @@ _mlan_next(MLan * mlan, int DoReset, int OnlyAlarmingDevices)
 	/* Search off */
 	sendpacket[sendlen++] = (uchar) (CMD_COMM | FUNCTSEL_SEARCHOFF | mlan->speed);
 
-	/* flush the buffers */
-	mlan->flush(mlan);
-
 	/* Send the packet */
 	if (mlan->write(mlan, sendlen, sendpacket)) {
 		/* Read back the response */
@@ -285,8 +281,12 @@ _mlan_next(MLan * mlan, int DoReset, int OnlyAlarmingDevices)
 				}	/* if */
 			}	/* for */
 			mlan->DOWCRC = 0;
-			for (i = 0; i < 8; i++)
+			mlan_debug(mlan, 3, ("Serial:  "));
+			for (i = 0; i < MLAN_SERIAL_SIZE; i++) {
+				mlan_debug(mlan, 3, ("%02x ", TempSerialNum[i]) );
 				mlan->dowcrc(mlan, TempSerialNum[i]);
+			}
+			mlan_debug(mlan, 3, ("\n"));
 			if ((mlan->DOWCRC != 0) || (mlan->LastDiscrepancy == 63)
 			    || (TempSerialNum[0] == 0)) {
 				mlan->LastDiscrepancy = 0;
@@ -299,7 +299,7 @@ _mlan_next(MLan * mlan, int DoReset, int OnlyAlarmingDevices)
 					mlan->LastDevice = TRUE;
 				}
 				/* Copy the serial number */
-				for (i = 0; i < 8; i++)
+				for (i = 0; i < MLAN_SERIAL_SIZE; i++)
 					mlan->SerialNum[i] = TempSerialNum[i];
 
 				mlan->LastDiscrepancy = TempLastDiscrepancy;
@@ -314,6 +314,15 @@ _mlan_next(MLan * mlan, int DoReset, int OnlyAlarmingDevices)
 	mlan->LastFamilyDiscrepancy = 0;
 
 	return (FALSE);
+}
+
+static void
+_copy_serial(MLan *mlan, uchar *dest)
+{
+	int i;
+	for(i=0; i<MLAN_SERIAL_SIZE; i++) {
+		dest[i]=mlan->SerialNum[i];
+	}
 }
 
 MLan           *
@@ -340,6 +349,7 @@ mlan_init(char *port, int baud_rate)
 	/* Search functions */
 	mlan->first = _mlan_first;
 	mlan->next = _mlan_next;
+	mlan->reset = _mlan_touchreset;
 
 	/* Control functions */
 	mlan->setlevel=_mlan_setlevel;
@@ -347,6 +357,7 @@ mlan_init(char *port, int baud_rate)
 	/* Misc functions */
 	mlan->dowcrc = dowcrc;
 	mlan->msDelay = msDelay;
+	mlan->copySerial = _copy_serial;
 
 	mlan->debug = 0;
 	mlan->mode = MODSEL_COMMAND;

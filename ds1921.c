@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.c,v 1.27 2002/01/29 10:33:09 dustin Exp $
+ * $Id: ds1921.c,v 1.28 2002/01/29 10:33:58 dustin Exp $
  */
 #include <stdio.h>
 #include <assert.h>
@@ -319,9 +319,8 @@ void printDS1921(struct ds1921_data d)
 	printf("Temperature samples:\n");
 	for(i=0; i<d.n_samples; i++) {
 		if(d.samples[i].sample>-40.0) {
-			printf("\tSample %04d from %s (%d) is %.2f\n",
+			printf("\tSample %04d from %s is %.2f\n",
 				i, ds1921_sample_time(d.samples[i].timestamp),
-				d.samples[i].timestamp,
 				d.samples[i].sample);
 		}
 	}

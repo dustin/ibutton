@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: storage-rrd.c,v 1.7 2002/01/30 20:34:37 dustin Exp $
+ * $Id: storage-rrd.c,v 1.8 2002/01/30 21:10:30 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -112,7 +112,7 @@ rrdNewFile(struct log_datum *p)
 
 	/* If not, create it  */
 	snprintf(buf, sizeof(buf), RRD_TEMPLATE_STRING,
-		file, (60*sample_rate), start_time, heartbeat,
+		file, (60*sample_rate), (int)start_time, heartbeat,
 		RRA_EXPAND(rra));
 
 	verboseprint(2, ("RRD create query:  %s\n", buf));

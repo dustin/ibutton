@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.23 2002/01/29 08:45:57 dustin Exp $
+ * $Id: sample_devices.c,v 1.24 2002/01/29 09:07:27 dustin Exp $
  */
 
 #include <stdio.h>
@@ -23,6 +23,7 @@
 /* Local */
 #include <mlan.h>
 #include <ds1920.h>
+#include <ds1921.h>
 
 /* Globals because I have to move it out of the way in a signal handler */
 FILE		*logfile=NULL;
@@ -343,9 +344,8 @@ dealWith(MLan *mlan, uchar *serial)
 	}
 
 	switch(serial[0]) {
-		case 0x10: {
+		case DEVICE_1920: {
 			struct ds1920_data data;
-			alarm(5);
 			data=getDS1920Data(mlan, serial);
 			if(data.valid!=TRUE) {
 				rv=-1;
@@ -368,6 +368,26 @@ dealWith(MLan *mlan, uchar *serial)
 				snprintf(data_str, sizeof(data_str),
 					"%.2f", data.temp);
 				record_cur(get_serial(serial),data_str);
+			}
+		} break;
+		case DEVICE_1921: {
+			struct ds1921_data data;
+			int i=0;
+			data=getDS1921Data(mlan, serial);
+			if(data.valid==TRUE) {
+				/* Take up to another five seconds to write the data out */
+				alarm(5);
+				for(i=0; i<data.n_samples; i++) {
+					char data_str[8192];
+					snprintf(data_str, sizeof(data_str),
+						"%s\t%s\t%.2f\n",
+						ds1921_sample_time(data.samples[i].offset, data),
+						get_serial(serial), data.samples[i].sample);
+					/* Log it */
+					fprintf(logfile, "%s\n", data_str);
+					/* Multicast it */
+					msend(data_str);
+				}
 			}
 		} break;
 		default:
@@ -429,6 +449,7 @@ main(int argc, char **argv)
 		/* Try three times to get a list of devices.  I don't know why this
 		 * doesn't work the first time, but whatever.  */
 		list_count=0;
+		/* Set the timer for the first */
 		alarm(5);
 		rslt=mlan->first(mlan, TRUE, FALSE);
 		while(rslt) {
@@ -436,21 +457,25 @@ main(int argc, char **argv)
 			mlan->copySerial(mlan, list[list_count++]);
 			/* Don't go too far */
 			assert(list_count<sizeof(list)-1);
-			/* Grab the next device */
+			/* Grab the next device, reset the timer */
 			alarm(5);
 			rslt = mlan->next(mlan, TRUE, FALSE);
 		}
 		failures=0;
 		/* Loop through the list and gather samples */
 		for(i=0; i<list_count; i++) {
+			/* Give it five seconds to get its sample */
+			alarm(5);
 			if(dealWith(mlan, list[i])<0) {
 				failures++;
 			}
 		}
+
+		/* Disable alarms */
+		alarm(0);
+
 		/* Write the log */
 		fflush(logfile);
-
-		alarm(0);
 
 		if(failures>0) {
 			/* Wait five seconds before reopening the device. */

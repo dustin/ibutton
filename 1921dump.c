@@ -163,13 +163,21 @@ int main(int argc, char **argv)
 	}
 
 	data=getDS1921Data(mlan, serial);
-	if(dump_raw) {
-		dumpRaw(data);
+	if(data.valid) {
+		if(dump_raw) {
+			dumpRaw(data);
+		} else {
+			printDS1921(data);
+		}
 	} else {
-		printDS1921(data);
+		printf("Received no valid data for %s\n", serial_in);
 	}
 
 	mlan->destroy(mlan);
+
+#ifdef MYMALLOC
+	_mdebug_dump();
+#endif /* MYMALLOC */
 
 	exit(0);
 }

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.c,v 1.28 2002/01/29 10:33:58 dustin Exp $
+ * $Id: ds1921.c,v 1.29 2002/01/30 05:39:43 dustin Exp $
  */
 #include <stdio.h>
 #include <assert.h>
@@ -508,6 +508,10 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 	/* Register data is at 16 */
 	mlan->getBlock(mlan, serial, 16, 1, buffer);
 	decodeRegister(buffer, &data);
+	if(data.status.control&STATUS_UNUSED) {
+		/* Invalid data */
+		goto finished;
+	}
 
 	/* Temperature alarms are at 17 */
 	mlan->getBlock(mlan, serial, 17, 3, buffer);
@@ -577,5 +581,6 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 
 	data.valid=1;
 
+	finished:
 	return(data);
 }

@@ -51,6 +51,10 @@ AC_ARG_WITH(pthreads, [  --with-pthreads         path to pthreads installation],
 		LDFLAGS="$LDFLAGS -L$withval/lib"
 	fi])
 
+AC_ARG_WITH(mlan-dev, [  --with-mlan-dev         path to default mlan device],
+	CPPFLAGS="$CPPFLAGS -DDEFAULT_MLAN_DEVICE='\"$withval\"'"
+	)
+
 dnl I needed these for something, might as well not include them if they
 dnl don't exist.
 if test -d /usr/local/include

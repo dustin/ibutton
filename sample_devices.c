@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.13 2001/08/02 21:32:22 dustin Exp $
+ * $Id: sample_devices.c,v 1.14 2001/08/02 21:33:28 dustin Exp $
  */
 
 #include <stdio.h>
@@ -152,7 +152,7 @@ initMulti(const char *group, int port, int mttl)
 {
 	char ttl='\0';
 
-	assert(mttl>0);
+	assert(mttl>=0);
 	assert(mttl<256);
 
 	msocket=socket(AF_INET, SOCK_DGRAM, 0);
@@ -161,10 +161,15 @@ initMulti(const char *group, int port, int mttl)
 		exit(1);
 	}
 
-	ttl=(char)mttl;
-	if(setsockopt(msocket, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl))<0){
-		perror("set multicast ttl");
-		exit(1);
+	/* If a TTL was given, use it */
+	if(mttl>0) {
+		ttl=(char)mttl;
+		if( setsockopt(msocket, IPPROTO_IP, IP_MULTICAST_TTL,
+			&ttl, sizeof(ttl) )<0) {
+
+			perror("set multicast ttl");
+			exit(1);
+		}
 	}
 
 	memset(&maddr, 0, sizeof(maddr));

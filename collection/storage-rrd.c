@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: storage-rrd.c,v 1.4 2002/01/29 21:36:13 dustin Exp $
+ * $Id: storage-rrd.c,v 1.5 2002/01/29 22:05:17 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -78,6 +78,7 @@ rrdNewFile(struct log_datum *p)
 	} else {
 		rv=YES;
 	}
+	freeList(args);
 	return(rv);
 }
 

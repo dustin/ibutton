@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mrecv.c,v 1.10 2002/01/26 04:18:01 dustin Exp $
+ * $Id: mrecv.c,v 1.11 2002/01/26 07:40:02 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -39,6 +39,7 @@
 
 /* Local includes */
 #include "data.h"
+#include "../utility.h"
 
 /* Defaults for listening */
 #define MLAN_PORT 6789
@@ -58,8 +59,27 @@ static struct rrd_queue *queue=NULL;
 static pthread_mutex_t queue_mutex;
 #endif /* WORKING_PTHREAD */
 
+#ifdef HAVE_LIBPQ_FE_H
+
+/* Definition of how to connect to the database. */
+static struct {
+	char *dbhost;
+	char *dbuser;
+	char *dbpass;
+	char *dboptions;
+	char *dbname;
+	char *dbport;
+} pg_config;
+
+/* The actual database connection */
+static PGconn *dbConn=NULL;
+
+#endif /* HAVE_LIBPQ_FE_H */
+
 /* This holds the multicast socket */
 static int msocket=0;
+
+static int verbose=0;
 
 /* Portable locking */
 #ifdef WORKING_PTHREAD
@@ -136,6 +156,10 @@ static void saveDataRRD(struct data_list *p)
 	snprintf(buf, sizeof(buf), "update %s.rrd %d:%f", p->serial,
 		p->timestamp, p->reading);
 
+	if(verbose>1) {
+		printf("RRD update query:  %s\n", buf);
+	}
+
 	/* Do something with it */
 	args=split(buf, " ");
 	optind=0;
@@ -158,18 +182,120 @@ static void saveDataRRD(struct data_list *p)
 }
 #endif /* HAVE_RRD_H */
 
-static void saveData(struct data_list *p) {
+#ifdef HAVE_LIBPQ_FE_H
+
+static void
+abandonPostgresConnection()
+{
+	if(verbose>0) {
+		printf("Abandoning postgres connection (if there is one).\n");
+	}
+	if(dbConn!=NULL) {
+		PQfinish(dbConn);
+		dbConn=NULL;
+	}
+}
+
+static int
+getPostgresConnection()
+{
+	int proceed=NO;
+
+	/* Check to see if we have a valid connection */
+	if(dbConn==NULL || (PQstatus(dbConn) == CONNECTION_BAD)) {
+		/* If there's an invalid connection, close it */
+		abandonPostgresConnection();
+
+		if(verbose>0) {
+			printf("Connecting to postgres.\n");
+		}
+
+		dbConn=PQsetdbLogin(pg_config.dbhost, pg_config.dbport,
+			pg_config.dboptions, NULL, pg_config.dbname, pg_config.dbuser,
+			pg_config.dbpass);
+		if (PQstatus(dbConn) == CONNECTION_BAD) {
+			fprintf(stderr, "Error connecting to postgres:  %s\n",
+				PQerrorMessage(dbConn));
+		} else {
+			proceed=YES;
+		}
+	} else {
+		proceed=YES;
+	}
+	return(proceed);
+}
+
+static void saveDataPostgres(struct data_list *p)
+{
+	static int queries=0;
+
+	if(getPostgresConnection()==YES) {
+		char query[8192];
+		struct tm *t;
+		time_t tt=0;
+		PGresult *res=NULL;
+		char *tuples=NULL;
+		int ntuples=0;
+
+		tt=p->timestamp;
+		t=localtime(&tt);
+		assert(t);
+		snprintf(query, sizeof(query),
+			"insert into samples(ts, sensor_id, sample)\n"
+			"\tselect '%d/%d/%d %d:%d:%d', sensor_id, %f from sensors\n"
+			"\twhere serial='%s'",
+			(1900+t->tm_year), (1+t->tm_mon), t->tm_mday,
+			t->tm_hour, t->tm_min, t->tm_sec, p->reading,
+			p->serial);
+		if(verbose>1) {
+			printf("Query:  %s\n", query);
+		}
+
+		/* Issue the query */
+		res=PQexec(dbConn, query);
+		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+			fprintf(stderr, "Postgres error:  %s\n\tDuring query:  %s\n",
+				PQerrorMessage(dbConn), query);
+		}
+		/* Figure out how many tuples we updated */
+		tuples=PQcmdTuples(res);
+		assert(tuples);
+		ntuples=atoi(tuples);
+		assert(ntuples < 2);
+		if(ntuples==0) {
+			fprintf(stderr, "Postgres error:  Insert failed.  Query: %s\n",
+				query);
+		}
+		/* Get rid of the result */
+		PQclear(res);
+
+		/* Reconnect after every 100 connections, just because */
+		if(queries>0 && (queries%100==0)) {
+			abandonPostgresConnection();
+		}
+		queries++;
+	}
+}
+#endif /* HAVE_LIBPQ_FE_H */
+
+static void saveData(struct data_list *p)
+{
 	/* Do the RRD save */
 	assert(p!=NULL);
+
+	if(verbose>0) {
+		printf("FLUSH:  %s was %.2f at %d\n", p->serial, p->reading,
+			(int)p->timestamp);
+	}
 
 #ifdef HAVE_RRD_H
 	saveDataRRD(p);
 #endif /* HAVE_RRD_H */
 
-	/*
-	printf("FLUSH:  %s was %.2f at %d\n", p->serial, p->reading,
-		(int)p->timestamp);
-	*/
+#ifdef HAVE_LIBPQ_FE_H
+	saveDataPostgres(p);
+#endif /* HAVE_LIBPQ_FE_H */
+
 }
 
 static void
@@ -219,8 +345,17 @@ static void process(const char *msg)
 	assert(msg);
 	calls++;
 
+	if(verbose>1) {
+		printf("MSG:  %s\n", msg);
+	}
+
 	d=parseLogEntry(msg);
 	assert(d);
+
+	if(verbose>0) {
+		printf("RECV:  %f from %s at %lu\n", d->reading, d->serial,
+			(unsigned long)d->tv.tv_sec);
+	}
 
 	LOCK_QUEUE
 	if(queue==NULL) {
@@ -231,7 +366,7 @@ static void process(const char *msg)
 
 	/* If there's not working pthreads, manually flush every once in a while */
 #ifndef WORKING_PTHREAD
-	if(calls > 0 && calls%CALLS_PER_FLUSH) {
+	if(calls > 0 && (calls%CALLS_PER_FLUSH == 0) ) {
 		doFlush();
 	}
 #endif /* WORKING_PTHREAD */
@@ -319,9 +454,24 @@ mainloop()
 static void
 usage(char *prog)
 {
-	fprintf(stderr, "Usage:  %s [-m multigroup] [-p multiport]\n", prog);
+	fprintf(stderr, "Usage:  %s [-m multigroup] [-p multiport] [-v] ", prog);
+#ifdef HAVE_LIBPQ_FE_H
+	fprintf(stderr, "[-H db_host] [-P db_port]\n\t[-D db_name] [-U db_user] "
+					"[-A db_pass] [-O db_options]\n");
+#endif /* HAVE_LIBPQ_FE_H */
+
 	exit(1);
 }
+
+/* This defines the optargs dynamically */
+#define BASEOPTIONS "m:p:v"
+#ifdef HAVE_LIBPQ_FE_H
+# define PGOPTIONS "H:P:D:U:A:O:"
+#else
+# define PGOPTIONS ""
+#endif /* HAVE_LIBPQ_FE_H */
+
+#define OPTIONS BASEOPTIONS PGOPTIONS
 
 int main(int argc, char *argv[])
 {
@@ -330,8 +480,11 @@ int main(int argc, char *argv[])
 	int c=0;
 	extern char *optarg;
 
+	/* Clear out the config */
+	memset(&pg_config, 0x00, sizeof(pg_config));
+
 	/* Deal with the arguments here */
-	while( (c=getopt(argc, argv, "m:p:")) != -1) {
+	while( (c=getopt(argc, argv, OPTIONS)) != -1) {
 		switch(c) {
 			case 'm':
 				multigroup=optarg;
@@ -339,6 +492,29 @@ int main(int argc, char *argv[])
 			case 'p':
 				multiport=atoi(optarg);
 				break;
+			case 'v':
+				verbose++;
+				break;
+#ifdef HAVE_LIBPQ_FE_H
+			case 'H':
+				pg_config.dbhost=optarg;
+				break;
+			case 'P':
+				pg_config.dbport=optarg;
+				break;
+			case 'D':
+				pg_config.dbname=optarg;
+				break;
+			case 'U':
+				pg_config.dbuser=optarg;
+				break;
+			case 'A':
+				pg_config.dbpass=optarg;
+				break;
+			case 'O':
+				pg_config.dboptions=optarg;
+				break;
+#endif /* HAVE_LIBPQ_FE_H */
 			case '?':
 				usage(argv[0]);
 				break;

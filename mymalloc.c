@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 1998  Dustin Sallings
  *
- * $Id: mymalloc.c,v 1.1 2002/01/27 01:50:15 dustin Exp $
+ * $Id: mymalloc.c,v 1.2 2002/01/27 02:13:27 dustin Exp $
  */
 
 #include <stdio.h>
@@ -141,11 +141,12 @@ _mdebug_dump(void)
 	}
 
 	printf("Hash size was %d buckets\n"
-	    "Highest:  %d\n"
-	    "Lowest:   %d\n"
-	    "Average:  %d\n"
-	    "Empty:    %d\n",
-	    NUM_MEMBUCKETS, max, min, avg / NUM_MEMBUCKETS, empty);
+		"Chunks in use:  %d\n"
+	    "Highest:        %d\n"
+	    "Lowest:         %d\n"
+	    "Average:        %d\n"
+	    "Empty:          %d\n",
+	    NUM_MEMBUCKETS, count, max, min, avg / NUM_MEMBUCKETS, empty);
 }
 
 void 

@@ -222,6 +222,7 @@ mainloop()
 			perror("recvfrom");
 			exit(1);
 		}
+		msgbuf[nbytes]=0x00;
 		process(msgbuf);
 	}
 }

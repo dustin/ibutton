@@ -17,6 +17,8 @@ static void getTime1(uchar *buffer, struct ds1921_data *d)
 	assert(buffer);
 	assert(d);
 
+	binDumpBlock(buffer, 7, 0);
+
 	/* Minutes and seconds are calculated the same way, and are the second
 	 * and first bytes respectively. */
 	seconds= (buffer[0]&0x0f) + (10* ((buffer[0]&0x70) >> 4) );
@@ -27,7 +29,7 @@ static void getTime1(uchar *buffer, struct ds1921_data *d)
 	/* Day of the week is the last three bits of the fourth byte */
 	day=buffer[3]&0x07;
 	/* Date is the fifth byte */
-	date= (buffer[4]&0x0f) + (10* ((buffer[4]&0x50) >> 4) );
+	date= (buffer[4]&0x0f) + (10* ((buffer[4]&0x30) >> 4) );
 	/* Month is the sixth byte */
 	month=(buffer[5]&0x0f) + (10* ((buffer[5]&0x10) >> 4) );
 

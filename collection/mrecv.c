@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mrecv.c,v 1.6 2002/01/25 09:05:21 dustin Exp $
+ * $Id: mrecv.c,v 1.7 2002/01/25 10:08:17 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -55,7 +55,8 @@ static pthread_mutex_t queue_mutex;
 # define UNLOCK_QUEUE
 #endif
 
-#define RRD_CREATE_STRING "create %s -s 60 DS:temp:GAUGE:300:-10:50 " \
+#define RRD_CREATE_STRING "create %s -s 60 -b now-5minutes " \
+	"DS:temp:GAUGE:300:-10:50 " \
 	"RRA:AVERAGE:0.5:5:210240 " \
 	"RRA:MIN:0.5:5:210240 " \
 	"RRA:MAX:0.5:5:210240 " \

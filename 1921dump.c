@@ -94,7 +94,7 @@ void dumpRaw(struct ds1921_data d)
 	rawHistogram(d.histogram);
 
 	for(i=0; i<d.n_samples; i++) {
-		printf("sample_%03d=%.02f\n", i, d.samples[i]);
+		printf("sample_data_%04d=%.02f\n", i, d.samples[i]);
 	}
 }
 

@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 #include <fcntl.h>
 #include <assert.h>
 #include <time.h>
@@ -63,6 +64,8 @@ static struct watch_list *watching=NULL;
 #define MAX_AGE 900
 /* Number of seconds between samples */
 #define SAMPLE_FREQUENCY 60
+/* Maximum number of failures before a device is removed from the watch list */
+#define MAX_FAILURES 10
 
 /*}}}*/
 
@@ -74,7 +77,9 @@ static void setsignals();
 /* This is the list of things being watched */
 struct watch_list {
 	uchar serial[MLAN_SERIAL_SIZE];
-	time_t last_read;
+	time_t last_read; /* Time of last successful read */
+	time_t next_read; /* Time of next read attempt */
+	int fail_count;   /* number of concurrent failures */
 	struct watch_list *next;
 };
 
@@ -108,8 +113,9 @@ getSerialFileTimestamp(uchar *serial)
 	return(rv);
 }
 
-static time_t
-timeOfLastUpdate(uchar *serial)
+/* Get a watch_list entry for the given serial number */
+static struct watch_list *
+getWatch(uchar *serial)
 {
 	struct watch_list *p=NULL;
 
@@ -130,22 +136,43 @@ timeOfLastUpdate(uchar *serial)
 		p->last_read=getSerialFileTimestamp(serial);
 	}
 
-	return(p->last_read);
+	assert(p!=NULL && memcmp(serial, p->serial, MLAN_SERIAL_SIZE)==0);
+
+	return(p);
 }
 
-static void cleanWatchList()
+static int
+watchIsGarbage(struct watch_list *w)
+{
+	time_t now = time(NULL);
+	int rv=0;
+
+	assert(w != NULL);
+	assert(w->serial != NULL);
+
+	rv=(w->fail_count > MAX_FAILURES || w->last_read < now - MAX_AGE);
+
+	/*
+	log_info("watchIsGarbage(%s) age=%d fail_count=%d -- rv=%d\n",
+		get_serial(w->serial), time(NULL) - w->last_read, w->fail_count, rv);
+	*/
+
+	return(rv);
+}
+
+static void
+cleanWatchList()
 {
 	struct watch_list *p=NULL;
-	int now=(int)time(NULL);
-	/* The minimum timestamp that we will keep */
-	int min_last = now - MAX_AGE;
 
 	/* Deal with stuff at the front of the list */
-	while(watching != NULL && watching->last_read < min_last) {
+	while(watching != NULL && watchIsGarbage(watching)) {
 		p=watching;
+		assert(p != NULL);
+		assert(p->serial != NULL);
+		log_error("Removing %s from the watch list (age=%d, fail_count=%d)\n",
+			get_serial(p->serial), time(NULL) - p->last_read, p->fail_count);
 		watching = p->next;
-		log_error("Removing %s from the watch list (too old)\n",
-			get_serial(p->serial));
 		free(p);
 	}
 
@@ -153,11 +180,15 @@ static void cleanWatchList()
 	if(watching != NULL) {
 		struct watch_list *tmp=NULL;
 		for(p=watching; p != NULL && p->next != NULL; p=p->next) {
-			if(p->last_read < min_last) {
+			if(watchIsGarbage(p->next)) {
 				tmp=p->next;
+				assert(tmp != NULL);
+				assert(tmp->serial != NULL);
+				log_error(
+					"Removing %s from the watch list (age=%d, fail_count=%d)\n",
+					get_serial(tmp->serial), time(NULL) - tmp->last_read,
+					tmp->fail_count);
 				p->next=tmp->next;
-				log_error("Removing %s from the watch list (too old)\n",
-					get_serial(tmp->serial));
 				free(tmp);
 			}
 		}
@@ -165,19 +196,24 @@ static void cleanWatchList()
 }
 
 static void
-updateSerial(uchar *serial, time_t when)
+updateSuccess(uchar *serial, time_t when)
 {
-	struct watch_list *p=NULL;
-
-	assert(serial);
-
-	/* Search for a match */
-	for(p=watching; p!=NULL
-		&& (memcmp(serial, p->serial, MLAN_SERIAL_SIZE)!=0); p=p->next);
-
-	assert(p!=NULL && memcmp(serial, p->serial, MLAN_SERIAL_SIZE)==0);
+	struct watch_list *p=getWatch(serial);
 
 	p->last_read=when;
+	p->next_read=when + SAMPLE_FREQUENCY;
+	p->fail_count=0;
+}
+
+static void
+updateFailure(uchar *serial, time_t when)
+{
+	struct watch_list *p=getWatch(serial);
+
+	/* calculate the next read as a function of the current failure count */
+
+	p->next_read=when + (5 + pow(2,p->fail_count));
+	p->fail_count++;
 }
 
 /* Record the current sample into a file unique to the serial number */
@@ -220,7 +256,7 @@ init_from_cur()
 	while( (d = readdir(dir)) != NULL) {
 		sdParseSerial(d->d_name, serial);
 		if(serial[0] != 0x00) {
-			timeOfLastUpdate(serial);
+			getWatch(serial);
 		}
 	}
 }
@@ -433,6 +469,7 @@ static int dealWith1920(MLan *mlan, uchar *serial)
 		rv=-1;
 		/* Log the failure */
 		log_error("Did not return valid data from %s.\n", get_serial(serial));
+		updateFailure(serial, time(NULL));
 	} else {
 		char data_str[8192];
 		snprintf(data_str, sizeof(data_str),
@@ -445,12 +482,11 @@ static int dealWith1920(MLan *mlan, uchar *serial)
 		/* Multicast it */
 		msend(data_str);
 		/* Now record the current */
-		snprintf(data_str, sizeof(data_str),
-			"%.2f", data.temp);
+		snprintf(data_str, sizeof(data_str), "%.2f", data.temp);
 		record_cur(get_serial(serial), data_str, time(NULL));
+		/* Mark it as updated */
+		updateSuccess(serial, time(NULL));
 	}
-	/* Mark it as updated */
-	updateSerial(serial, time(NULL));
 
 	return(rv);
 }
@@ -465,7 +501,7 @@ dealWith1921(MLan *mlan, uchar *serial)
 
 	data=getDS1921Data(mlan, serial);
 	if(data.valid==TRUE) {
-		time_t last_update=timeOfLastUpdate(serial);
+		struct watch_list *watch=getWatch(serial);
 		time_t last_record=0;
 		float last_reading=0;
 		char data_str[8192];
@@ -476,7 +512,7 @@ dealWith1921(MLan *mlan, uchar *serial)
 		alarm(0);
 		for(i=0; i<data.n_samples; i++) {
 			/* Only send data we haven't seen */
-			if(data.samples[i].timestamp>last_update) {
+			if(data.samples[i].timestamp > watch->last_read) {
 				snprintf(data_str, sizeof(data_str),
 					"%s\t%s\t%.2f\ts=%d,r=%d",
 					get_time_str(data.samples[i].timestamp),
@@ -492,7 +528,7 @@ dealWith1921(MLan *mlan, uchar *serial)
 			last_reading=data.samples[i].sample;
 		}
 		/* Mark it as updated */
-		updateSerial(serial, last_record);
+		updateSuccess(serial, last_record);
 		snprintf(data_str, sizeof(data_str), "%.2f", last_reading);
 		record_cur(get_serial(serial), data_str, last_record);
 
@@ -500,6 +536,7 @@ dealWith1921(MLan *mlan, uchar *serial)
 		rv=0;
 	} else {
 		log_error("Did not return valid data from %s.\n", get_serial(serial));
+		updateFailure(serial, time(NULL));
 	}
 
 	return(rv);
@@ -522,7 +559,7 @@ dealWith(MLan *mlan, uchar *serial)
 			break;
 		default:
 			/* Mark it as updated */
-			updateSerial(serial, time(NULL));
+			updateSuccess(serial, time(NULL));
 			break;
 	}
 
@@ -540,7 +577,7 @@ busLoop(MLan *mlan)
 	int rslt=0;
 	/* Devices are eligible for sampling if the last time they were seen is
 	 * more than SAMPLE_FREQUENCY seconds ago */
-	time_t eligibility_age=time(NULL) - SAMPLE_FREQUENCY;
+	time_t now=time(NULL);
 
 	/* Set the timer for the first */
 	alarm(5);
@@ -558,12 +595,12 @@ busLoop(MLan *mlan)
 	/* Loop through the list and make sure all serials are in the watch list */
 	for(i=0; i<list_count; i++) {
 		/* This will make sure the device is in the watch list */
-		timeOfLastUpdate(list[i]);
+		getWatch(list[i]);
 	}
 
 	/* Loop through the watch list and gather samples */
 	for(wtmp=watching; wtmp != NULL; wtmp=wtmp->next) {
-		if(wtmp->last_read <= eligibility_age) {
+		if(wtmp->next_read <= now) {
 			alarm(15);
 			if(dealWith(mlan, wtmp->serial) < 0) {
 				failures++;

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlanscm.c,v 1.5 2001/12/10 08:23:13 dustin Exp $
+ * $Id: mlanscm.c,v 1.6 2001/12/10 20:54:17 dustin Exp $
  */
 
 #include <stdio.h>
@@ -13,6 +13,10 @@
 #include <guile/gh.h>
 
 #include <mlan.h>
+
+/* This allows me to do a throw with two string arguments (symbol and
+ * error) and does everything properly. */
+#define THROW(a, b) scm_throw(gh_symbol2scm(a), scm_list_1(gh_str02scm(b)))
 
 static long mlan_tag=-1;
 
@@ -31,7 +35,9 @@ static SCM make_mlan(SCM dev, SCM debuglevel)
 	dev_string=gh_scm2newstr(dev, NULL);
 	mlan=mlan_init(dev_string, PARMSET_9600);
 	free(dev_string);
-	SCM_ASSERT((mlan!=NULL), dev, "init failed", "mlan-init");
+	if(mlan==NULL) {
+		THROW("init-failed", "MLan initialization failed");
+	}
 
 	/* Check to see if there's a debug level passed in */
 	if(debuglevel != SCM_EOL) {
@@ -77,7 +83,7 @@ static MLan *mlan_getmlan(SCM mlan_smob, char *where)
 {
 	MLan *mlan=NULL;
 
-	SCM_ASSERT((SCM_NIMP(mlan_smob) && SCM_CAR(mlan_smob) == mlan_tag),
+	SCM_ASSERT((SCM_NIMP(mlan_smob) && (long)SCM_CAR(mlan_smob) == mlan_tag),
 		mlan_smob, SCM_ARG1, where);
 
 	mlan=(MLan *)SCM_CDR(mlan_smob);
@@ -91,7 +97,7 @@ static SCM mlan_p(SCM mlan_smob)
 {
 	SCM rv=SCM_BOOL_F;
 
-	if(SCM_NIMP(mlan_smob) && SCM_CAR(mlan_smob) == mlan_tag) {
+	if(SCM_NIMP(mlan_smob) && (long)SCM_CAR(mlan_smob) == mlan_tag) {
 		rv=SCM_BOOL_T;
 	}
 
@@ -149,7 +155,9 @@ static SCM mlan_access(SCM mlan_smob, SCM serial)
 
 	rv=mlan->access(mlan, ser);
 
-	SCM_ASSERT(rv, serial, "Access failed", "mlan-access");
+	if(rv!=TRUE) {
+		THROW("access-failed", "Access call failed");
+	}
 
 	return(SCM_BOOL_T);
 }
@@ -185,7 +193,9 @@ static SCM mlan_setlevel(SCM mlan_smob, SCM value)
 	/* Set the level */
 	rv=mlan->setlevel(mlan, value_int);
 	/* Return the value of the level */
-	SCM_ASSERT(rv==value_int, value, "unable to set level", "mlan-setlevel");
+	if(rv!=value_int) {
+		THROW("setlevel-failed", "Failed to set level on MLan bus");
+	}
 	return(gh_int2scm(rv));
 }
 
@@ -229,22 +239,30 @@ static SCM mlan_block(SCM mlan_smob, SCM do_reset, SCM bytes)
 	for(lit=bytes; SCM_CONSP(lit); lit=SCM_CDR(lit)) {
 		SCM car=SCM_CAR(lit);
 		int bv=0;
-		SCM_ASSERT(SCM_INUM(car), car, "int expected", "mlan-block");
+		if(!SCM_INUM(car)) {
+			THROW("invalid-argument", "MLan block must contain only ints");
+		}
 		bv=SCM_INUM(car);
-		SCM_ASSERT( (bv>=0 && bv<256), car,
-			"byte value must be between 0 and 255 (inclusive)", "mlan-block");
+		if(bv>255 || bv<0) {
+			THROW("invalid-argument",
+				"byte value must be between 0 and 255 (inclusive)");
+		}
 		send_block[send_cnt++]=bv;
 	}
 
 	tmp=mlan->block(mlan, do_reset_v, send_block, send_cnt);
-	SCM_ASSERT(tmp, mlan_smob, "block failed", "mlan-block");
+	if(tmp!=TRUE) {
+		THROW("block-failed", "MLan block failed");
+	}
 
 	/* CRC */
 	mlan->DOWCRC=0;
 	for(tmp=send_cnt-9; tmp<send_cnt; tmp++)
 		mlan->dowcrc(mlan, send_block[tmp]);
 
-	SCM_ASSERT(mlan->DOWCRC==0, mlan_smob, "CRC failed", "mlan-block");
+	if(mlan->DOWCRC!=0) {
+		THROW("crc-failed", "MLan block CRC failed");
+	}
 
 	for(; send_cnt>=0; send_cnt--) {
 		rv=gh_cons(gh_int2scm(send_block[send_cnt]), rv);
@@ -267,8 +285,9 @@ static SCM mlan_getblock(SCM mlan_smob, SCM serial, SCM page, SCM pages)
 	SCM_ASSERT(SCM_INUMP(pages), pages, SCM_ARG4, "mlan-getblock");
 
 	/* Check the size */
-	SCM_ASSERT( (32*SCM_INUM(pages)) < sizeof(buffer),
-		pages, "pages must be less than 256", "mlan-getblock");
+	if( (32*SCM_INUM(pages)) >= sizeof(buffer) ) {
+		THROW("invalid-argument", "pages must be less than 256");
+	}
 
 	/* Get the MLan thing */
 	mlan=mlan_getmlan(mlan_smob, "mlan-getblock");
@@ -298,15 +317,15 @@ void init_mlan_type()
 	scm_set_smob_free(mlan_tag, free_mlan);
 
 	/* Subs */
-	scm_make_gsubr("mlan-init", 1, 0, 1, make_mlan);
-	scm_make_gsubr("mlanp", 1, 0, 0, mlan_p);
-	scm_make_gsubr("mlan-search", 1, 0, 0, mlan_search);
-	scm_make_gsubr("mlan-access", 2, 0, 0, mlan_access);
-	scm_make_gsubr("mlan-touchbyte", 2, 0, 0, mlan_touchbyte);
-	scm_make_gsubr("mlan-setlevel", 2, 0, 0, mlan_setlevel);
-	scm_make_gsubr("mlan-msdelay", 2, 0, 0, mlan_msdelay);
-	scm_make_gsubr("mlan-block", 3, 0, 0, mlan_block);
-	scm_make_gsubr("mlan-getblock", 4, 0, 0, mlan_getblock);
+	scm_c_define_gsubr("mlan-init", 1, 0, 1, make_mlan);
+	scm_c_define_gsubr("mlanp", 1, 0, 0, mlan_p);
+	scm_c_define_gsubr("mlan-search", 1, 0, 0, mlan_search);
+	scm_c_define_gsubr("mlan-access", 2, 0, 0, mlan_access);
+	scm_c_define_gsubr("mlan-touchbyte", 2, 0, 0, mlan_touchbyte);
+	scm_c_define_gsubr("mlan-setlevel", 2, 0, 0, mlan_setlevel);
+	scm_c_define_gsubr("mlan-msdelay", 2, 0, 0, mlan_msdelay);
+	scm_c_define_gsubr("mlan-block", 3, 0, 0, mlan_block);
+	scm_c_define_gsubr("mlan-getblock", 4, 0, 0, mlan_getblock);
 
 	/* Constants */
 	gh_define("mlan-mode-normal", gh_int2scm(0x00));

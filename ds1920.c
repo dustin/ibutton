@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1920.c,v 1.5 2000/07/16 21:35:24 dustin Exp $
+ * $Id: ds1920.c,v 1.6 2000/07/18 09:00:12 dustin Exp $
  */
 
 #include <stdio.h>
@@ -50,8 +50,16 @@ setDS1920Params(MLan *mlan, uchar *serial, struct ds1920_data d)
 	}
 
 	send_buffer[send_cnt++]=DS1920WRITE_SCRACTHPAD;
-	send_buffer[send_cnt++]=ds1920temp_convert_in(d.temp_hi);
-	send_buffer[send_cnt++]=ds1920temp_convert_in(d.temp_low);
+	if(d.temp_hi>0) {
+		send_buffer[send_cnt++]=d.temp_hi;
+	} else {
+		send_buffer[send_cnt++]=abs(d.temp_hi) | 0x80;
+	}
+	if(d.temp_low>0) {
+		send_buffer[send_cnt++]=d.temp_low;
+	} else {
+		send_buffer[send_cnt++]=abs(d.temp_low) | 0x80;
+	}
 	mlan_debug(mlan, 3, ("Writing DS1920 scratchpad.\n"));
 	if(! (mlan->block(mlan, FALSE, send_buffer, send_cnt))) {
 		printf("Error writing to scratchpad!\n");
@@ -156,12 +164,20 @@ getDS1920Data(MLan *mlan, uchar *serial)
 	}
 
 	/* Store the high and low values */
-	data.temp_hi=ds1920temp_convert_out(send_block[3]);
-	data.temp_low=ds1920temp_convert_out(send_block[4]);
+	data.temp_hi=send_block[3]&0x7F; /* Drop the sign */
+	if(send_block[3]&0x80) {
+		/* If there was a sign, negate the value */
+		data.temp_hi=-data.temp_hi;
+	}
+	data.temp_low=send_block[4]&0x7F; /* Drop the sign */
+	if(send_block[4]&0x80) {
+		/* If there was a sign, negate the value */
+		data.temp_low=-data.temp_low;
+	}
 
-	mlan_debug(mlan, 2, ("TH=%f\n", data.temp_hi));
+	mlan_debug(mlan, 2, ("TH=%x (%f)\n", send_block[3], data.temp_hi));
 	mlan_debug(mlan, 2, ("T=%f\n",  ds1920temp_convert_out(send_block[1])) );
-	mlan_debug(mlan, 2, ("TL=%f\n", data.temp_low));
+	mlan_debug(mlan, 2, ("TL=%x (%f)\n", send_block[4], data.temp_low));
 
 	/* Calculate the temperature from the scratchpad, get a more accurate
 	 * reading. */

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.27 2002/01/29 23:19:00 dustin Exp $
+ * $Id: sample_devices.c,v 1.28 2002/01/29 23:57:10 dustin Exp $
  */
 
 #include <stdio.h>
@@ -435,8 +435,11 @@ dealWith(MLan *mlan, uchar *serial)
 				/*
 				printf("Got the data, preparing to write it out.\n");
 				*/
-				/* Take up to another thirty seconds to write the data out */
-				alarm(30);
+				/* Disable alarms for recording the data.  Nothing should
+				 * block here, and if it doesn't finish properly, we're
+				 * going to lose our timestamp thingy.  It can take a while
+				 * when there's a lot of data, but ooooh well.  */
+				alarm(0);
 				for(i=0; i<data.n_samples; i++) {
 					/* Only send data we haven't seen */
 					if(data.samples[i].timestamp>last_update) {

@@ -117,9 +117,11 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	ds1921_mission(mlan, serial, data);
-
-	printf("Missioned!\n");
+	if(ds1921_mission(mlan, serial, data)==TRUE) {
+		printf("Missioned!\n");
+	} else {
+		printf("Error missioning.\n");
+	}
 
 	mlan->destroy(mlan);
 

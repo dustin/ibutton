@@ -1,11 +1,14 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.h,v 1.6 2000/07/16 21:35:28 dustin Exp $
+ * $Id: ds1921.h,v 1.7 2000/07/17 07:39:15 dustin Exp $
  */
 
 #ifndef DS1921_H
 #define DS1921_H 1
+
+/* Need time stuff */
+#include <time.h>
 
 /* 128 bytes of histogram */
 #define HISTOGRAM_SIZE 64
@@ -34,6 +37,7 @@ struct ds1921_data {
 			int hours;
 			int minutes;
 			int seconds;
+			time_t clock;
 		} clock;
 
 		/* Mission timestamp */
@@ -43,6 +47,7 @@ struct ds1921_data {
 			int date;
 			int hours;
 			int minutes;
+			time_t clock;
 		} mission_ts;
 
 		/* Current status */

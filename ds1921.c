@@ -8,10 +8,21 @@
 #include <mlan.h>
 #include <ds1921.h>
 
+static long getGMTOffset()
+{
+	struct tm *tm;
+	time_t t;
+
+	t=time(NULL);
+	tm=localtime(&t);
+	return(tm->tm_gmtoff);
+}
+
 /* This is for the realtime clock */
 static void getTime1(uchar *buffer, struct ds1921_data *d)
 {
 	int seconds=0, minutes=0, hours=0, day=0, date=0, month=0, year=0;
+	struct tm tm;
 
 	assert(buffer);
 	assert(d);
@@ -35,6 +46,20 @@ static void getTime1(uchar *buffer, struct ds1921_data *d)
 	/* 1900 + century + the stuff in the seventh byte = year */
 	year+=1900+(buffer[6]&0x0f) + (10* ( (buffer[6]&0xf0) >> 4) );
 
+	memset(&tm, 0x00, sizeof(tm));
+	tm.tm_sec=seconds;
+	tm.tm_min=minutes;
+	tm.tm_hour=hours;
+	tm.tm_mday=date;
+	tm.tm_mon=month-1;
+	tm.tm_year=year-1900;
+	tm.tm_isdst=-1;
+
+	/* Add a time_t */
+	d->status.clock.clock=mktime(&tm);
+	/* Adjust it for the GMT offset */
+	d->status.clock.clock+=getGMTOffset();
+
 	/* Stick it in the structure */
 	d->status.clock.year=year;
 	d->status.clock.month=month;
@@ -49,6 +74,8 @@ static void getTime1(uchar *buffer, struct ds1921_data *d)
 static void getTime2(uchar *buffer, struct ds1921_data *d)
 {
 	int minutes=0, hours=0, date=0, month=0, year=0;
+	struct tm tm;
+	long gmtoff=0;
 
 	assert(buffer);
 	assert(d);
@@ -63,12 +90,41 @@ static void getTime2(uchar *buffer, struct ds1921_data *d)
 		year+=100;
 	}
 
-	/* Stick it in the structure */
-	d->status.mission_ts.year=year;
-	d->status.mission_ts.month=month;
-	d->status.mission_ts.date=date;
-	d->status.mission_ts.hours=hours;
-	d->status.mission_ts.minutes=minutes;
+	/* get the gmt offset */
+	gmtoff=getGMTOffset();
+
+	/* Calculate the time_t */
+	memset(&tm, 0x00, sizeof(tm));
+	tm.tm_min=minutes;
+	tm.tm_hour=hours;
+	tm.tm_mday=date;
+	tm.tm_mon=month-1;
+	tm.tm_year=year-1900;
+	tm.tm_gmtoff=gmtoff;
+	tm.tm_isdst=-1;
+
+	if(month>0) {
+		/* Add a time_t */
+		d->status.mission_ts.clock=mktime(&tm);
+		/* Adjust for the gmt offset */
+		d->status.mission_ts.clock+=gmtoff;
+
+		/* Stick it in the structure */
+		d->status.mission_ts.year=year;
+		d->status.mission_ts.month=month;
+		d->status.mission_ts.date=date;
+		d->status.mission_ts.hours=hours;
+		d->status.mission_ts.minutes=minutes;
+	} else {
+		d->status.mission_ts.clock=-1;
+		/* Fill in bad info */
+		d->status.mission_ts.year=0;
+		d->status.mission_ts.month=0;
+		d->status.mission_ts.date=0;
+		d->status.mission_ts.hours=0;
+		d->status.mission_ts.minutes=0;
+	}
+
 }
 
 static void showStatus(int status)
@@ -182,32 +238,16 @@ static char *ds1921_sample_time(int i, struct ds1921_data d)
 {
 	static char result[80];
 	time_t t=0;
-	struct tm tm;
+	struct tm *tmtmp;;
 
-	memset(&tm, 0x00, sizeof(tm));
-
-	tm.tm_min=d.status.mission_ts.minutes;
-	tm.tm_hour=d.status.mission_ts.hours;
-	tm.tm_mday=d.status.mission_ts.date;
-	tm.tm_mon=d.status.mission_ts.month-1;
-	tm.tm_year=d.status.mission_ts.year-1900;
-	tm.tm_isdst=-1;
-	tm.tm_zone="UTC";
-
-	t=mktime(&tm);
+	t=d.status.mission_ts.clock;
 
 	/* Add the sample_rate times the sample we're on) */
 	t+=60*(i*d.status.sample_rate);
 
-	/* I have to use localtime because gmtime won't give me the time in
-	 * UTC.  I have no idea why. */
-	localtime_r(&t, &tm);
-	/* It sucks I have to keep doing the following */
-	tm.tm_zone="UTC";
-	tm.tm_isdst=-1;
-	tm.tm_gmtoff=0;
+	tmtmp=localtime(&t);
 
-	strftime(result, 80, "%Y-%d-%m %T", &tm);
+	strftime(result, 80, "%Y-%m-%d %T", tmtmp);
 
 	return(result);
 }
@@ -215,25 +255,20 @@ static char *ds1921_sample_time(int i, struct ds1921_data d)
 void printDS1921(struct ds1921_data d)
 {
 	int i;
-	char *days[]={
-		NULL, "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday",
-			"Friday" "Saturday", NULL
-	};
-	/* Display what we've got */
-	printf("Current time:  %s, %04d/%02d/%02d %02d:%02d:%02d\n",
-		days[d.status.clock.day],
-		d.status.clock.year, d.status.clock.month, d.status.clock.date,
-		d.status.clock.hours, d.status.clock.minutes, d.status.clock.seconds);
 
+	/* Display what we've got */
+	printf("Current time:  %s", ctime(&d.status.clock.clock));
 	/* If the mission is delayed, display the time to mission, else display
 	 * when it started. */
 	if(d.status.mission_delay) {
 		printf("Mission begins in %d minutes.\n", d.status.mission_delay);
 	} else {
-		printf("Mission start time:  %04d/%02d/%02d %02d:%02d:00\n",
-			d.status.mission_ts.year, d.status.mission_ts.month,
-			d.status.mission_ts.date,
-			d.status.mission_ts.hours, d.status.mission_ts.minutes);
+		if(d.status.mission_ts.clock>0) {
+			printf("Mission start time:  %s",
+				ctime(&d.status.mission_ts.clock));
+		} else {
+			printf("Mission timestamp not yet established.\n");
+		}
 	}
 	printf("Current sample rate is one sample per %d minutes\n",
 		d.status.sample_rate);
@@ -293,12 +328,12 @@ static void decodeAlarms(uchar *buffer, struct ds1921_data *d)
 	/* Low first */
 	for(j=0, i=0; i<32; i+=4, j++) {
 		d->low_alarms[j].sample_offset=
-			(buffer[i+2]<<16)|(buffer[i+1]<<8)|buffer[i];
+			((buffer[i+2]<<16)|(buffer[i+1]<<8)|buffer[i])-1;
 		d->low_alarms[j].duration=buffer[i+3];
 	}
 	for(j=0, i=32; i<96; i+=4, j++) {
 		d->hi_alarms[j].sample_offset=
-			(buffer[i+2]<<16)|(buffer[i+1]<<8)|buffer[i];
+			((buffer[i+2]<<16)|(buffer[i+1]<<8)|buffer[i])-1;
 		d->hi_alarms[j].duration=buffer[i+3];
 	}
 }
@@ -306,15 +341,21 @@ static void decodeAlarms(uchar *buffer, struct ds1921_data *d)
 static void getSummary(struct ds1921_data *d)
 {
 	if(d->status.status&STATUS_MISSION_IN_PROGRESS) {
-		if(d->status.mission_delay>0) {
-			sprintf(d->summary, "Mission begins in %d minutes",
+
+		if(d->status.mission_delay) {
+			sprintf(d->summary,
+				"Mission begins in %d minutes.",
 				d->status.mission_delay);
 		} else {
-			sprintf(d->summary, "Mission in progress since "
-								"%04d/%02d/%02d %02d:%02d:00",
-				d->status.mission_ts.year, d->status.mission_ts.month,
-				d->status.mission_ts.date,
-				d->status.mission_ts.hours, d->status.mission_ts.minutes);
+			if(d->status.mission_ts.clock>0) {
+				sprintf(d->summary,
+					"Mission start time:  %s",
+					ctime(&d->status.mission_ts.clock));
+				d->summary[strlen(d->summary)-1]=0x00;
+			} else {
+				sprintf(d->summary,
+					"Mission timestamp not yet established.");
+			}
 		}
 	} else {
 		sprintf(d->summary, "%s", "No mission in progress.");
@@ -363,11 +404,6 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 		}
 	}
 
-	/*
-	((data.status.clock.hours/10)<<4)
-		| (data.status.clock.hours%10);
-	*/
-
 	buffer[3]=data.status.clock.day;
 	buffer[4]= ((data.status.clock.date/10)<<4)
 		| (data.status.clock.date%10);
@@ -402,8 +438,8 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	buffer[14]=control|CONTROL_MISSION_ENABLED
 		|CONTROL_MEMORY_CLR_ENABLED;
 
-	buffer[19]=(data.status.mission_delay>>8);
 	buffer[18]=(data.status.mission_delay & 0xFF);
+	buffer[19]=(data.status.mission_delay>>8);
 
 	/* Send it on */
 	if(mlan->writeScratchpad(mlan, serial, 16, 32, buffer)!=TRUE) {

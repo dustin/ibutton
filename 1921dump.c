@@ -16,6 +16,8 @@ int main(int argc, char **argv)
 	char *serial_in=NULL, *dev=NULL;
 	struct ds1921_data data;
 
+	tzset();
+
 	if(argc<2) {
 		fprintf(stderr, "Need a serial number.\n");
 		exit(1);

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.9 2000/07/14 21:48:54 dustin Exp $
+ * $Id: devices.c,v 1.10 2000/07/15 10:45:47 dustin Exp $
  */
 
 #include <stdio.h>
@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include <assert.h>
 
 #include <mlan.h>
@@ -39,14 +40,29 @@ ftoc(float in)
 void dumpBlock(uchar *buffer, int size)
 {
 	int i=0;
+	int line=0;
+
+	assert(buffer);
+	/* This thing would look really funny if a line had fewer than 16 bytes */
+	assert( (size%16)==0 );
+
 	printf("Dumping %d bytes\n", size);
-	for(i=0; i<size; i++) {
-		printf("%02X ", buffer[i]);
-		if((i+1)%16==0) {
-			puts("");
+	for(line=0; line*16<size; line++) {
+		printf("%04X  ", line*16);
+		for(i=0; i<16; i++) {
+			printf("%02X ", buffer[(line*16)+i]);
 		}
+		putchar(' ');
+		for(i=0; i<16; i++) {
+			int c=buffer[(line*16)+i];
+			if(isgraph(c) || c==' ') {
+				putchar(c);
+			} else {
+				putchar('.');
+			}
+		}
+		printf("\n");
 	}
-	puts("");
 }
 
 /* Dump a block in binary */

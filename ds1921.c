@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
+ *
+ * $Id: ds1921.c,v 1.23 2001/08/29 09:27:53 dustin Exp $
+ */
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: commands.h,v 1.3 2000/09/17 09:20:04 dustin Exp $
+ * $Id: commands.h,v 1.4 2001/08/29 09:27:50 dustin Exp $
  */
 
 #ifndef COMMANDS_H
@@ -34,5 +34,14 @@
 #define DS2406CHANNEL_ACCESS 0xf5
 #define DS2406READ_STATUS 0xaa
 #define DS2406WRITE_STATUS 0x55
+
+/* 2438 stuff */
+/* Convert voltage */
+#define DS2438CONVERTV 0xb4
+/* Convert temperature */
+#define DS2438CONVERTT 0x44
+#define DS2438RECALL 0xb8
+#define DS2438WRITE_SCRATCHPAD 0x4e
+#define DS2438READ_SCRATCHPAD 0xbe
 
 #endif /* COMMANDS_H */

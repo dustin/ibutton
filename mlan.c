@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.18 2001/07/04 20:21:42 dustin Exp $
+ * $Id: mlan.c,v 1.19 2001/08/29 09:27:55 dustin Exp $
  */
 
 #include <stdio.h>
@@ -404,6 +404,7 @@ _mlan_init_table(void)
 	serial_table[0x18]=strdup("DS1962/1963 Monetary iButton");
 	serial_table[0x1a]=strdup("DS1963L Monetary iButton");
 	serial_table[0x21]=strdup("DS1921 Thermochron");
+	serial_table[0x26]=strdup("DS2438 Battery Monitor/Humidity Sensor");
 	serial_table[0x23]=strdup("DS1973 4kbit EEPROM iButton");
 	serial_table[0x96]=strdup("DS199550-400 Java Button");
 }

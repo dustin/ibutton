@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.15 2000/09/17 09:20:06 dustin Exp $
+ * $Id: devices.c,v 1.16 2001/08/29 09:27:51 dustin Exp $
  */
 
 #include <stdio.h>
@@ -104,16 +104,6 @@ void binDumpBlock(uchar *buffer, int size, int start_addr)
 		puts("");
 	}
 }
-
-/*
-static float
-ftoc(float in)
-{
-	float ret;
-	ret=(in-32) * 5/9;
-	return(ret);
-}
-*/
 
 /* abstracted sampler */
 char *

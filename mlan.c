@@ -893,6 +893,19 @@ mlan_init(char *port, int baud_rate)
 	return (mlan);
 }
 
+/* Get the default MLan port */
+char *mlan_get_port()
+{
+	static char *rv=NULL;
+
+	if(getenv("MLAN_DEVICE")) {
+		rv=getenv("MLAN_DEVICE");
+	} else {
+		rv=DEFAULT_MLAN_DEVICE;
+	}
+	return(rv);
+}
+
 /*
  * arch-tag: 20466FD1-13E5-11D8-BE72-000393CFE6B8
  */

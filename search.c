@@ -9,7 +9,6 @@ int main(int argc, char **argv)
 	MLan *mlan;
 	int i, j, rslt, current=0;
 	uchar list[MAX_SERIAL_NUMS][MLAN_SERIAL_SIZE];
-	char *dev=NULL;
 	int only_alarming=FALSE;
 	int do_sample=FALSE;
 	int ch;
@@ -32,12 +31,7 @@ int main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if(getenv("MLAN_DEVICE")) {
-		dev=getenv("MLAN_DEVICE");
-	} else {
-		dev="/dev/tty00";
-	}
-	mlan=mlan_init(dev, PARMSET_9600);
+	mlan=mlan_init(mlan_get_port(), PARMSET_9600);
 	assert(mlan);
 	mlan->debug=0;
 

@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 {
 	MLan *mlan=NULL;
 	uchar serial[MLAN_SERIAL_SIZE];
-	char *serial_in=NULL, *dev=NULL;
+	char *serial_in=NULL;
 	struct ds1921_data data;
 	char *tmp, temp;
 	char *cmd;
@@ -101,12 +101,7 @@ int main(int argc, char **argv)
 	}
 	serial_in=argv[0];
 
-	if(getenv("MLAN_DEVICE")) {
-		dev=getenv("MLAN_DEVICE");
-	} else {
-		dev="/dev/tty00";
-	}
-	mlan=mlan_init(dev, PARMSET_9600);
+	mlan=mlan_init(mlan_get_port(), PARMSET_9600);
 	assert(mlan);
 	mlan->debug=0;
 

@@ -19,15 +19,10 @@ int main(int argc, char **argv)
 		"PARMSET_Slew2p2Vus", "PARMSET_Slew15Vus", NULL
 	};
 	int i=0, rslt=0;
-	char *s=NULL, *dev=NULL;
+	char *s=NULL;
 
 
-	if(getenv("MLAN_DEVICE")) {
-		dev=getenv("MLAN_DEVICE");
-	} else {
-		dev="/dev/tty00";
-	}
-	mlan=mlan_init(dev, PARMSET_9600);
+	mlan=mlan_init(mlan_get_port(), PARMSET_9600);
 	assert(mlan);
 	mlan->debug=0;
 

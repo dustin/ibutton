@@ -13,6 +13,10 @@
 
 #include "utility.h"
 
+#ifndef DEFAULT_MLAN_DEVICE
+# define DEFAULT_MLAN_DEVICE "/dev/tty00"
+#endif
+
 /* Need a uchar */
 typedef unsigned char uchar;
 
@@ -288,6 +292,10 @@ struct __mlan {
 	ushort (*docrc16)(MLan *mlan, ushort x);
 };
 
+/* Get the default mlan port */
+char *mlan_get_port();
+
+/* Initialize an mlan device */
 MLan *mlan_init(char *port, int baud_rate);
 
 /* Devices */

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.10 2001/07/28 08:13:43 dustin Exp $
+ * $Id: sample_devices.c,v 1.11 2001/07/28 08:26:32 dustin Exp $
  */
 
 #include <stdio.h>
@@ -156,9 +156,9 @@ initMulti(const char *group, int port)
 	}
 
 	memset(&maddr, 0, sizeof(maddr));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = inet_addr(group);
-	addr.sin_port = htons(port);
+	maddr.sin_family = AF_INET;
+	maddr.sin_addr.s_addr = inet_addr(group);
+	maddr.sin_port = htons(port);
 }
 
 /* Send a multicast message */
@@ -166,7 +166,8 @@ static void
 msend(const char *msg)
 {
 	if(msocket>=0) {
-		if(sendto(msocket, msg, strlen(msg), 0,
+		/* length of the string +1 to send the NULL */
+		if(sendto(msocket, msg, (strlen(msg)+1), 0,
 			(struct sockaddr *)&maddr, sizeof(maddr)) < 0) {
 			perror("sendto");
 		}
@@ -183,20 +184,21 @@ usage(const char *name)
 	fprintf(stderr, "  logdir - directory to write indivual snapshots\n");
 	fprintf(stderr, "  multigroup - multicast group to announce readings\n");
 	fprintf(stderr, "  multiport - port for sending multicast [1313]\n");
-	fprintf("By default, if no multicast group is defined, there will be\n"
+	fprintf(stderr,
+		"By default, if no multicast group is defined, there will be\n"
 		"no multicast announcements.\n");
 	exit(1);
 }
 
 static void
-getoptions(int argc, const char **argv)
+getoptions(int argc, char **argv)
 {
 	int c;
 	extern char *optarg;
 	char *multigroup=NULL;
 	int multiport=1313;
 
-	while( (c=getopt(argc, argv, "b:l:c:m:")) != -1) {
+	while( (c=getopt(argc, argv, "b:l:c:m:p:")) != -1) {
 		switch(c) {
 			case 'b':
 				busdev=optarg;
@@ -297,14 +299,15 @@ main(int argc, char **argv)
 								"Error getting sample");
 					} else {
 						char data_str[8192];
-						snprintf(data_str, "%s\t%s\t%.2f\tl=%.2f,h=%.2f",
+						snprintf(data_str, sizeof(data_str),
+							"%s\t%s\t%.2f\tl=%.2f,h=%.2f",
 							get_time_str(), get_serial(list[i]),
-							ctof(data.temp),
-							ctof(data.temp_low), ctof(data.temp_hi));
+							ctof(data.temp), ctof(data.temp_low),
+							ctof(data.temp_hi));
 						/* Log it */
 						fprintf(logfile, "%s\n", data_str);
 						/* Multicast it */
-						mcast(data_str);
+						msend(data_str);
 						/* Now record the current */
 						snprintf(data_str, sizeof(data_str),
 							"%.2f", ctof(data.temp));

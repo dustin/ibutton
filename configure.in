@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.15 2002/01/30 00:11:31 dustin Exp $
+dnl $Id: configure.in,v 1.16 2002/01/30 00:13:31 dustin Exp $
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(mlan.c)
 
@@ -110,6 +110,7 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h sys/errno.h unistd.h getopt.h getopts.h pthread.h)
+AC_CHECK_HEADERS(utime.h)
 AC_CHECK_HEADERS(rrd.h libpq-fe.h)
 
 dnl check for working pthreads

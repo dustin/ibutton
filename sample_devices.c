@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.29 2002/01/30 00:11:33 dustin Exp $
+ * $Id: sample_devices.c,v 1.30 2002/01/30 00:14:54 dustin Exp $
  */
 
 #include <stdio.h>
@@ -12,8 +12,13 @@
 #include <assert.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/types.h>
 #define _BSD_SIGNALS
 #include <signal.h>
+
+#ifdef HAVE_UTIME_H
+#include <utime.h>
+#endif /* HAVE_UTIME_H */
 
 /* For multicast */
 #include <sys/socket.h>

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings
  *
- * $Id: data.h,v 1.6 2002/01/29 19:19:13 dustin Exp $
+ * $Id: data.h,v 1.7 2002/01/29 21:36:10 dustin Exp $
  */
 
 #ifndef DATA_H
@@ -42,15 +42,9 @@ struct log_datum {
 	int isValid:2;
 };
 
-struct data_list {
-	time_t timestamp;
-	char *serial;
-	float reading;
-	struct data_list *next;
-};
-
 struct data_queue {
-	struct data_list *list;
+	char *line;
+	struct data_queue *next;
 };
 
 /* log parsing and disposal */
@@ -63,8 +57,7 @@ void freeList(char **list);
 int listLength(const char **list);
 
 /* Linked list stuff */
-void appendToRRDQueue(struct data_queue *dl, struct log_datum *datum);
+struct data_queue *appendToRRDQueue(struct data_queue *dl, char *datum);
 void disposeOfRRDQueue(struct data_queue *dl);
-struct data_queue *newRRDQueue();
 
 #endif

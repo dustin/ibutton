@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: collector.c,v 1.7 2002/01/27 01:50:18 dustin Exp $
+ * $Id: collector.c,v 1.8 2002/01/29 21:36:07 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -53,13 +53,13 @@ int col_verbose=0;
 # define UNLOCK_QUEUE
 #endif
 
-static void saveData(struct data_list *p)
+static void saveData(struct log_datum *p)
 {
 	/* Do the RRD save */
 	assert(p!=NULL);
 
 	verboseprint(1, ("FLUSH:  %s was %.2f at %d\n", p->serial, p->reading,
-			(int)p->timestamp));
+			(int)p->tv.tv_sec));
 
 #ifdef HAVE_RRD_H
 	verboseprint(2, ("Saving to RRD.\n"));
@@ -80,7 +80,7 @@ static void saveData(struct data_list *p)
 static void
 doFlush()
 {
-	struct data_list *p=NULL;
+	struct data_queue *p=NULL;
 	struct data_queue *tmpqueue=NULL;
 	int i=0;
 
@@ -93,8 +93,13 @@ doFlush()
 		UNLOCK_QUEUE
 
 		/* Now, work on it */
-		for(i=0, p=tmpqueue->list; p!=NULL; i++, p=p->next) {
-			saveData(p);
+		for(i=0, p=tmpqueue; p!=NULL; i++, p=p->next) {
+			struct log_datum *tmp;
+			tmp=parseLogEntry(p->line);
+			if(tmp!=NULL) {
+				saveData(tmp);
+				disposeOfLogEntry(tmp);
+			}
 		}
 
 		disposeOfRRDQueue(tmpqueue);
@@ -121,25 +126,15 @@ static void
 
 static void process(const char *msg)
 {
-	struct log_datum *d=NULL;
 	static int calls=0;
 
 	assert(msg);
 	calls++;
 
-	verboseprint(2, ("MSG:  %s\n", msg));
-
-	d=parseLogEntry(msg);
-	assert(d);
-
-	verboseprint(1, ("RECV:  %f from %s at %lu\n", d->reading, d->serial,
-			(unsigned long)d->tv.tv_sec));
+	verboseprint(1, ("RECV:  %s\n", msg));
 
 	LOCK_QUEUE
-	if(queue==NULL) {
-		queue=newRRDQueue();
-	}
-	appendToRRDQueue(queue, d);
+	queue=appendToRRDQueue(queue, msg);
 	UNLOCK_QUEUE
 
 	/* If there's not working pthreads, manually flush every once in a while */
@@ -148,9 +143,6 @@ static void process(const char *msg)
 		doFlush();
 	}
 #endif /* WORKING_PTHREAD */
-
-	/* Clean up */
-	disposeOfLogEntry(d);
 }
 
 static void

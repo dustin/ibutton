@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: storage-rrd.c,v 1.3 2002/01/26 10:56:31 dustin Exp $
+ * $Id: storage-rrd.c,v 1.4 2002/01/29 21:36:13 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -52,7 +52,7 @@ rrdErrorPrint(char *buf, char **args)
 }
 
 static int
-rrdNewFile(struct data_list *p)
+rrdNewFile(struct log_datum *p)
 {
 	char buf[8192];
 	char file[1024];
@@ -81,7 +81,7 @@ rrdNewFile(struct data_list *p)
 	return(rv);
 }
 
-void saveDataRRD(struct data_list *p)
+void saveDataRRD(struct log_datum *p)
 {
 	char buf[8192];
 	char **args=NULL;
@@ -89,7 +89,7 @@ void saveDataRRD(struct data_list *p)
 	extern int optind;
 
 	snprintf(buf, sizeof(buf), "update %s.rrd %lu:%f", p->serial,
-		(unsigned long)p->timestamp, p->reading);
+		(unsigned long)p->tv.tv_sec, p->reading);
 
 	verboseprint(2, ("RRD update query:  %s\n", buf));
 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: storage-pgsql.c,v 1.3 2002/01/26 10:08:43 dustin Exp $
+ * $Id: storage-pgsql.c,v 1.4 2002/01/29 21:36:11 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -79,7 +79,7 @@ initPostgresStore()
 }
 
 void
-saveDataPostgres(struct data_list *p)
+saveDataPostgres(struct log_datum *p)
 {
 	static int queries=0;
 
@@ -91,7 +91,7 @@ saveDataPostgres(struct data_list *p)
 		char *tuples=NULL;
 		int ntuples=0;
 
-		tt=p->timestamp;
+		tt=p->tv.tv_sec;
 		t=localtime(&tt);
 		assert(t);
 		snprintf(query, sizeof(query),

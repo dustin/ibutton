@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.6 2002/01/29 19:19:12 dustin Exp $
+ * $Id: data.c,v 1.7 2002/01/29 21:36:08 dustin Exp $
  */
 
 #include <stdio.h>
@@ -126,57 +126,44 @@ void disposeOfLogEntry(struct log_datum *entry)
 	free(entry);
 }
 
-void appendToRRDQueue(struct data_queue *dl, struct log_datum *datum)
+/*!
+ * Append the given string to the end of the data queue.  Return the new
+ * data queue (may change if it was originally null). */
+struct data_queue *
+appendToRRDQueue(struct data_queue *dl, char *datum)
 {
-	struct data_list *p=NULL;
-	struct data_list *newe=NULL;
+	struct data_queue *p=NULL;
+	struct data_queue *newe=NULL;
 
 	assert(dl);
 	assert(datum);
 
 	/* Seek to the end of the list */
-	for(p=dl->list; p!=NULL && p->next!=NULL; p=p->next);
+	for(p=dl; p!=NULL && p->next!=NULL; p=p->next);
 
-	newe=calloc(sizeof(struct data_list), 1);
+	newe=calloc(sizeof(struct data_queue), 1);
 	assert(newe);
 
-	newe->serial=strdup(datum->serial);
-	assert(newe->serial);
-	newe->reading=datum->reading;
-	newe->timestamp=datum->tv.tv_sec;
+	newe->line=strdup(datum);
+	assert(newe->line);
 
 	if(p==NULL) {
-		dl->list=newe;
+		dl=newe;
 	} else {
 		p->next=newe;
 	}
 
-}
-
-static void freeDataList(struct data_list *list)
-{
-	assert(list);
-	if(list->next != NULL) {
-		freeDataList(list->next);
-	}
-	free(list->serial);
-	free(list);
+	return(dl);
 }
 
 void disposeOfRRDQueue(struct data_queue *dl)
 {
 	assert(dl);
-	if(dl->list != NULL) {
-		freeDataList(dl->list);
+	if(dl->next != NULL) {
+		disposeOfRRDQueue(dl->next);
 	}
+	free(dl->line);
 	free(dl);
-}
-
-struct data_queue *newRRDQueue()
-{
-	struct data_queue *rv;
-	rv=calloc(sizeof(struct data_queue), 1);
-	return(rv);
 }
 
 #ifdef DATA_MAIN

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.13 2002/01/30 20:33:40 dustin Exp $
+ * $Id: data.c,v 1.14 2002/01/30 21:09:15 dustin Exp $
  */
 
 #include <stdio.h>
@@ -59,7 +59,7 @@ void freeList(char **list)
 	}
 }
 
-int listLength(const char **list)
+int listLength(char **list)
 {
 	int rv=0;
 	for(rv=0; list[rv]!=NULL; rv++) {

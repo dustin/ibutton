@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings
  *
- * $Id: data.h,v 1.10 2002/01/30 20:33:42 dustin Exp $
+ * $Id: data.h,v 1.11 2002/01/30 21:09:17 dustin Exp $
  */
 
 #ifndef DATA_H
@@ -60,7 +60,7 @@ void logDatumPrint(struct log_datum *);
 /* Array stuff */
 char **split(const char *input, const char *delim);
 void freeList(char **list);
-int listLength(const char **list);
+int listLength(char **list);
 
 /* Linked list stuff */
 struct data_queue *appendToRRDQueue(struct data_queue *dl, const char *datum);

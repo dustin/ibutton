@@ -43,7 +43,6 @@
 /*}}}1*/
 
 static int writeToClient(struct client *client, const char *fmt, ...);
-static char *sdParseSerial(char *in, uchar *out);
 
 /* {{{1 Commands */
 /* 2406 command {{{2*/
@@ -401,22 +400,6 @@ runCommand(MLan *mlan, struct client *client, char *command)
 
 	freePtrList(argv);
 
-	return(rv);
-}
-
-/* Parse the serial number if it looks like a serial number, else return a
- * serial number beginning with 0x00 */
-static char *
-sdParseSerial(char *in, uchar *out)
-{
-	char *rv=NULL;
-
-	/* Validate the size */
-	if(strlen(in) == (MLAN_SERIAL_SIZE*2)) {
-		rv=parseSerial(in, out);
-	} else {
-		out[0]=0x00;
-	}
 	return(rv);
 }
 

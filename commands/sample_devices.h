@@ -59,6 +59,7 @@ void handleNewConnection(struct client*, struct sockaddr_in);
 int getServerSocket(int port);
 int handleRead(MLan *mlan, struct client *client);
 void handleWrite(struct client *client);
+char *sdParseSerial(char *in, uchar *out);
 
 /* Free a client message */
 void freeClientMessage(struct client_msg *msg);

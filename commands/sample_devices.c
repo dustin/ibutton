@@ -16,6 +16,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #define _BSD_SIGNALS
 #include <signal.h>
@@ -151,7 +152,7 @@ static void cleanWatchList()
 	/* Remove anything else in the list */
 	if(watching != NULL) {
 		struct watch_list *tmp=NULL;
-		for(p=watching; p->next != NULL; p=p->next) {
+		for(p=watching; p != NULL && p->next != NULL; p=p->next) {
 			if(p->last_read < min_last) {
 				tmp=p->next;
 				p->next=tmp->next;
@@ -205,6 +206,23 @@ record_cur(const char *serial, const char *value, time_t update_time)
 	tvp.modtime=update_time;
 
 	utime(fn, &tvp);
+}
+
+/* Initialize the watch list from the stamps left in the curdir */
+static void
+init_from_cur()
+{
+	DIR *dir=NULL;
+	struct dirent *d=NULL;
+	uchar serial[MLAN_SERIAL_SIZE];
+
+	dir=opendir(curdir);
+	while( (d = readdir(dir)) != NULL) {
+		sdParseSerial(d->d_name, serial);
+		if(serial[0] != 0x00) {
+			timeOfLastUpdate(serial);
+		}
+	}
 }
 
 /* Get the time for the record. */
@@ -388,6 +406,23 @@ msend(const char *msg)
 /* }}} */
 
 /* Device handling {{{ */
+
+/* Parse the serial number if it looks like a serial number, else return a
+ * serial number beginning with 0x00 */
+char *
+sdParseSerial(char *in, uchar *out)
+{
+	char *rv=NULL;
+
+	/* Validate the size */
+	if(strlen(in) == (MLAN_SERIAL_SIZE*2)) {
+		rv=parseSerial(in, out);
+	} else {
+		out[0]=0x00;
+	}
+	return(rv);
+}
+
 static int dealWith1920(MLan *mlan, uchar *serial)
 {
 	struct ds1920_data data;
@@ -499,7 +534,7 @@ busLoop(MLan *mlan)
 {
 	uchar list[MAX_SERIAL_NUMS][MLAN_SERIAL_SIZE];
 	struct watch_list *wtmp=NULL;
-	int failures=0;
+	int failures=0, successes=0;
 	int list_count=0;
 	int i=0;
 	int rslt=0;
@@ -532,6 +567,8 @@ busLoop(MLan *mlan)
 			alarm(15);
 			if(dealWith(mlan, wtmp->serial) < 0) {
 				failures++;
+			} else {
+				successes++;
 			}
 		}
 	}
@@ -539,7 +576,7 @@ busLoop(MLan *mlan)
 	/* Disable alarms */
 	alarm(0);
 
-	if(list_count==0) {
+	if(list_count==0 && successes==0) {
 		log_error("Didn't find any devices, indicating failure.\n");
 		failures++;
 	}
@@ -812,6 +849,8 @@ main(int argc, char **argv)
 	/* Set signal handlers */
 	setsignals();
 
+	/* initialize the watch list */
+	init_from_cur();
 	mainLoop();
 
 	/* NOT REACHED */

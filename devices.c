@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.11 2000/07/15 23:05:36 dustin Exp $
+ * $Id: devices.c,v 1.12 2000/07/15 23:12:38 dustin Exp $
  */
 
 #include <stdio.h>
@@ -99,7 +99,7 @@ char *
 get_sample(MLan *mlan, uchar *serial)
 {
 	static char buffer[80];
-	chat *ret=NULL;
+	char *ret=NULL;
 
 	assert(mlan);
 	assert(serial);
@@ -111,8 +111,8 @@ get_sample(MLan *mlan, uchar *serial)
 				struct ds1920_data d;
 				d=ds1920Sample(mlan, serial);
 				if(d.valid) {
-					assert(strlen(d.reading_f)<sizeof(ret));
-					strcpy(ret, d.reading_f);
+					assert(strlen(d.reading_f)<sizeof(buffer));
+					strcpy(buffer, d.reading_f);
 					ret=buffer;
 				}
 			}
@@ -120,8 +120,8 @@ get_sample(MLan *mlan, uchar *serial)
 		case 0x21: {
 				struct ds1921_data d;
 				d=getDS1921Data(mlan, serial);
-				assert(strlen(d.summary)<sizeof(ret));
-				strcpy(ret, d.summary);
+				assert(strlen(d.summary)<sizeof(buffer));
+				strcpy(buffer, d.summary);
 				ret=buffer;
 		}
 	}

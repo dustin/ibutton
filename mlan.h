@@ -1,11 +1,13 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.15 2001/12/10 08:23:12 dustin Exp $
+ * $Id: mlan.h,v 1.16 2002/01/23 23:56:03 dustin Exp $
  */
 
 #ifndef MLAN_H
 #define MLAN_H 1
+
+#include "utility.h"
 
 /* Need a uchar */
 typedef unsigned char uchar;

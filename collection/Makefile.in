@@ -1,0 +1,20 @@
+SHELL=/bin/sh
+AR=@AR@
+RANLIB=@RANLIB@
+
+DEFS=@DEFS@
+CFLAGS=-I. @CFLAGS@ $(DEFS)
+LDFLAGS=@LDFLAGS@ @LIBS@
+RRDLIB=@RRDLIB@
+
+OBJ=data.o
+PROGS=mrecv
+PROGO=mrecv.o
+
+CC=@CC@
+
+mrecv: $(OBJ) mrecv.o
+	$(CC) -o $@ data.o mrecv.o $(LDFLAGS) $(RRDLIB)
+
+clean:
+	rm -f $(OBJ) $(PROGO) $(PROGS)

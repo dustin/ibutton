@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.17 2001/12/24 09:07:09 dustin Exp $
+# $Id: Makefile.in,v 1.18 2002/01/23 23:55:58 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -12,8 +12,10 @@ GUILECONF=@GUILECONF@
 DEFS=@DEFS@
 CFLAGS=-I. @CFLAGS@ @GUILEINC@ $(DEFS)
 LDFLAGS=@LDFLAGS@ @LIBS@
+RRDLIB=@RRDLIB@
 
-OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o ds2406.o ds2438.o
+OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o ds2406.o ds2438.o \
+	utility.o
 PROGS=search lookup sample_devices slew 1921dump 1921mission \
 	1920 storage 2406 2438 @GUILESTUFF@
 PROGO=search.o lookup.o sample_devices.o slew.o
@@ -76,7 +78,8 @@ mlan.o: mlan.h ds1920.h ds1921.h commands.h ds2438.h
 devices.o: mlan.h ds1920.h ds1921.h
 
 distclean: clean
-	rm -f Makefile config.cache config.status config.log
+	cd collection && make clean
+	rm -f Makefile config.cache config.status config.log collection/Makefile
 
 clean:
 	rm -f $(OBJ) mlan.a $(PROGS) $(PROGO)

@@ -1,0 +1,110 @@
+OVERVIEW
+	
+	This is a very fast and simple explanation of using these tools for the
+	Dallas Semi 1921 iButton.  These instructions may help you run other
+	such ibutton devices.
+
+COMPILE AND INSTALL
+
+	./configure <your parameters or `-help' for options listing>
+	make install
+
+USAGE
+
+	The fisrt thing you will want to do is search your serial port for all
+	of the devices on the serial bus.  First start by setting your
+	MLAN_DEVICE environment variable so that the serial port is known:
+
+		(t)csh:
+		setenv MLAN_DEVICE /dev/tty00
+
+		(ba)sh:
+		MLAN_DEVICE=/dev/tty00
+		export MLAN_DEVICE
+
+		Note: For Linux OSes, your first serial port may be /dev/ttyS0
+		Note: If you receive permission denied errors, please see your
+			system administrator for appropriate permissions assignment
+			for your user.
+	
+	This should result in output similar to:
+
+		$ ./search
+		Serial[0]:  xxxxxxxxxxxxxxxx -- DS1921 Thermochron
+		Serial[1]:  xxxxxxxxxxxxxxxx -- DS9097u 1-wire to RS232 converter
+		$ 
+		
+		Note: "xxxxxxxxxxxxxxxx" will be replaced by your serial numbers
+
+	With these serial numbers and your serial port, you are all ready to
+	go.  First you must set up your ibutton to have a mission.  A mission
+	is simply telling the ibutton what to 
+
+
+
+APPS
+
+	search
+	
+		Takes no required parameters but does require that the MLAN_DEVICE
+		environment variable points to the serial device
+		(default: /dev/tty00) which has the ibutton bus.
+
+		-r
+			check for missions on each of the devices on the bus
+
+	1921mission
+
+		Sets the mission (sampling rate) for the device.  This takes one
+		required parameter as the <serial number> for the device to
+		mission.
+
+		<serial number>
+			The serial number of the device to set a mission for
+
+		-r
+			Rollover.  When the ibutton reaches it's memory maximum, start
+			writing over the oldest entry.  Round-robin fashion.
+
+		-s <sample rate>
+			The rate of sampling.  This is in minutes.
+
+		-d <mission delay>
+			The number of minutes to delay before taking samples.
+				The number of minutes to delay before taking samples.
+
+		-l <low alert>
+
+		-h <high alert>
+
+
+	sample_devices
+
+		Polls all devices on the bus for changes and logs them to a log
+		file.  Optionally, the changes can also be published to a multicast
+		group.
+
+		-b <busdev>
+			Serial device containing the bus to poll (i.e. /dev/tty00)
+
+		-l <logfile>
+			File to write log entries.  These are general logs.
+
+		-c <logdir>
+			Directory to write individual snapshots.  These will be named the
+			serial number of the ibutton device and will be located in this
+			directory.
+
+
+	1921dump
+
+		Dumps all setting for the mission as well as the current statistics
+		and data stored on the device.
+
+		<serial number>
+			The serial number of the device to retrieve all the settings
+			for.
+
+
+--
+# arch-tag: 10193B13-77E7-11D8-BA36-000A957659CC

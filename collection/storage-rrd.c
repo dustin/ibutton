@@ -23,7 +23,7 @@
 #include "data.h"
 #include "collection.h"
 #include "storage-rrd.h"
-#include "../utility.h"
+#include <utility.h>
 
 #define RRD_TEMPLATE_STRING "create %s -s %d -b %d " \
 	"DS:temp:GAUGE:%d:-20:75 " \

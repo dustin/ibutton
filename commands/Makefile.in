@@ -1,0 +1,68 @@
+# Makefile for the 1wire commands
+#
+# Copyright (c) 2004  Dustin Sallings <dustin@spy.net>
+#
+# arch-tag: 00905-43-118-82-0030187026
+
+SHELL=/bin/sh
+AR=@AR@
+RANLIB=@RANLIB@
+GUILECONF=@GUILECONF@
+
+TOPDIR=@top_srcdir@
+
+DEFS=@DEFS@
+CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mlan -I$(TOPDIR)/mymalloc \
+	@CFLAGS@ @GUILEINC@ $(DEFS)
+LDFLAGS=@LDFLAGS@ @LIBS@
+RRDLIB=@RRDLIB@
+
+MLANLIB=../mlan/mlan.a
+
+VPATH=$(TOPDIR)/commands:.
+
+PROGS=search lookup sample_devices slew 1921dump 1921mission \
+	1920 storage 2406 2438 @GUILESTUFF@
+PROGO=search.o lookup.o sample_devices.o slew.o 1920.o 1921dump.o \
+	1921mission.o 2406.o 2438.o storage.o
+CC=@CC@
+
+.SUFFIXES: .c .o .l .a .ln
+
+all: $(PROGS)
+
+slew: $(MLANLIB) slew.o
+	$(CC) -o $@ slew.o $(MLANLIB) $(LDFLAGS)
+
+sample_devices: $(MLANLIB) sample_devices.o
+	$(CC) -o $@ sample_devices.o $(MLANLIB) $(LDFLAGS)
+
+search: $(MLANLIB) search.o
+	$(CC) -o $@ search.o $(MLANLIB) $(LDFLAGS)
+
+lookup: $(MLANLIB) lookup.o
+	$(CC) -o $@ lookup.o $(MLANLIB) $(LDFLAGS)
+
+storage: $(MLANLIB) storage.o
+	$(CC) -o $@ storage.o $(MLANLIB) $(LDFLAGS)
+
+1920: $(MLANLIB) 1920.o
+	$(CC) -o $@ 1920.o $(MLANLIB) $(LDFLAGS)
+
+2406: $(MLANLIB) 2406.o
+	$(CC) -o $@ 2406.o $(MLANLIB) $(LDFLAGS)
+
+2438: $(MLANLIB) 2438.o
+	$(CC) -o $@ 2438.o $(MLANLIB) $(LDFLAGS)
+
+1921dump: $(MLANLIB) 1921dump.o
+	$(CC) -o $@ 1921dump.o $(MLANLIB) $(LDFLAGS)
+
+1921mission: $(MLANLIB) 1921mission.o
+	$(CC) -o $@ 1921mission.o $(MLANLIB) $(LDFLAGS)
+
+mlanscm: mlanscm.o $(MLANLIB)
+	$(CC) -g -o $@ mlanscm.o $(MLANLIB) $(LDFLAGS) `$(GUILECONF) link`
+
+clean:
+	rm -f $(PROGS) $(PROGO)

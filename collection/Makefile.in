@@ -7,7 +7,8 @@ TOPDIR=@top_srcdir@
 VPATH=$(TOPDIR):@srcdir@:.
 
 DEFS=@DEFS@
-CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/collection -I$(TOPDIR)/mymalloc @CFLAGS@ $(DEFS)
+CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mlan -I$(TOPDIR)/collection \
+	-I$(TOPDIR)/mymalloc @CFLAGS@ $(DEFS)
 LDFLAGS=@LDFLAGS@ @LIBS@
 RRDLIB=@RRDLIB@
 POSTGRESLIB=@POSTGRESLIB@
@@ -19,7 +20,7 @@ PROGO=collector.o
 CC=@CC@
 
 collector: $(OBJ) collector.o
-	$(CC) -o $@ $(OBJ) collector.o ../mlan.a \
+	$(CC) -o $@ $(OBJ) collector.o ../mlan/mlan.a \
 		$(LDFLAGS) $(RRDLIB) $(POSTGRESLIB)
 
 clean:

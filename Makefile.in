@@ -13,89 +13,31 @@ GUILECONF=@GUILECONF@
 TOPDIR=@top_srcdir@
 
 DEFS=@DEFS@
-CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mymalloc @CFLAGS@ @GUILEINC@ $(DEFS)
+CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mlan -I$(TOPDIR)/mymalloc \
+	@CFLAGS@ @GUILEINC@ $(DEFS)
 LDFLAGS=@LDFLAGS@ @LIBS@
 RRDLIB=@RRDLIB@
 
+MLANLIB=mlan/mlan.a
+
 VPATH=$(TOPDIR):.
 
-OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o ds2406.o ds2438.o \
-	utility.o mymalloc/mymalloc.o
-PROGS=search lookup sample_devices slew 1921dump 1921mission \
-	1920 storage 2406 2438 @GUILESTUFF@
-PROGO=search.o lookup.o sample_devices.o slew.o 1920.o 1921dump.o \
-	1921mission.o 2406.o 2438.o storage.o
 CC=@CC@
-
-# Lint stuff
-LINT=@LINT@
-LINTFLAGS=-I. @GUILEINC@ $(DEFS) -v -x -u
-LINTS=com.ln ds2480.ln mlan.ln devices.ln ds1920.ln ds1921.ln ds2406.ln \
-	ds2438.ln
-# /Lint stuff
 
 .SUFFIXES: .c .o .l .a .ln
 
-all: $(PROGS)
-
-slew: mlan.a slew.o
-	$(CC) -o $@ slew.o mlan.a $(LDFLAGS)
-
-sample_devices: mlan.a sample_devices.o
-	$(CC) -o $@ sample_devices.o mlan.a $(LDFLAGS)
-
-search: mlan.a search.o
-	$(CC) -o $@ search.o mlan.a $(LDFLAGS)
-
-lookup: mlan.a lookup.o
-	$(CC) -o $@ lookup.o mlan.a $(LDFLAGS)
-
-storage: mlan.a storage.o
-	$(CC) -o $@ storage.o mlan.a $(LDFLAGS)
-
-1920: mlan.a 1920.o ds1920.h
-	$(CC) -o $@ 1920.o mlan.a $(LDFLAGS)
-
-2406: mlan.a 2406.o ds2406.h
-	$(CC) -o $@ 2406.o mlan.a $(LDFLAGS)
-
-2438: mlan.a 2438.o ds2438.h
-	$(CC) -o $@ 2438.o mlan.a $(LDFLAGS)
-
-1921dump: mlan.a 1921dump.o ds1921.h
-	$(CC) -o $@ 1921dump.o mlan.a $(LDFLAGS)
-
-1921mission: mlan.a 1921mission.o ds1921.h
-	$(CC) -o $@ 1921mission.o mlan.a $(LDFLAGS)
-
-mlanscm: mlanscm.o mlan.a
-	$(CC) -g -o $@ mlanscm.o mlan.a $(LDFLAGS) `$(GUILECONF) link`
-
-mlan.a: $(OBJ) mlan.h
-	$(AR) rc $@ $(OBJ)
-	$(RANLIB) $@
-
-mymalloc/mymalloc.o: @top_srcdir@/mymalloc/mymalloc.c
-	-mkdir mymalloc
-	$(CC) $(CFLAGS) -c -o mymalloc/mymalloc.o $(TOPDIR)/mymalloc/mymalloc.c
-
-com.o: mlan.h ds1920.h ds1921.h
-
-ds2480.o: mlan.h ds1920.h ds1921.h
-
-mlan.o: mlan.h ds1920.h ds1921.h commands.h ds2438.h
-
-devices.o: mlan.h ds1920.h ds1921.h
+all:
+	cd mlan && make
+	cd commands && make
+	cd collection && make
 
 distclean: clean
 	cd collection && make clean
-	rm -f Makefile config.cache config.status config.log collection/Makefile
+	rm -f Makefile config.cache config.status config.log \
+		collection/Makefile mlan/Makefile
 
 clean:
-	rm -f $(OBJ) mlan.a $(PROGS) $(PROGO)
-
-lint: $(LINTS)
-	$(LINT) $(LINTFLAGS) $(LINTS)
-
-.c.ln: $<
-	$(LINT) $(LINTFLAGS) -c $<
+	rm -f $(PROGS) $(PROGO)
+	cd mlan && make clean
+	cd commands && make clean
+	cd collection && make clean

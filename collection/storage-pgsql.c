@@ -20,7 +20,7 @@
 #include "data.h"
 #include "collection.h"
 #include "storage-pgsql.h"
-#include "../utility.h"
+#include <utility.h>
 
 #ifdef HAVE_LIBPQ_FE_H
 

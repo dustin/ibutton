@@ -1,0 +1,47 @@
+# Makefile for the mlan library
+#
+# Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
+#
+# arch-tag: 6047-49-118-82-0030187026
+
+SHELL=/bin/sh
+AR=@AR@
+RANLIB=@RANLIB@
+GUILECONF=@GUILECONF@
+
+TOPDIR=@top_srcdir@
+
+DEFS=@DEFS@
+CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mlan -I$(TOPDIR)/mymalloc \
+	@CFLAGS@ @GUILEINC@ $(DEFS)
+LDFLAGS=@LDFLAGS@ @LIBS@
+RRDLIB=@RRDLIB@
+
+VPATH=$(TOPDIR)/mlan:.
+
+OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o ds2406.o ds2438.o \
+	utility.o mymalloc/mymalloc.o
+CC=@CC@
+
+.SUFFIXES: .c .o .l .a .ln
+
+all: mlan.a
+
+mlan.a: $(OBJ) mlan.h
+	$(AR) rc $@ $(OBJ)
+	$(RANLIB) $@
+
+mymalloc/mymalloc.o: $(TOPDIR)/mymalloc/mymalloc.c
+	-mkdir mymalloc
+	$(CC) $(CFLAGS) -c -o mymalloc/mymalloc.o $(TOPDIR)/mymalloc/mymalloc.c
+
+com.o: mlan.h ds1920.h ds1921.h
+
+ds2480.o: mlan.h ds1920.h ds1921.h
+
+mlan.o: mlan.h ds1920.h ds1921.h commands.h ds2438.h
+
+devices.o: mlan.h ds1920.h ds1921.h
+
+clean:
+	rm -f $(OBJ) mlan.a

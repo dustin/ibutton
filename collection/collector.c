@@ -27,7 +27,7 @@
 #endif /* WORKING_PTHREAD */
 
 /* Local includes */
-#include "../utility.h"
+#include <utility.h>
 #include "data.h"
 #include "collection.h"
 #include "storage-pgsql.h"

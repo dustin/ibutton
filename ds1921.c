@@ -366,7 +366,7 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	int year=0;
 	int control=0;
 	time_t t;
-	struct tm tm;
+	struct tm *tm;
 
 	assert(mlan);
 	assert(serial);
@@ -377,14 +377,14 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 
 	/* Set the time */
 	t=time(NULL);
-	gmtime_r(&t, &tm);
-	data.status.clock.seconds=tm.tm_sec;
-	data.status.clock.minutes=tm.tm_min;
-	data.status.clock.hours=tm.tm_hour;
-	data.status.clock.date=tm.tm_mday;
-	data.status.clock.month=tm.tm_mon+1;
-	data.status.clock.year=tm.tm_year+1900;
-	data.status.clock.day=tm.tm_wday+1;
+	tm=gmtime(&t);
+	data.status.clock.seconds=tm->tm_sec;
+	data.status.clock.minutes=tm->tm_min;
+	data.status.clock.hours=tm->tm_hour;
+	data.status.clock.date=tm->tm_mday;
+	data.status.clock.month=tm->tm_mon+1;
+	data.status.clock.year=tm->tm_year+1900;
+	data.status.clock.day=tm->tm_wday+1;
 
 	buffer[0]= ((data.status.clock.seconds/10)<<4)
 		| (data.status.clock.seconds%10);

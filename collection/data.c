@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.8 2002/01/29 21:39:45 dustin Exp $
+ * $Id: data.c,v 1.9 2002/01/29 22:42:21 dustin Exp $
  */
 
 #include <stdio.h>
@@ -50,12 +50,12 @@ char **split(const char *input, const char *delim)
 void freeList(char **list)
 {
 	int i=0;
-	assert(list);
-
-	for(i=0; list[i]!=NULL; i++) {
-		free(list[i]);
+	if(list!=NULL) {
+		for(i=0; list[i]!=NULL; i++) {
+			free(list[i]);
+		}
+		free(list);
 	}
-	free(list);
 }
 
 int listLength(const char **list)
@@ -71,8 +71,10 @@ struct log_datum *parseLogEntry(const char *line)
 {
 	struct log_datum *rv=NULL;
 	struct tm t;
-	char **fields;
-	char **ta;
+	char **fields=NULL;
+	char **ta=NULL;
+	char **extra=NULL;
+	int i=0;
 	uchar serial[MLAN_SERIAL_SIZE];
 
 	assert(line);
@@ -83,10 +85,18 @@ struct log_datum *parseLogEntry(const char *line)
 
 	/* Split the fields */
 	fields=split(line, "\t;");
-	assert(listLength(fields)>=3);
+	if(listLength(fields)<3) {
+		fprintf(stderr, "Not enough data fields in multicast packet:\n\t%s\n",
+			line);
+		goto finished;
+	}
 	/* Split the time */
 	ta=split(fields[0], ": /.");
-	assert(listLength(ta)>=6);
+	if(listLength(ta)<6) {
+		fprintf(stderr, "Not enough data fields in time field:  %s\n",
+			fields[0]);
+		goto finished;
+	}
 
 	t.tm_wday=0;
 	t.tm_yday=0;
@@ -99,18 +109,62 @@ struct log_datum *parseLogEntry(const char *line)
 	t.tm_sec=atoi(ta[5]);
 
 	rv->tv.tv_sec=mktime(&t);
+	if(rv->tv.tv_sec<0) {
+		fprintf(stderr, "Time data made no sense:  %d/%d/%d %d:%d:%d\n",
+			t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
+		goto finished;
+	}
 	rv->tv.tv_usec=(float)(atoi(ta[6]))/1000000.0;
 
 	rv->serial=strdup(fields[1]);
+	assert(rv->serial);
 	rv->reading=atof(fields[2]);
 
 	parseSerial(rv->serial, serial);
+	rv->type=(short)serial[0];
+
+	/* Grab extra arguments and split them */
+	if(listLength(ta)>6) {
+		extra=split(ta[7], "=,");
+	}
 
 	/* Do device-specific-stuff here */
 
+	switch(rv->type) {
+		case DEVICE_1920:
+			for(i=0; (extra!=NULL) && i<listLength(extra); i+=2) {
+				assert(listLength(extra)>=(i+1));
+
+				if(strcmp(extra[i], "l")==0) {
+					rv->dev.dev_1920.low=atof(extra[i+1]);
+				} else if(strcmp(extra[i], "h")==0) {
+					rv->dev.dev_1920.high=atof(extra[i+1]);
+				}
+
+			}
+			break;
+		case DEVICE_1921:
+			for(i=0; (extra!=NULL) && i<listLength(extra); i+=2) {
+				assert(listLength(extra)>=(i+1));
+
+				if(strcmp(extra[i], "r")==0) {
+					rv->dev.dev_1921.sample_rate=atoi(extra[i+1]);
+				} else if(strcmp(extra[i], "s")==0) {
+					rv->dev.dev_1921.mission_ts=atoi(extra[i+1]);
+				}
+
+			}
+			break;
+	}
+
+	/* If we made it this far, it's because the line was a valid datum */
+	rv->isValid=1;
+
+	/* Do final cleanup stuff before returning */
+	finished:
 	freeList(fields);
 	freeList(ta);
-	rv->isValid=1;
+	freeList(extra);
 	return(rv);
 }
 
@@ -124,6 +178,29 @@ void disposeOfLogEntry(struct log_datum *entry)
 
 	free(entry->serial);
 	free(entry);
+}
+
+void
+logDatumPrint(struct log_datum *p)
+{
+	assert(p);
+
+	printf("Datum type of %s is %x.  Reading is %f\n",
+		p->serial, p->type, p->reading);
+	printf("Device specific:\n");
+	switch(p->type) {
+		case DEVICE_1920:
+			printf("\tLow temperature:  %f\n\tHigh Temperature:  %f\n",
+				p->dev.dev_1920.low, p->dev.dev_1920.high);
+			break;
+		case DEVICE_1921:
+			printf("\tStart time:  %d\n\tSample rate:  %d\n",
+				p->dev.dev_1921.mission_ts, p->dev.dev_1921.sample_rate);
+			break;
+		default:
+			printf("\tUnknown device type:  %x\n", p->type);
+			break;
+	}
 }
 
 /*!

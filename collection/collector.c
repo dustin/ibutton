@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: collector.c,v 1.8 2002/01/29 21:36:07 dustin Exp $
+ * $Id: collector.c,v 1.9 2002/01/29 22:42:19 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -61,6 +61,10 @@ static void saveData(struct log_datum *p)
 	verboseprint(1, ("FLUSH:  %s was %.2f at %d\n", p->serial, p->reading,
 			(int)p->tv.tv_sec));
 
+	if(col_verbose>1) {
+		logDatumPrint(p);
+	}
+
 #ifdef HAVE_RRD_H
 	verboseprint(2, ("Saving to RRD.\n"));
 	saveDataRRD(p);
@@ -96,10 +100,11 @@ doFlush()
 		for(i=0, p=tmpqueue; p!=NULL; i++, p=p->next) {
 			struct log_datum *tmp;
 			tmp=parseLogEntry(p->line);
-			if(tmp!=NULL) {
+			assert(tmp); /* Should always return something */
+			if(tmp->isValid == 1) {
 				saveData(tmp);
-				disposeOfLogEntry(tmp);
 			}
+			disposeOfLogEntry(tmp);
 		}
 
 		disposeOfRRDQueue(tmpqueue);

@@ -1,13 +1,15 @@
 /*
  * Copyright (c) 2002  Dustin Sallings
  *
- * $Id: data.h,v 1.7 2002/01/29 21:36:10 dustin Exp $
+ * $Id: data.h,v 1.8 2002/01/29 22:42:22 dustin Exp $
  */
 
 #ifndef DATA_H
 #define DATA_H 1
 
 #include <sys/time.h>
+
+#include <mlan.h>
 
 #ifdef MYMALLOC
 #include <mymalloc.h>
@@ -50,6 +52,8 @@ struct data_queue {
 /* log parsing and disposal */
 struct log_datum *parseLogEntry(const char *);
 void disposeOfLogEntry(struct log_datum *);
+/* debug */
+void logDatumPrint(struct log_datum *);
 
 /* Array stuff */
 char **split(const char *input, const char *delim);

@@ -12,11 +12,7 @@ int main(int argc, char **argv)
 	assert(mlan);
 	/* mlan->debug=5; */
 
-	printf("File descriptor is %d\n", mlan->fd);
-
-	if(mlan->ds2480detect(mlan)==TRUE) {
-		printf("Found a DS2480\n");
-	} else {
+	if(mlan->ds2480detect(mlan)!=TRUE) {
 		printf("Found no DS2480\n");
 	}
 
@@ -27,9 +23,14 @@ int main(int argc, char **argv)
 	}
 
 	for(i=0; i<current; i++) {
+		char *what;
 		printf("Serial[%d]:  ", i);
 		for(j=0; j<MLAN_SERIAL_SIZE; j++) {
 			printf("%02x ", list[i][j]);
+		}
+		what=mlan->serialLookup(mlan, (int)list[i][0]);
+		if(what!=NULL) {
+			printf("-- %s", what);
 		}
 		printf("\n");
 	}

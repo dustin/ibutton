@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.4 1999/12/07 08:04:21 dustin Exp $
+ * $Id: mlan.h,v 1.5 1999/12/07 08:55:16 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -173,6 +173,11 @@ typedef unsigned char uchar;
 #define MLAN_SERIAL_SIZE				8
 #define MAX_SERIAL_NUMS					200
 
+/* Tweaking stuff */
+
+/* Default amount of time before we give up on a read or write */
+#define MLAN_DEFAULT_TIMEOUT			5
+
 #ifndef mlan_debug
 #define mlan_debug(a, b, c) if(a->debug > b) { printf c; }
 #endif
@@ -197,6 +202,10 @@ struct __mlan {
 	int LastDiscrepancy;
 	int LastDevice;
 	int LastFamilyDiscrepancy;
+
+	/* Timeouts */
+	int readTimeout;
+	int writeTimeout;
 
 	unsigned short CRC16;	/* Storage for CRC 16 */
 	uchar SerialNum[MLAN_SERIAL_SIZE];		/* Serial numbers */
@@ -229,6 +238,8 @@ struct __mlan {
 	int (*programpulse)(MLan *mlan);
 	void (*msDelay)(MLan *mlan, int t);
 	void (*copySerial)(MLan *mlan, uchar *in);
+	char *(*serialLookup)(MLan *mlan, int which);
+	void (*registerSerial)(MLan *mlan, int id, char *value);
 
 	/* misc crap */
 	uchar (*dowcrc)(MLan *mlan, uchar x);

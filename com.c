@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: com.c,v 1.4 1999/12/07 08:04:16 dustin Exp $
+ * $Id: com.c,v 1.5 1999/12/07 08:55:12 dustin Exp $
  */
 
 #include <stdio.h>
@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include <mlan.h>
 
@@ -18,6 +19,8 @@ void _com_setbaud(MLan *mlan, int new_baud)
 {
 	struct termios com;
 	int speed;
+
+	assert(mlan);
 
 	mlan_debug(mlan, 2, ("Calling setbaud (%d)\n", new_baud));
 
@@ -72,6 +75,7 @@ void _com_setbaud(MLan *mlan, int new_baud)
 
 void _com_flush(MLan *mlan)
 {
+	assert(mlan);
 	mlan_debug(mlan, 2, ("Calling flush\n"));
 	tcflush(mlan->fd, TCIOFLUSH);
 	/* mlan_debug(mlan, 2, ("Returning from flush\n")); */
@@ -80,6 +84,10 @@ void _com_flush(MLan *mlan)
 int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 {
 	int rv=0, i;
+	time_t start, current;
+
+	assert(mlan);
+	assert(outbuf);
 	
 	/* Flush before we write */
 	mlan->flush(mlan);
@@ -94,6 +102,7 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 		printf("\n");
 	}
 	
+	start=time(NULL);
 	while(rv<outlen) {
 		int tmp;
 		tmp=write(mlan->fd, outbuf+rv, outlen-rv);
@@ -108,6 +117,11 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 				break;
 			}
 		}
+		current=time(NULL);
+		if( (current-start) > mlan->writeTimeout ) {
+			mlan_debug(mlan, 1, ("Timed out on write.\n") );
+			break;
+		}
 	}
 	mlan_debug(mlan, 2, ("Returning from write (%d - %d)\n", rv, errno));
 	return(rv==outlen);
@@ -116,12 +130,16 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 {
 	int rv=0, i;
+	time_t start, current;
+
+	assert(mlan);
 
 	mlan_debug(mlan, 2, ("Calling read(%d)\n", inlen));
 
 	/* Give it some time... */
 	usleep(mlan->usec_per_byte * (inlen+5) + 800);
 
+	start=time(NULL);
 	while(rv<inlen) {
 		int tmp;
 		mlan_debug(mlan, 3, ("Read %d bytes\n", rv) );
@@ -137,6 +155,11 @@ int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 				perror("read");
 				break;
 			}
+		}
+		current=time(NULL);
+		if( (current-start) > mlan->readTimeout) {
+			mlan_debug(mlan, 1, ("Timed out on read.") );
+			break;
 		}
 	}
 
@@ -154,6 +177,7 @@ int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 
 void _com_cbreak(MLan *mlan)
 {
+	assert(mlan);
 	mlan_debug(mlan, 2, ("Calling break\n"));
 	tcsendbreak(mlan->fd, 1);
 	/* mlan_debug(mlan, 2, ("Returning from break\n")); */

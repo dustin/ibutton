@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.4 1999/12/07 08:04:19 dustin Exp $
+ * $Id: mlan.c,v 1.5 1999/12/07 08:55:15 dustin Exp $
  */
 
 #include <stdio.h>
@@ -22,6 +22,9 @@ extern int      _com_read(MLan * mlan, int inlen, uchar * inbuf);
 extern void     _com_cbreak(MLan * mlan);
 extern int      _ds2480_detect(MLan * mlan);
 extern int      _ds2480_changebaud(MLan * mlan, uchar newbaud);
+
+static int initialized=0;
+static char **serial_table;
 
 static          uchar
 dowcrc(MLan * mlan, uchar x)
@@ -52,6 +55,7 @@ dowcrc(MLan * mlan, uchar x)
 		200, 150, 21, 75, 169, 247, 182, 232, 10, 84, 215,
 		137, 107, 53
 	};
+	assert(mlan);
 	mlan->DOWCRC = dscrc_table[mlan->DOWCRC ^ x];
 	return (mlan->DOWCRC);
 }
@@ -60,6 +64,7 @@ dowcrc(MLan * mlan, uchar x)
 static void
 msDelay(MLan *mlan, int t)
 {
+	assert(mlan);
 	mlan_debug(mlan, 3, ("Sleeping %dms\n", t) );
 	usleep(t * 1000);
 }
@@ -69,6 +74,8 @@ static int
 bitacc(int op, int state, int loc, uchar * buf)
 {
 	int             nbyt, nbit;
+
+	assert(buf);
 
 	nbyt = (loc / 8);
 	nbit = loc - (nbyt * 8);
@@ -90,6 +97,8 @@ _mlan_setlevel(MLan *mlan, int newlevel)
 	uchar sendpacket[10],readbuffer[10];
 	int sendlen=0;
 	int rt=FALSE;
+
+	assert(mlan);
 
 	if(newlevel != mlan->level) {
 		/* OK, we need to do this either way. */
@@ -147,6 +156,8 @@ _mlan_touchreset(MLan *mlan)
 	uchar readbuffer[10],sendpacket[10];
 	int sendlen=0;
 
+	assert(mlan);
+
 	mlan->setlevel(mlan, MODE_NORMAL);
 
 	if(mlan->mode != MODSEL_COMMAND) {
@@ -179,6 +190,8 @@ _mlan_touchreset(MLan *mlan)
 static int
 _mlan_first(MLan * mlan, int DoReset, int OnlyAlarmingDevices)
 {
+	assert(mlan);
+
 	mlan->LastDiscrepancy = 0;
 	mlan->LastDevice = FALSE;
 	mlan->LastFamilyDiscrepancy = 0;
@@ -193,6 +206,8 @@ _mlan_next(MLan * mlan, int DoReset, int OnlyAlarmingDevices)
 	uchar           TempSerialNum[MLAN_SERIAL_SIZE];
 	uchar           readbuffer[20], sendpacket[40];
 	int             sendlen = 0;
+
+	assert(mlan);
 
 	/* If the last was the last, reset the search */
 	if (mlan->LastDevice) {
@@ -320,9 +335,45 @@ static void
 _copy_serial(MLan *mlan, uchar *dest)
 {
 	int i;
+
 	for(i=0; i<MLAN_SERIAL_SIZE; i++) {
 		dest[i]=mlan->SerialNum[i];
 	}
+}
+
+void
+_mlan_init_table()
+{
+	serial_table = (char **)calloc(256, sizeof(char *));
+	assert(serial_table);
+
+	/* These are things we know */
+	serial_table[0x09]=strdup("DS9097u 1-wire to RS232 converter");
+	serial_table[0x10]=strdup("DS1820/1920 Temperature Sensor");
+	serial_table[0x12]=strdup("DS2407 2 Channel Switch (wind dir)");
+	serial_table[0x96]=strdup("DS199550-400 Java Button");
+}
+
+void
+_mlan_register_serial(MLan *mlan, int id, char *str)
+{
+	assert(id < 256);
+	assert(id >= 0);
+	assert(str != NULL);
+
+	if(serial_table[id]!=NULL) {
+		free(serial_table[id]);
+	}
+
+	serial_table[id]=strdup(str);
+}
+
+char *
+_mlan_serial_lookup(MLan *mlan, int id)
+{
+	assert(id < 256);
+	assert(id >= 0);
+	return(serial_table[id]);
 }
 
 MLan           *
@@ -331,6 +382,10 @@ mlan_init(char *port, int baud_rate)
 	MLan           *mlan;
 
 	assert(port);
+
+	if(initialized==0) {
+		_mlan_init_table();
+	}
 
 	mlan = calloc(1, sizeof(MLan));
 	assert(mlan);
@@ -358,12 +413,17 @@ mlan_init(char *port, int baud_rate)
 	mlan->dowcrc = dowcrc;
 	mlan->msDelay = msDelay;
 	mlan->copySerial = _copy_serial;
+	mlan->serialLookup = _mlan_serial_lookup;
+	mlan->registerSerial = _mlan_register_serial;
 
 	mlan->debug = 0;
 	mlan->mode = MODSEL_COMMAND;
 	mlan->baud = PARMSET_9600;
 	mlan->speed = SPEEDSEL_FLEX;
 	mlan->level = MODE_NORMAL;
+
+	mlan->readTimeout = MLAN_DEFAULT_TIMEOUT;
+	mlan->writeTimeout = MLAN_DEFAULT_TIMEOUT;
 
 	mlan->fd = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (mlan->fd < 0) {

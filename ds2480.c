@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds2480.c,v 1.4 1999/12/07 08:04:18 dustin Exp $
+ * $Id: ds2480.c,v 1.5 1999/12/07 08:55:14 dustin Exp $
  */
 
 #include <stdio.h>
@@ -17,6 +17,8 @@ int _ds2480_detect(MLan *mlan)
 {
 	uchar sendpacket[10],readbuffer[10];
 	int sendlen=0;
+
+	assert(mlan);
 
 	mlan_debug(mlan, 2, ("Calling ds2480_detect\n"));
 
@@ -67,6 +69,8 @@ int _ds2480_changebaud(MLan *mlan, uchar newbaud)
 	int rt=FALSE;
 	uchar readbuffer[5],sendpacket[5],sendpacket2[5];
 	int sendlen=0,sendlen2=0;
+
+	assert(mlan);
 
 	if(mlan->baud == newbaud) {
 		return(TRUE);

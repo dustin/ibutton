@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.5 2000/07/15 23:05:39 dustin Exp $
+ * $Id: sample_devices.c,v 1.6 2000/07/15 23:14:26 dustin Exp $
  */
 
 #include <stdio.h>
@@ -176,7 +176,6 @@ main(int argc, char **argv)
 				mlan=init(busdev);
 				if(mlan==NULL) {
 					log_error("Init failed, sleeping...\n");
-					fprintf(stderr, "Reinit failed, sleeping...\n");
 					sleep(15);
 				} else {
 					log_error("Initialization successful.\n");
@@ -194,8 +193,6 @@ main(int argc, char **argv)
 			alarm(5);
 			rslt = mlan->next(mlan, TRUE, FALSE);
 		}
-		fprintf(stderr, "Count is %d\n", list_count);
-		fflush(stderr);
 		failures=0;
 		/* Loop through the list and gather samples */
 		for(i=0; i<list_count; i++) {
@@ -204,7 +201,7 @@ main(int argc, char **argv)
 				case 0x10:
 					alarm(5);
 					sample_str=get_sample(mlan, list[i]);
-					if(sample_str[0]==0x00) {
+					if(sample_str==NULL) {
 						failures++;
 						sample_str="Error getting sample";
 					}

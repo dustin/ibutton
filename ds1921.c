@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.c,v 1.25 2002/01/29 07:43:40 dustin Exp $
+ * $Id: ds1921.c,v 1.26 2002/01/29 09:06:11 dustin Exp $
  */
 #include <stdio.h>
 #include <assert.h>
@@ -238,7 +238,7 @@ static int findTimeOffset(int i, struct ds1921_data d) {
 	return(i);
 }
 
-static char *ds1921_sample_time(int i, struct ds1921_data d)
+char *ds1921_sample_time(int i, struct ds1921_data d)
 {
 	static char result[80];
 	time_t t=0;
@@ -558,6 +558,8 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 	}
 
 	getSummary(&data);
+
+	data.valid=1;
 
 	return(data);
 }

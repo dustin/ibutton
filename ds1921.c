@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.c,v 1.24 2001/12/08 12:06:55 dustin Exp $
+ * $Id: ds1921.c,v 1.25 2002/01/29 07:43:40 dustin Exp $
  */
 #include <stdio.h>
 #include <assert.h>
@@ -254,6 +254,9 @@ static char *ds1921_sample_time(int i, struct ds1921_data d)
 	return(result);
 }
 
+/*!
+ * Display the details from the 1921 data structure to stdout.
+ */
 void printDS1921(struct ds1921_data d)
 {
 	int i;
@@ -312,10 +315,9 @@ void printDS1921(struct ds1921_data d)
 
 	printf("Temperature samples:\n");
 	for(i=0; i<d.n_samples; i++) {
-		float temp=d.samples[i].sample;
-		if(temp>-40.0) {
-			printf("\tSample %04d from %s is %.2ff (%.2fc)\n",
-				i, ds1921_sample_time(d.samples[i].offset, d), temp,
+		if(d.samples[i].sample>-40.0) {
+			printf("\tSample %04d from %s is %.2f\n",
+				i, ds1921_sample_time(d.samples[i].offset, d),
 				d.samples[i].sample);
 		}
 	}
@@ -365,6 +367,9 @@ static void getSummary(struct ds1921_data *d)
 	}
 }
 
+/*!
+ * Mission a 1921 with the given ds1921_data struct.
+ */
 int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 {
 	uchar buffer[64];
@@ -475,6 +480,9 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	return(TRUE);
 }
 
+/*!
+ * Get the data from the given 1921.
+ */
 struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 {
 	struct ds1921_data data;

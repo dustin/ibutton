@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.3 2002/01/25 09:05:18 dustin Exp $
+ * $Id: data.c,v 1.4 2002/01/26 08:24:37 dustin Exp $
  */
 
 #include <stdio.h>
@@ -122,7 +122,7 @@ void disposeOfLogEntry(struct log_datum *entry)
 	free(entry);
 }
 
-void appendToRRDQueue(struct rrd_queue *dl, struct log_datum *datum)
+void appendToRRDQueue(struct data_queue *dl, struct log_datum *datum)
 {
 	struct data_list *p=NULL;
 	struct data_list *newe=NULL;
@@ -159,7 +159,7 @@ static void freeDataList(struct data_list *list)
 	free(list);
 }
 
-void disposeOfRRDQueue(struct rrd_queue *dl)
+void disposeOfRRDQueue(struct data_queue *dl)
 {
 	assert(dl);
 	if(dl->list != NULL) {
@@ -168,10 +168,10 @@ void disposeOfRRDQueue(struct rrd_queue *dl)
 	free(dl);
 }
 
-struct rrd_queue *newRRDQueue()
+struct data_queue *newRRDQueue()
 {
-	struct rrd_queue *rv;
-	rv=calloc(sizeof(struct rrd_queue), 1);
+	struct data_queue *rv;
+	rv=calloc(sizeof(struct data_queue), 1);
 	return(rv);
 }
 

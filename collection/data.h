@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings
  *
- * $Id: data.h,v 1.3 2002/01/25 09:05:19 dustin Exp $
+ * $Id: data.h,v 1.4 2002/01/26 08:24:39 dustin Exp $
  */
 
 #ifndef DATA_H
@@ -31,7 +31,7 @@ struct data_list {
 	struct data_list *next;
 };
 
-struct rrd_queue {
+struct data_queue {
 	struct data_list *list;
 };
 
@@ -45,8 +45,8 @@ void freeList(char **list);
 int listLength(const char **list);
 
 /* Linked list stuff */
-void appendToRRDQueue(struct rrd_queue *dl, struct log_datum *datum);
-void disposeOfRRDQueue(struct rrd_queue *dl);
-struct rrd_queue *newRRDQueue();
+void appendToRRDQueue(struct data_queue *dl, struct log_datum *datum);
+void disposeOfRRDQueue(struct data_queue *dl);
+struct data_queue *newRRDQueue();
 
 #endif

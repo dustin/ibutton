@@ -8,14 +8,15 @@ LDFLAGS=@LDFLAGS@ @LIBS@
 RRDLIB=@RRDLIB@
 POSTGRESLIB=@POSTGRESLIB@
 
-OBJ=data.o
-PROGS=mrecv
-PROGO=mrecv.o
+OBJ=data.o storage-pgsql.o storage-rrd.o
+PROGS=collector
+PROGO=collector.o
 
 CC=@CC@
 
-mrecv: $(OBJ) mrecv.o
-	$(CC) -o $@ data.o mrecv.o ../utility.o $(LDFLAGS) $(RRDLIB) $(POSTGRESLIB)
+collector: $(OBJ) collector.o
+	$(CC) -o $@ $(OBJ) collector.o ../utility.o \
+		$(LDFLAGS) $(RRDLIB) $(POSTGRESLIB)
 
 clean:
 	rm -f $(OBJ) $(PROGO) $(PROGS)

@@ -33,6 +33,15 @@ int main(int argc, char **argv)
 			printf("-- %s", what);
 		}
 		printf("\n");
+
+		/* Sample is abstracted, but the application needs to know what to
+		 * do with it, we'll just look at DS1920's here.  */
+		if((int)list[i][0]==0x10) {
+			float temp;
+			if(sample(mlan, list[i], (void *)&temp)) {
+				printf("\tTemperature reading:  %2f\n", temp);
+			}
+		}
 	}
 
 	return(0);

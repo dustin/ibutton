@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.5 1999/12/07 08:55:16 dustin Exp $
+ * $Id: mlan.h,v 1.6 1999/12/07 10:09:04 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -227,8 +227,12 @@ struct __mlan {
 	int (*first)(MLan *mlan, int DoReset, int OnlyAlarmingDevices);
 	int (*next)(MLan *mlan, int DoReset, int OnlyAlarmingDevices);
 
-	/* Misc commands and stuff */
+	/* MLAN functions */
+	int (*access)(MLan *mlan, uchar *serial);
+	int (*block)(MLan *mlan, int doreset, uchar *buf, int len);
 	int (*reset)(MLan *mlan);
+
+	/* Misc commands and stuff */
 	int (*setlevel)(MLan *mlan,int newlevel);
 	int (*touchbit)(MLan *mlan, int sendbit);
 	int (*writebyte)(MLan *mlan, int sendbyte);
@@ -246,5 +250,9 @@ struct __mlan {
 };
 
 MLan *mlan_init(char *port, int baud_rate);
+
+/* Devices */
+int sample(MLan *mlan, uchar *serial, void *data);
+
 
 #endif /* MLAN_H */

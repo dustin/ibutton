@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.5 1999/12/07 08:55:15 dustin Exp $
+ * $Id: mlan.c,v 1.6 1999/12/07 10:09:02 dustin Exp $
  */
 
 #include <stdio.h>
@@ -336,6 +336,9 @@ _copy_serial(MLan *mlan, uchar *dest)
 {
 	int i;
 
+	assert(mlan);
+	assert(dest);
+
 	for(i=0; i<MLAN_SERIAL_SIZE; i++) {
 		dest[i]=mlan->SerialNum[i];
 	}
@@ -348,13 +351,25 @@ _mlan_init_table()
 	assert(serial_table);
 
 	/* These are things we know */
+	serial_table[0x01]=strdup("DS1990 Serial Number iButton");
+	serial_table[0x02]=strdup("DS1991 Multi-key iButton");
+	serial_table[0x04]=strdup("DS1992/1993/1994 Memory iButton");
 	serial_table[0x09]=strdup("DS9097u 1-wire to RS232 converter");
+	serial_table[0x0a]=strdup("DS1995 64kbit Memory iButton");
+	serial_table[0x0b]=strdup("DS1985 16kbit Add-only iButton");
+	serial_table[0x0c]=strdup("DS1986 64kbit Memory iButton");
+	serial_table[0x0f]=strdup("DS1986 64kbit Add-only iButton");
 	serial_table[0x10]=strdup("DS1820/1920 Temperature Sensor");
 	serial_table[0x12]=strdup("DS2407 2 Channel Switch (wind dir)");
+	serial_table[0x14]=strdup("DS1971 256-bit EEPROM iButton");
+	serial_table[0x18]=strdup("DS1962/1963 Monetary iButton");
+	serial_table[0x1a]=strdup("DS1963L Monetary iButton");
+	serial_table[0x21]=strdup("DS1921 Thermochron");
+	serial_table[0x23]=strdup("DS1973 4kbit EEPROM iButton");
 	serial_table[0x96]=strdup("DS199550-400 Java Button");
 }
 
-void
+static void
 _mlan_register_serial(MLan *mlan, int id, char *str)
 {
 	assert(id < 256);
@@ -368,12 +383,114 @@ _mlan_register_serial(MLan *mlan, int id, char *str)
 	serial_table[id]=strdup(str);
 }
 
-char *
+static char *
 _mlan_serial_lookup(MLan *mlan, int id)
 {
 	assert(id < 256);
 	assert(id >= 0);
 	return(serial_table[id]);
+}
+
+static int
+_mlan_block(MLan *mlan, int doreset, uchar *buf, int len)
+{
+	uchar sendpacket[150];
+	int sendlen=0, pos=0, i=0;
+
+	assert(mlan);
+	assert(buf);
+
+	if(len>64) {
+		return(FALSE);
+	}
+
+	if(doreset) {
+		if(! (mlan->reset(mlan))) {
+			return(FALSE);
+		}
+	}
+
+	if(mlan->mode != MODSEL_DATA) {
+		mlan->mode=MODSEL_DATA;
+		sendpacket[sendlen++] = MODE_DATA;
+	}
+
+	pos=sendlen;
+	for(i=0; i<len; i++) {
+		sendpacket[sendlen++]=buf[i];
+		if(buf[i]==MODE_COMMAND)
+			sendpacket[sendlen++] = buf[i];
+	}
+
+	if(mlan->write(mlan, sendlen, sendpacket)) {
+		if(mlan->read(mlan, len, buf) == len) {
+			return(TRUE);
+		}
+	}
+
+	/* If the above failed, resync */
+	mlan->ds2480detect(mlan);
+	return(FALSE);
+}
+
+static int
+_mlan_access(MLan *mlan, uchar *serial)
+{
+	uchar TranBuf[MLAN_SERIAL_SIZE + 1];
+	int i;
+
+	assert(mlan);
+	assert(serial);
+
+	if(mlan->reset(mlan)) {
+		TranBuf[0]=0x55;
+		for(i=1; i<MLAN_SERIAL_SIZE + 1; i++) {
+			TranBuf[i]=serial[i-1];
+		}
+
+		if(mlan->block(mlan, FALSE, TranBuf, MLAN_SERIAL_SIZE + 1)) {
+			for(i=1; i<MLAN_SERIAL_SIZE + 1; i++) {
+				if(TranBuf[i] != serial[i-1]) {
+					return(FALSE);
+				}
+			}
+			if(TranBuf[0]!=0x55)
+				return(FALSE);
+			else
+				return(TRUE);
+		}
+	}
+	/* If the reset failed, return false */
+	return(FALSE);
+}
+
+static int
+_mlan_touchbyte(MLan *mlan, int byte)
+{
+	uchar readbuffer[10], sendpacket[10];
+	int sendlen=0;
+
+	assert(mlan);
+
+	mlan->level=MODE_NORMAL;
+
+	if(mlan->mode != MODSEL_DATA) {
+		mlan->mode=MODSEL_DATA;
+		sendpacket[sendlen++] = MODE_DATA;
+	}
+
+	sendpacket[sendlen++] = (uchar)byte;
+
+	if (byte == MODE_COMMAND)
+		sendpacket[sendlen++] = (uchar)byte;
+
+	if(mlan->write(mlan, sendlen, sendpacket)) {
+		if(mlan->read(mlan, 1, readbuffer)==1) {
+			return((int)readbuffer[0]);
+		}
+	}
+	mlan->ds2480detect(mlan);
+	return(0);
 }
 
 MLan           *
@@ -404,7 +521,12 @@ mlan_init(char *port, int baud_rate)
 	/* Search functions */
 	mlan->first = _mlan_first;
 	mlan->next = _mlan_next;
+
+	/* MLan functions */
 	mlan->reset = _mlan_touchreset;
+	mlan->touchbyte = _mlan_touchbyte;
+	mlan->access = _mlan_access;
+	mlan->block = _mlan_block;
 
 	/* Control functions */
 	mlan->setlevel=_mlan_setlevel;

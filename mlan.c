@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.16 2001/01/17 09:45:32 dustin Exp $
+ * $Id: mlan.c,v 1.17 2001/01/18 18:47:40 dustin Exp $
  */
 
 #include <stdio.h>
@@ -399,7 +399,7 @@ _mlan_init_table(void)
 	serial_table[0x0c]=strdup("DS1986 64kbit Memory iButton");
 	serial_table[0x0f]=strdup("DS1986 64kbit Add-only iButton");
 	serial_table[0x10]=strdup("DS1820/1920 Temperature Sensor");
-	serial_table[0x12]=strdup("DS2407 2 Channel Switch)");
+	serial_table[0x12]=strdup("DS2407 2 Channel Switch");
 	serial_table[0x14]=strdup("DS1971 256-bit EEPROM iButton");
 	serial_table[0x18]=strdup("DS1962/1963 Monetary iButton");
 	serial_table[0x1a]=strdup("DS1963L Monetary iButton");

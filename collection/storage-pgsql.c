@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: storage-pgsql.c,v 1.1 2002/01/26 08:24:42 dustin Exp $
+ * $Id: storage-pgsql.c,v 1.2 2002/01/26 08:40:33 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -31,9 +31,6 @@ struct pg_config_t pg_config;
 static PGconn *dbConn=NULL;
 
 #endif /* HAVE_LIBPQ_FE_H */
-
-/* This holds the multicast socket */
-static int msocket=0;
 
 #ifdef HAVE_LIBPQ_FE_H
 

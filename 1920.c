@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 	if(argc<2 || argc==3 || argc>4) {
 		fprintf(stderr, "Usage:  %s serial_number [low_alarm high_alarm]\n",
 			argv[0]);
-		fprintf(stderr, "Temperatures given in farenheit.\n");
+		fprintf(stderr, "Temperatures given in celsius.\n");
 		exit(1);
 	}
 	serial_in=argv[1];
@@ -63,8 +63,8 @@ int main(int argc, char **argv)
 	/* If we have a high and a low, use them. */
 	if(argc==4) {
 		memset(&data, 0x00, sizeof(data));
-		data.temp_low=ftoc(atof(argv[2]));
-		data.temp_hi=ftoc(atof(argv[3]));
+		data.temp_low=atof(argv[2]);
+		data.temp_hi=atof(argv[3]);
 		printf("Setting parameters...");
 		fflush(stdout);
 		setDS1920Params(mlan, serial, data);

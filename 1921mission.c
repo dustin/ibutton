@@ -14,7 +14,7 @@ static void showUsage(char *cmd)
 	fprintf(stderr, "Usage:  %s [-r] [-s sample_rate] [-d mission_delay]\n"
 		"\t\t[-l low_alert] [-h high_alert] serial_number\n",
 			cmd);
-	fprintf(stderr, "Temperature is given in degrees farenheit.\n");
+	fprintf(stderr, "Temperature is given in degrees celsius.\n");
 	exit(-1);
 }
 
@@ -37,8 +37,8 @@ int main(int argc, char **argv)
 	memset(&data, 0x00, sizeof(data));
 
 	/* Defaults */
-	data.status.low_alarm=ftoc(-40);
-	data.status.high_alarm=ftoc(185);
+	data.status.low_alarm=-40; /* Damned cold */
+	data.status.high_alarm=85; /* Damned hot */
 	data.status.sample_rate=15;
 
 	/* Parse the arguments */
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 					fprintf(stderr, "Invalid low temperature:  %s\n", optarg);
 					showUsage(cmd);
 				}
-				data.status.low_alarm=ftoc(temp);
+				data.status.low_alarm=temp;
 				data.status.control|=CONTROL_HI_ALARM_ENABLED;
 				break;
 			case 'h':
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 					fprintf(stderr, "Invalid high temperature:  %s\n", optarg);
 					showUsage(cmd);
 				}
-				data.status.high_alarm=ftoc(temp);
+				data.status.high_alarm=temp;
 				data.status.control|=CONTROL_LOW_ALARM_ENABLED;
 				break;
 			case '?':

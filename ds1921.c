@@ -310,11 +310,16 @@ static void decodeAlarms(uchar *buffer, struct ds1921_data *d)
 static void getSummary(struct ds1921_data *d)
 {
 	if(d->status.status&STATUS_MISSION_IN_PROGRESS) {
-		sprintf(d->summary, "Mission in progress since "
-							"%04d/%02d/%02d %02d:%02d:00",
-			d->status.mission_ts.year, d->status.mission_ts.month,
-			d->status.mission_ts.date,
-			d->status.mission_ts.hours, d->status.mission_ts.minutes);
+		if(d->status.mission_delay>0) {
+			sprintf(d->summary, "Mission begins in %d minutes",
+				d->status.mission_delay);
+		} else {
+			sprintf(d->summary, "Mission in progress since "
+								"%04d/%02d/%02d %02d:%02d:00",
+				d->status.mission_ts.year, d->status.mission_ts.month,
+				d->status.mission_ts.date,
+				d->status.mission_ts.hours, d->status.mission_ts.minutes);
+		}
 	} else {
 		sprintf(d->summary, "%s", "No mission in progress.");
 	}

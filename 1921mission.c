@@ -14,7 +14,7 @@ static void showUsage(char *cmd)
 	fprintf(stderr, "Usage:  %s [-r] [-s sample_rate] [-d mission_delay]\n"
 		"\t\t[-l low_alert] [-h high_alert] serial_number\n",
 			cmd);
-	fprintf(stderr, "Temperature is given in degrees farenheight.\n");
+	fprintf(stderr, "Temperature is given in degrees farenheit.\n");
 }
 
 int main(int argc, char **argv)

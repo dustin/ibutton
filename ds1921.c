@@ -371,6 +371,22 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	}
 	buffer[6]=((year/10)<<4) | (year%10);
 
+	/* Alarms, uncommenting this block will cause the 1921 to alarm every
+	 * second. */
+	/*
+	buffer[7]=0x80;
+	buffer[8]=0x80;
+	buffer[9]=0x80;
+	buffer[10]=0x80;
+	*/
+
+	/* Low threshold */
+	buffer[11]=do1921temp_convert_in(data.status.low_alarm);
+	buffer[12]=do1921temp_convert_in(data.status.high_alarm);
+
+	/* Set the sample rate */
+	buffer[13]=data.status.sample_rate;
+
 	/* Control data */
 	control=data.status.control;
 	buffer[14]=control|CONTROL_MISSION_ENABLED
@@ -378,13 +394,6 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 
 	buffer[19]=(data.status.mission_delay>>8);
 	buffer[18]=(data.status.mission_delay & 0xFF);
-
-	/* Set the sample rate */
-	buffer[13]=data.status.sample_rate;
-
-	/* Low threshold */
-	buffer[11]=do1921temp_convert_in(data.status.low_alarm);
-	buffer[12]=do1921temp_convert_in(data.status.high_alarm);
 
 	/* Send it on */
 	if(mlan->writeScratchpad(mlan, serial, 16, 32, buffer)!=TRUE) {

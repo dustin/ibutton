@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlanscm.c,v 1.6 2001/12/10 20:54:17 dustin Exp $
+ * $Id: mlanscm.c,v 1.7 2001/12/10 21:09:25 dustin Exp $
  */
 
 #include <stdio.h>
@@ -16,7 +16,19 @@
 
 /* This allows me to do a throw with two string arguments (symbol and
  * error) and does everything properly. */
-#define THROW(a, b) scm_throw(gh_symbol2scm(a), scm_list_1(gh_str02scm(b)))
+#define THROW(a, b) scm_throw(gh_symbol2scm(a), SCM_LIST1(gh_str02scm(b)))
+
+/* This is deprecated in newer versions, but doesn't exist in older
+ * versions.  */
+#ifdef SCM_MAJOR_VERSION
+# if ((SCM_MAJOR_VERSION>=1) && (SCM_MINOR_VERSION>=5))
+#  define MAKE_SUB scm_c_define_gsubr
+# endif
+#endif
+
+#ifndef MAKE_SUB
+# define MAKE_SUB scm_make_gsubr
+#endif
 
 static long mlan_tag=-1;
 
@@ -36,7 +48,7 @@ static SCM make_mlan(SCM dev, SCM debuglevel)
 	mlan=mlan_init(dev_string, PARMSET_9600);
 	free(dev_string);
 	if(mlan==NULL) {
-		THROW("init-failed", "MLan initialization failed");
+		THROW("init-failed", "Failed to open and init port");
 	}
 
 	/* Check to see if there's a debug level passed in */
@@ -47,7 +59,9 @@ static SCM make_mlan(SCM dev, SCM debuglevel)
 	}
 
 	init_rv=mlan->ds2480detect(mlan);
-	assert(init_rv==TRUE);
+	if(init_rv!=TRUE) {
+		THROW("init-failed", "Failed to detect DS2480");
+	}
 
 	SCM_NEWCELL(mlan_smob);
 	SCM_SETCDR(mlan_smob, (int)mlan);
@@ -317,15 +331,15 @@ void init_mlan_type()
 	scm_set_smob_free(mlan_tag, free_mlan);
 
 	/* Subs */
-	scm_c_define_gsubr("mlan-init", 1, 0, 1, make_mlan);
-	scm_c_define_gsubr("mlanp", 1, 0, 0, mlan_p);
-	scm_c_define_gsubr("mlan-search", 1, 0, 0, mlan_search);
-	scm_c_define_gsubr("mlan-access", 2, 0, 0, mlan_access);
-	scm_c_define_gsubr("mlan-touchbyte", 2, 0, 0, mlan_touchbyte);
-	scm_c_define_gsubr("mlan-setlevel", 2, 0, 0, mlan_setlevel);
-	scm_c_define_gsubr("mlan-msdelay", 2, 0, 0, mlan_msdelay);
-	scm_c_define_gsubr("mlan-block", 3, 0, 0, mlan_block);
-	scm_c_define_gsubr("mlan-getblock", 4, 0, 0, mlan_getblock);
+	MAKE_SUB("mlan-init", 1, 0, 1, make_mlan);
+	MAKE_SUB("mlanp", 1, 0, 0, mlan_p);
+	MAKE_SUB("mlan-search", 1, 0, 0, mlan_search);
+	MAKE_SUB("mlan-access", 2, 0, 0, mlan_access);
+	MAKE_SUB("mlan-touchbyte", 2, 0, 0, mlan_touchbyte);
+	MAKE_SUB("mlan-setlevel", 2, 0, 0, mlan_setlevel);
+	MAKE_SUB("mlan-msdelay", 2, 0, 0, mlan_msdelay);
+	MAKE_SUB("mlan-block", 3, 0, 0, mlan_block);
+	MAKE_SUB("mlan-getblock", 4, 0, 0, mlan_getblock);
 
 	/* Constants */
 	gh_define("mlan-mode-normal", gh_int2scm(0x00));

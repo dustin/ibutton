@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.21 2002/01/30 09:44:03 dustin Exp $
+ * $Id: mlan.h,v 1.22 2002/01/30 09:51:20 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -15,8 +15,6 @@
 
 /* Need a uchar */
 typedef unsigned char uchar;
-/* Need a ushort */
-typedef unsigned short ushort;
 
 #define WRITE_FUNCTION 1
 #define READ_FUNCTION  0   
@@ -287,7 +285,7 @@ struct __mlan {
 
 	/* misc crap */
 	uchar (*dowcrc)(MLan *mlan, uchar x);
-	uchar (*docrc16)(MLan *mlan, ushort x);
+	ushort (*docrc16)(MLan *mlan, ushort x);
 };
 
 MLan *mlan_init(char *port, int baud_rate);

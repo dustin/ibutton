@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlanscm.c,v 1.7 2001/12/10 21:09:25 dustin Exp $
+ * $Id: mlanscm.c,v 1.8 2001/12/10 21:34:02 dustin Exp $
  */
 
 #include <stdio.h>
@@ -235,7 +235,7 @@ static SCM mlan_block(SCM mlan_smob, SCM do_reset, SCM bytes)
 	SCM rv=SCM_EOL;
 	SCM lit=SCM_EOL;
 	uchar send_block[30];
-	int send_cnt=0;
+	int send_cnt=0, crcblocks=0;
 	int tmp=0;
 
 	/* Check types */
@@ -261,6 +261,9 @@ static SCM mlan_block(SCM mlan_smob, SCM do_reset, SCM bytes)
 			THROW("invalid-argument",
 				"byte value must be between 0 and 255 (inclusive)");
 		}
+		if(bv==0xff) {
+			crcblocks++;
+		}
 		send_block[send_cnt++]=bv;
 	}
 
@@ -271,7 +274,7 @@ static SCM mlan_block(SCM mlan_smob, SCM do_reset, SCM bytes)
 
 	/* CRC */
 	mlan->DOWCRC=0;
-	for(tmp=send_cnt-9; tmp<send_cnt; tmp++)
+	for(tmp=send_cnt-crcblocks; tmp<send_cnt; tmp++)
 		mlan->dowcrc(mlan, send_block[tmp]);
 
 	if(mlan->DOWCRC!=0) {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlanscm.c,v 1.8 2001/12/10 21:34:02 dustin Exp $
+ * $Id: mlanscm.c,v 1.9 2001/12/11 08:26:06 dustin Exp $
  */
 
 #include <stdio.h>
@@ -253,7 +253,7 @@ static SCM mlan_block(SCM mlan_smob, SCM do_reset, SCM bytes)
 	for(lit=bytes; SCM_CONSP(lit); lit=SCM_CDR(lit)) {
 		SCM car=SCM_CAR(lit);
 		int bv=0;
-		if(!SCM_INUM(car)) {
+		if(!SCM_INUMP(car)) {
 			THROW("invalid-argument", "MLan block must contain only ints");
 		}
 		bv=SCM_INUM(car);
@@ -325,6 +325,30 @@ static SCM mlan_getblock(SCM mlan_smob, SCM serial, SCM page, SCM pages)
 	return(rv);
 }
 
+SCM mlan_parse_serial(SCM mlan_smob, SCM serial)
+{
+	MLan *mlan=NULL;
+	uchar ser[MLAN_SERIAL_SIZE];
+	char *serial_str=NULL;
+	SCM rv=SCM_EOL;
+	int i=0;
+
+	mlan=mlan_getmlan(mlan_smob, "mlan-parse-serial");
+
+	SCM_ASSERT(SCM_NIMP(serial) && SCM_STRINGP(serial), serial,
+		SCM_ARG1, "mlan-parse-serial");
+
+	serial_str=gh_scm2newstr(serial, NULL);
+	mlan->parseSerial(mlan, serial_str, ser);
+	free(serial_str);
+
+	for(i=(MLAN_SERIAL_SIZE-1); i>=0; i--) {
+		rv=gh_cons(gh_int2scm(ser[i]), rv);
+	}
+
+	return(rv);
+}
+
 void init_mlan_type()
 {
 	mlan_tag=scm_make_smob_type("mlan", sizeof(MLan));
@@ -343,6 +367,7 @@ void init_mlan_type()
 	MAKE_SUB("mlan-msdelay", 2, 0, 0, mlan_msdelay);
 	MAKE_SUB("mlan-block", 3, 0, 0, mlan_block);
 	MAKE_SUB("mlan-getblock", 4, 0, 0, mlan_getblock);
+	MAKE_SUB("mlan-parse-serial", 2, 0, 0, mlan_parse_serial);
 
 	/* Constants */
 	gh_define("mlan-mode-normal", gh_int2scm(0x00));

@@ -1,20 +1,12 @@
 #!./mlanscm -s
 !#
 ; Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
-; $Id: 1920.scm,v 1.2 2001/12/11 07:27:31 dustin Exp $
+; $Id: 1920.scm,v 1.3 2001/12/11 08:26:07 dustin Exp $
 (define ds1920-convert-temperature #x44)
 (define ds1920-read-scratchpad #xbe)
 (define ds1920-write-scratchpad #x4e)
 (define ds1920-copy-scratchpad #x48)
 (define ds1920-match-rom #x55)
-
-; This needs to be in the common libs
-(define (mlan-parse-serial-old ser)
-  (do
-	((rv '() rv) (i 0 (+ i 2)))
-	((>= i (string-length ser)) rv)
-	(set! rv (append rv (list (string->number (substring ser i (+ i 2)) 16))))))
-
 
 ; Debug printer
 (define (mlan-debug . x)
@@ -32,14 +24,18 @@
 	(if (<= lv 0)
 	  (set! lv (logior #x80 (abs lv))))
 	; Put the data in the scratch pad
+	(mlan-debug "Sending to scratchpad")
 	(mlan-block mcon #f (list ds1920-write-scratchpad hv lv))
 	; match ROM -- not sure why, but this is what I did in C
-	(mlan-block mcon #f (append
+	(mlan-debug "Matching and copying scratchpad.")
+	(mlan-block mcon #t (append
 						  (list ds1920-match-rom)
-						  (mlan-parse-serial serial)
+						  (mlan-parse-serial mcon serial)
 						  (list ds1920-copy-scratchpad)))
+	(mlan-debug "Setting mode to strong5")
 	(mlan-setlevel mcon mlan-mode-strong5)
 	(mlan-msdelay mcon 500)
+	(mlan-debug "Setting mode to normal")
 	(mlan-setlevel mcon mlan-mode-normal)))
 
 

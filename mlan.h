@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.2 1999/09/22 07:49:59 dustin Exp $
+ * $Id: mlan.h,v 1.3 1999/12/07 05:37:30 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -168,11 +168,6 @@ typedef unsigned char uchar;
 #define MODE_PROGRAM                   0x04
 #define MODE_BREAK                     0x08
 
-/* Macros */
-#ifndef msDelay
-#define msDelay(a) usleep(a * 1000)
-#endif
-
 #ifndef mlan_debug
 #define mlan_debug(a, b, c) if(a->debug > b) { printf c; }
 #endif
@@ -227,6 +222,7 @@ struct __mlan {
 	int (*touchbyte)(MLan *mlan, int sendbyte);
 	int (*setspeed)(MLan *mlan, int newspeed);
 	int (*programpulse)(MLan *mlan);
+	void (*msDelay)(MLan *mlan, int t);
 
 	/* misc crap */
 	uchar (*dowcrc)(MLan *mlan, uchar x);

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.2 1999/09/22 07:49:57 dustin Exp $
+ * $Id: mlan.c,v 1.3 1999/12/07 05:37:28 dustin Exp $
  */
 
 #include <stdio.h>
@@ -54,6 +54,14 @@ dowcrc(MLan * mlan, uchar x)
 	};
 	mlan->DOWCRC = dscrc_table[mlan->DOWCRC ^ x];
 	return (mlan->DOWCRC);
+}
+
+/* Millisecond sleep */
+static void
+msDelay(MLan *mlan, int t)
+{
+	mlan_debug(mlan, 3, ("Sleeping %dms\n", t) );
+	usleep(t * 1000);
 }
 
 /* Bit utility to read and write a bit in a buffer */
@@ -338,6 +346,7 @@ mlan_init(char *port, int baud_rate)
 
 	/* Misc functions */
 	mlan->dowcrc = dowcrc;
+	mlan->msDelay = msDelay;
 
 	mlan->debug = 0;
 	mlan->mode = MODSEL_COMMAND;

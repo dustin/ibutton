@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds2480.c,v 1.2 1999/09/22 07:49:56 dustin Exp $
+ * $Id: ds2480.c,v 1.3 1999/12/07 05:37:27 dustin Exp $
  */
 
 #include <stdio.h>
@@ -22,10 +22,11 @@ int _ds2480_detect(MLan *mlan)
 
 	mlan->mode = MODSEL_COMMAND;
 	mlan->speed = SPEEDSEL_FLEX;
+	mlan->baud = PARMSET_9600;
 
 	mlan->setbaud(mlan, mlan->baud);
 	mlan->cbreak(mlan);
-	msDelay(2);
+	mlan->msDelay(mlan, 2);
 	mlan->flush(mlan);
 	
 	/* OK, get ready to send shite */
@@ -45,8 +46,6 @@ int _ds2480_detect(MLan *mlan)
 							(PARMSEL_BAUDRATE >> 3);
 
 	sendpacket[sendlen++] = CMD_COMM | FUNCTSEL_BIT | mlan->baud | BITPOL_ONE;
-
-	mlan->flush(mlan);
 
 	if(mlan->write(mlan, sendlen, sendpacket)) {
 		if(mlan->read(mlan, 5, readbuffer) == 5) {
@@ -82,10 +81,10 @@ int _ds2480_changebaud(MLan *mlan, uchar newbaud)
 		mlan->flush(mlan);
 
 		if(mlan->write(mlan, sendlen, sendpacket)) {
-			msDelay(5);
+			mlan->msDelay(mlan, 5);
 
 			mlan->setbaud(mlan, newbaud);
-			msDelay(5);
+			mlan->msDelay(mlan, 5);
 			sendpacket2[sendlen2++] = CMD_CONFIG | PARMSEL_PARMREAD |
 									(PARMSEL_BAUDRATE >> 3);
 			mlan->flush(mlan);

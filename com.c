@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: com.c,v 1.2 1999/09/22 07:49:55 dustin Exp $
+ * $Id: com.c,v 1.3 1999/12/07 05:37:26 dustin Exp $
  */
 
 #include <stdio.h>
@@ -32,22 +32,27 @@ void _com_setbaud(MLan *mlan, int new_baud)
 	/* Set up the baud rate */
 	switch(new_baud) {
 		case PARMSET_9600:
+			mlan_debug(mlan, 3, ("Setting baud to 9600\n") );
 			mlan->speed = B9600;
 			mlan->usec_per_byte = 833;
 			break;
 		case PARMSET_19200:
+			mlan_debug(mlan, 3, ("Setting baud to 19200\n") );
 			mlan->speed = B19200;
 			mlan->usec_per_byte = 416;
 			break;
 		case PARMSET_57600:
+			mlan_debug(mlan, 3, ("Setting baud to 57600\n") );
 			mlan->speed = B57600;
 			mlan->usec_per_byte = 139;
 			break;
 		case PARMSET_115200:
+			mlan_debug(mlan, 3, ("Setting baud to 115200\n") );
 			mlan->speed = B115200;
 			mlan->usec_per_byte = 69;
 			break;
 		default:
+			mlan_debug(mlan, 3, ("Setting baud to 9600\n") );
 			mlan->speed = B9600;
 			mlan->usec_per_byte = 833;
 	}
@@ -63,14 +68,14 @@ void _com_setbaud(MLan *mlan, int new_baud)
 
 	mlan->baud = new_baud;
 
-	mlan_debug(mlan, 2, ("Returning from setbaud\n"));
+	/* mlan_debug(mlan, 2, ("Returning from setbaud\n")); */
 }
 
 void _com_flush(MLan *mlan)
 {
 	mlan_debug(mlan, 2, ("Calling flush\n"));
 	tcflush(mlan->fd, TCIOFLUSH);
-	mlan_debug(mlan, 2, ("Returning from flush\n"));
+	/* mlan_debug(mlan, 2, ("Returning from flush\n")); */
 }
 
 int _com_write(MLan *mlan, int outlen, uchar *outbuf)
@@ -96,7 +101,7 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 				rv += tmp;
 			} else {
 				if(errno==EAGAIN) {
-					msDelay(5);
+					mlan->msDelay(mlan, 5);
 					errno=0;
 				} else {
 					perror("write");
@@ -105,7 +110,6 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 			}
 		}
 	}
-	mlan->flush(mlan);
 	mlan_debug(mlan, 2, ("Returning from write (%d - %d)\n", rv, errno));
 	return(rv==outlen);
 }
@@ -123,13 +127,14 @@ int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 	if(rv>0) {
 		while(rv<inlen) {
 			int tmp;
+			mlan_debug(mlan, 3, ("Read %d bytes\n", rv) );
 			tmp=read(mlan->fd, inbuf+rv, inlen-rv);
 			if(tmp>0) {
 				rv += tmp;
 			} else {
 				if(errno==EAGAIN) {
 					mlan_debug(mlan, 4, ("EAGAIN while doing read\n"));
-					msDelay(5);
+					mlan->msDelay(mlan, 5);
 					errno=0;
 				} else {
 					perror("read");
@@ -155,5 +160,5 @@ void _com_cbreak(MLan *mlan)
 {
 	mlan_debug(mlan, 2, ("Calling break\n"));
 	tcsendbreak(mlan->fd, 1);
-	mlan_debug(mlan, 2, ("Returning from break\n"));
+	/* mlan_debug(mlan, 2, ("Returning from break\n")); */
 }

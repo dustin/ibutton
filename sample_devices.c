@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.24 2002/01/29 09:07:27 dustin Exp $
+ * $Id: sample_devices.c,v 1.25 2002/01/29 10:33:12 dustin Exp $
  */
 
 #include <stdio.h>
@@ -65,40 +65,44 @@ get_serial(uchar *serial)
 	return(r);
 }
 
-static int
-secondsSinceLastUpdate(uchar *serial)
+static time_t
+timeOfLastUpdate(uchar *serial)
 {
-	int rv=86400;
 	struct watch_list *p=NULL;
-	time_t now=0;
 
 	assert(serial);
 
 	/* Search for a match */
 	for(p=watching; p!=NULL
 		&& (memcmp(serial, p->serial, MLAN_SERIAL_SIZE)!=0); p=p->next);
-
 	assert(p==NULL || memcmp(serial, p->serial, MLAN_SERIAL_SIZE)==0);
 
-	now=time(NULL);
 	if(p==NULL) {
 		p=calloc(sizeof(struct watch_list), 1);
 		assert(p);
 		memcpy(p->serial, serial, MLAN_SERIAL_SIZE);
 		p->next=watching;
-		p->last_read=now;
 		watching=p;
-	} else {
-		rv=now-p->last_read;
 	}
 
+	return(p->last_read);
+}
+
+static int
+secondsSinceLastUpdate(uchar *serial)
+{
+	int rv=0;
+
+	rv=(time(NULL) - timeOfLastUpdate(serial));
+	/*
 	printf("secondsSinceLastUpdate(%s) => %d\n", get_serial(serial), rv);
+	*/
 
 	return(rv);
 }
 
 static void
-updateSerial(uchar *serial)
+updateSerial(uchar *serial, time_t when)
 {
 	struct watch_list *p=NULL;
 
@@ -110,7 +114,10 @@ updateSerial(uchar *serial)
 
 	assert(p!=NULL && memcmp(serial, p->serial, MLAN_SERIAL_SIZE)==0);
 
-	p->last_read=time(NULL);
+	p->last_read=when;
+	/*
+	printf("updateSerial(%s, %lu)\n", get_serial(serial), when);
+	*/
 }
 
 /* NOTE:  The initialization may be called more than once */
@@ -156,7 +163,7 @@ record_cur(const char *serial, const char *value)
 
 /* Get the time for the record. */
 static char*
-get_time_str()
+get_time_str_now()
 {
 	struct timeval tv;
 	struct tm *tp;
@@ -180,10 +187,31 @@ get_time_str()
 	return(str);
 }
 
+/* Get the time for the record. */
+static char*
+get_time_str(time_t t)
+{
+	struct tm *tp;
+	static char str[50];
+	time_t sec=0;
+
+	sec=t;
+	tp = localtime(&sec);
+
+	sprintf(str, "%.4d/%.2d/%.2d %.2d:%.2d:%s%d.0",
+		tp->tm_year + 1900,
+		tp->tm_mon + 1,
+		tp->tm_mday,
+		tp->tm_hour,
+		tp->tm_min,
+		(tp->tm_sec <10 ? "0" : ""), tp->tm_sec);
+	return(str);
+}
+
 static void
 log_error(char *str)
 {
-	fprintf(stderr, "%s:  ERROR:  %s", get_time_str(), str);
+	fprintf(stderr, "%s:  ERROR:  %s", get_time_str_now(), str);
 	fflush(stderr);
 }
 
@@ -255,11 +283,18 @@ initMulti(const char *group, int port, int mttl)
 static void
 msend(const char *msg)
 {
+	static int sent=0;
+
 	if(msocket>=0) {
 		/* length of the string +1 to send the NULL */
 		if(sendto(msocket, msg, (strlen(msg)+1), 0,
 			(struct sockaddr *)&maddr, sizeof(maddr)) < 0) {
 			perror("sendto");
+		}
+
+		/* Sleep a bit after a few packets */
+		if( (++sent%100) ) {
+			usleep(100);
 		}
 	}
 }
@@ -351,13 +386,13 @@ dealWith(MLan *mlan, uchar *serial)
 				rv=-1;
 				/* Log the failure */
 				fprintf(logfile, "%s\t%s\t%s\n",
-					get_time_str(), get_serial(serial),
+					get_time_str_now(), get_serial(serial),
 						"Error getting sample");
 			} else {
 				char data_str[8192];
 				snprintf(data_str, sizeof(data_str),
 					"%s\t%s\t%.2f\tl=%.2f,h=%.2f",
-					get_time_str(), get_serial(serial),
+					get_time_str_now(), get_serial(serial),
 					data.temp, data.temp_low,
 					data.temp_hi);
 				/* Log it */
@@ -369,34 +404,48 @@ dealWith(MLan *mlan, uchar *serial)
 					"%.2f", data.temp);
 				record_cur(get_serial(serial),data_str);
 			}
+			/* Mark it as updated */
+			updateSerial(serial, time(NULL));
 		} break;
 		case DEVICE_1921: {
 			struct ds1921_data data;
 			int i=0;
 			data=getDS1921Data(mlan, serial);
 			if(data.valid==TRUE) {
-				/* Take up to another five seconds to write the data out */
-				alarm(5);
+				time_t last_update=timeOfLastUpdate(serial);
+				time_t last_record=0;
+				/*
+				printf("Got the data, preparing to write it out.\n");
+				*/
+				/* Take up to another thirty seconds to write the data out */
+				alarm(30);
 				for(i=0; i<data.n_samples; i++) {
-					char data_str[8192];
-					snprintf(data_str, sizeof(data_str),
-						"%s\t%s\t%.2f\n",
-						ds1921_sample_time(data.samples[i].offset, data),
-						get_serial(serial), data.samples[i].sample);
-					/* Log it */
-					fprintf(logfile, "%s\n", data_str);
-					/* Multicast it */
-					msend(data_str);
+					/* Only send data we haven't seen */
+					if(data.samples[i].timestamp>last_update) {
+						char data_str[8192];
+						snprintf(data_str, sizeof(data_str),
+							"%s\t%s\t%.2f",
+							get_time_str(data.samples[i].timestamp),
+							get_serial(serial), data.samples[i].sample);
+						/* Log it */
+						fprintf(logfile, "%s\n", data_str);
+						/* Multicast it */
+						msend(data_str);
+					}
+					last_record=data.samples[i].timestamp;
 				}
+				/* Mark it as updated */
+				updateSerial(serial, last_record);
+				/*
+				printf("Finished writing the data.\n");
+				*/
 			}
 		} break;
 		default:
-			/* Nothing */
+			/* Mark it as updated */
+			updateSerial(serial, time(NULL));
 			break;
 	}
-
-	/* Mark it as updated */
-	updateSerial(serial);
 
 	return(rv);
 }
@@ -464,8 +513,8 @@ main(int argc, char **argv)
 		failures=0;
 		/* Loop through the list and gather samples */
 		for(i=0; i<list_count; i++) {
-			/* Give it five seconds to get its sample */
-			alarm(5);
+			/* Give it fifteen seconds to get its sample */
+			alarm(15);
 			if(dealWith(mlan, list[i])<0) {
 				failures++;
 			}

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.4 2002/01/26 08:24:37 dustin Exp $
+ * $Id: data.c,v 1.5 2002/01/29 10:33:13 dustin Exp $
  */
 
 #include <stdio.h>
@@ -84,7 +84,7 @@ struct log_datum *parseLogEntry(const char *line)
 	assert(listLength(fields)>=3);
 	/* Split the time */
 	ta=split(fields[0], ": /.");
-	assert(listLength(ta)==7);
+	assert(listLength(ta)>=6);
 
 	t.tm_wday=0;
 	t.tm_yday=0;

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.h,v 1.9 2002/01/29 09:06:14 dustin Exp $
+ * $Id: ds1921.h,v 1.10 2002/01/29 10:33:10 dustin Exp $
  */
 
 #ifndef DS1921_H
@@ -19,6 +19,7 @@
 
 /* The alarm structures */
 struct temp_alarm {
+	time_t timestamp;
 	int sample_offset;
 	int duration;
 };
@@ -79,6 +80,7 @@ struct ds1921_data {
 	struct {
 		float sample;
 		int offset;
+		time_t timestamp;
 	} samples[SAMPLE_SIZE];
 
 	/* Temperature alarms */
@@ -118,7 +120,6 @@ struct ds1921_data {
 struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial);
 void printDS1921(struct ds1921_data d);
 int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data);
-char *ds1921_sample_time(int i, struct ds1921_data d);
 
 /* Temperature conversions */
 #define ds1921temp_convert_out(a) ( ((float)(a)/2) - 40)

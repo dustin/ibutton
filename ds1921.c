@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.c,v 1.26 2002/01/29 09:06:11 dustin Exp $
+ * $Id: ds1921.c,v 1.27 2002/01/29 10:33:09 dustin Exp $
  */
 #include <stdio.h>
 #include <assert.h>
@@ -12,6 +12,12 @@
 
 #include <mlan.h>
 #include <ds1921.h>
+
+#define GET_TIME_T_FROM_OFFSET(data, offset) \
+	data.status.mission_ts.clock+(60*(offset*data.status.sample_rate))
+
+#define GET_TIME_T_FROM_OFFSET_P(data, offset) \
+	data->status.mission_ts.clock+(60*(offset*data->status.sample_rate))
 
 /* This is for the realtime clock */
 static void getTime1(uchar *buffer, struct ds1921_data *d)
@@ -76,7 +82,7 @@ static void getTime2(uchar *buffer, struct ds1921_data *d)
 
 	minutes=(buffer[0]&0x0f) + (10* ((buffer[0]&0x70) >> 4) );
 	hours=(buffer[1]&0x0f) + (10* ( (buffer[1]&0x10) >>4));
-	date= (buffer[2]&0x0f) + (10* ((buffer[2]&0x50) >> 4) );
+	date= (buffer[2]&0x0f) + (10* ((buffer[2]&0x30) >> 4) );
 	month=(buffer[3]&0x0f) + (10* ((buffer[3]&0x10) >> 4) );
 	year+=1900+(buffer[4]&0x0f) + (10* ( (buffer[4]&0xf0) >> 4) );
 	/* yes to kia */
@@ -238,18 +244,15 @@ static int findTimeOffset(int i, struct ds1921_data d) {
 	return(i);
 }
 
-char *ds1921_sample_time(int i, struct ds1921_data d)
+static char *ds1921_sample_time(time_t when)
 {
 	static char result[80];
 	time_t t=0;
-	struct tm *tmtmp;;
+	struct tm *tmtmp;
 
-	t=d.status.mission_ts.clock;
-
-	/* Add the sample_rate times the sample we're on) */
-	t+=60*(i*d.status.sample_rate);
+	t=when;
 	tmtmp=localtime(&t);
-	strftime(result, 80, "%Y-%m-%d %T", tmtmp);
+	strftime(result, sizeof(result), "%Y-%m-%d %T", tmtmp);
 
 	return(result);
 }
@@ -294,7 +297,7 @@ void printDS1921(struct ds1921_data d)
 	for(i=0; i<ALARMSIZE; i++) {
 		if(d.low_alarms[i].duration>0) {
 			printf("\t\t%s (%d) for %d minutes\n",
-				ds1921_sample_time(d.low_alarms[i].sample_offset, d),
+				ds1921_sample_time(d.low_alarms[i].timestamp),
 				d.low_alarms[i].sample_offset,
 				d.low_alarms[i].duration * d.status.sample_rate);
 		}
@@ -304,7 +307,7 @@ void printDS1921(struct ds1921_data d)
 	for(i=0; i<ALARMSIZE; i++) {
 		if(d.hi_alarms[i].duration>0) {
 			printf("\t\t%s (%d) for %d minutes\n",
-				ds1921_sample_time(d.hi_alarms[i].sample_offset, d),
+				ds1921_sample_time(d.hi_alarms[i].timestamp),
 				d.hi_alarms[i].sample_offset,
 				d.hi_alarms[i].duration * d.status.sample_rate);
 		}
@@ -316,8 +319,9 @@ void printDS1921(struct ds1921_data d)
 	printf("Temperature samples:\n");
 	for(i=0; i<d.n_samples; i++) {
 		if(d.samples[i].sample>-40.0) {
-			printf("\tSample %04d from %s is %.2f\n",
-				i, ds1921_sample_time(d.samples[i].offset, d),
+			printf("\tSample %04d from %s (%d) is %.2f\n",
+				i, ds1921_sample_time(d.samples[i].timestamp),
+				d.samples[i].timestamp,
 				d.samples[i].sample);
 		}
 	}
@@ -335,11 +339,15 @@ static void decodeAlarms(uchar *buffer, struct ds1921_data *d)
 		d->low_alarms[j].sample_offset=
 			((buffer[i+2]<<16)|(buffer[i+1]<<8)|buffer[i])-1;
 		d->low_alarms[j].duration=buffer[i+3];
+		d->low_alarms[j].timestamp=GET_TIME_T_FROM_OFFSET_P(d,
+			d->low_alarms[j].sample_offset);
 	}
 	for(j=0, i=32; i<96; i+=4, j++) {
 		d->hi_alarms[j].sample_offset=
 			((buffer[i+2]<<16)|(buffer[i+1]<<8)|buffer[i])-1;
 		d->hi_alarms[j].duration=buffer[i+3];
+		d->hi_alarms[j].timestamp=GET_TIME_T_FROM_OFFSET_P(d,
+			d->hi_alarms[j].sample_offset);
 	}
 }
 
@@ -536,6 +544,9 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 			float temp=ds1921temp_convert_out(buffer[i]);
 			data.samples[data.n_samples].offset=findTimeOffset(i, data);
 			data.samples[data.n_samples].sample=temp;
+			data.samples[data.n_samples].timestamp=
+				GET_TIME_T_FROM_OFFSET(data,
+					data.samples[data.n_samples].offset);
 			data.n_samples++;
 		}
 
@@ -545,6 +556,9 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 			assert(data.n_samples<SAMPLE_SIZE);
 			data.samples[data.n_samples].offset=findTimeOffset(i, data);
 			data.samples[data.n_samples].sample=temp;
+			data.samples[data.n_samples].timestamp=
+				GET_TIME_T_FROM_OFFSET(data,
+					data.samples[data.n_samples].offset);
 			data.n_samples++;
 		}
 	} else {
@@ -553,6 +567,9 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 			assert(data.n_samples<SAMPLE_SIZE);
 			data.samples[data.n_samples].offset=findTimeOffset(i, data);
 			data.samples[data.n_samples].sample=temp;
+			data.samples[data.n_samples].timestamp=
+				GET_TIME_T_FROM_OFFSET(data,
+					data.samples[data.n_samples].offset);
 			data.n_samples++;
 		}
 	}

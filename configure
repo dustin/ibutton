@@ -1071,8 +1071,8 @@ esac
 
 if test "$GCC" = "yes"
 then
-	echo "GCC, setting -Wall and -Werror"
-	CPPFLAGS="$CPPFLAGS -Wall -Werror"
+	echo "GCC, setting -Wall"
+	CPPFLAGS="$CPPFLAGS -Wall"
 fi
 
 if test "$GUILECONF" = ""

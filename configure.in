@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.11 2002/01/25 09:14:14 dustin Exp $
+dnl $Id: configure.in,v 1.12 2002/01/25 09:17:33 dustin Exp $
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(mlan.c)
 
@@ -90,8 +90,8 @@ esac
 
 if test "$GCC" = "yes"
 then
-	echo "GCC, setting -Wall and -Werror"
-	CPPFLAGS="$CPPFLAGS -Wall -Werror"
+	echo "GCC, setting -Wall"
+	CPPFLAGS="$CPPFLAGS -Wall"
 fi
 
 dnl If there's guile, build the guile stuff.

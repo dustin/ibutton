@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.17 2001/01/18 18:47:40 dustin Exp $
+ * $Id: mlan.c,v 1.18 2001/07/04 20:21:42 dustin Exp $
  */
 
 #include <stdio.h>
@@ -814,6 +814,7 @@ mlan_init(char *port, int baud_rate)
 
 	mlan->fd = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (mlan->fd < 0) {
+		perror(port);
 		free(mlan);
 		/* Short-circuit on failure */
 		return (NULL);

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mrecv.c,v 1.9 2002/01/25 23:16:18 dustin Exp $
+ * $Id: mrecv.c,v 1.10 2002/01/26 04:18:01 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -15,6 +15,13 @@
 #include <unistd.h>
 #include <assert.h>
 
+#ifdef GETOPT_H
+#include <getopt.h>
+#endif /* GETOPT_H */
+#ifdef GETOPTS_H
+#include <getopts.h>
+#endif /* GETOPTS_H */
+
 #ifdef WORKING_PTHREAD
 #include <pthread.h>
 #endif /* WORKING_PTHREAD */
@@ -26,9 +33,14 @@
 #undef time_value
 #endif /* HAVE_RRD_H */
 
+#ifdef HAVE_LIBPQ_FE_H
+#include <libpq-fe.h>
+#endif /* HAVE_LIBPQ_FE_H */
+
+/* Local includes */
 #include "data.h"
 
-/* This is how we listen */
+/* Defaults for listening */
 #define MLAN_PORT 6789
 #define MLAN_GROUP "225.0.0.37"
 #define MSGBUFSIZE 256
@@ -45,6 +57,9 @@ static struct rrd_queue *queue=NULL;
 #ifdef WORKING_PTHREAD
 static pthread_mutex_t queue_mutex;
 #endif /* WORKING_PTHREAD */
+
+/* This holds the multicast socket */
+static int msocket=0;
 
 /* Portable locking */
 #ifdef WORKING_PTHREAD
@@ -110,9 +125,9 @@ newFile(struct data_list *p)
 	return(rv);
 }
 
+#ifdef HAVE_RRD_H
 static void saveDataRRD(struct data_list *p)
 {
-#ifdef HAVE_RRD_H
 	char buf[8192];
 	char **args=NULL;
 	int rv=0;
@@ -140,15 +155,17 @@ static void saveDataRRD(struct data_list *p)
 
 	/* Clean up */
 	freeList(args);
-#else /* HAVE_RRD_H */
-	printf("ERROR:  RRD not found at build time.\n");
-#endif /* HAVE_RRD_H */
 }
+#endif /* HAVE_RRD_H */
 
 static void saveData(struct data_list *p) {
 	/* Do the RRD save */
 	assert(p!=NULL);
+
+#ifdef HAVE_RRD_H
 	saveDataRRD(p);
+#endif /* HAVE_RRD_H */
+
 	/*
 	printf("FLUSH:  %s was %.2f at %d\n", p->serial, p->reading,
 		(int)p->timestamp);
@@ -223,12 +240,12 @@ static void process(const char *msg)
 	disposeOfLogEntry(d);
 }
 
-int main(int argc, char *argv[])
+static void
+init(const char *multigroup, int multiport)
 {
+	int    reuse=1;
 	struct sockaddr_in addr;
-	int             fd=0, nbytes=0, addrlen=0, reuse=1;
 	struct ip_mreq  mreq;
-	char            msgbuf[MSGBUFSIZE];
 
 #ifdef WORKING_PTHREAD
 	pthread_t		flusher_thread;
@@ -238,10 +255,10 @@ int main(int argc, char *argv[])
 #ifndef WORKING_PTHREAD
 		"out"
 #endif /* WORKING_PTHREAD */
-		" thread support at %s:%d.\n", MLAN_GROUP, MLAN_PORT);
+		" thread support at %s:%d.\n", multigroup, multiport);
 
 	/* create what looks like an ordinary UDP socket */
-	if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+	if ((msocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket");
 		exit(1);
 	}
@@ -250,21 +267,24 @@ int main(int argc, char *argv[])
 	addr.sin_family = AF_INET;
 	/* N.B.: differs from * sender */
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	addr.sin_port = htons(MLAN_PORT);
+	addr.sin_port = htons(multiport);
 
-	if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse, sizeof(int))<0){
+	if(setsockopt(msocket, SOL_SOCKET, SO_REUSEADDR,
+		(char*)&reuse, sizeof(int))<0){
 		perror("setsockopt");
 	}
 
 	/* bind to receive address */
-	if (bind(fd, (struct sockaddr *) & addr, sizeof(addr)) < 0) {
+	if (bind(msocket, (struct sockaddr *) & addr, sizeof(addr)) < 0) {
 		perror("bind");
 		exit(1);
 	}
 	/* use setsockopt() to request that the kernel join a multicast group */
-	mreq.imr_multiaddr.s_addr = inet_addr(MLAN_GROUP);
+	mreq.imr_multiaddr.s_addr = inet_addr(multigroup);
 	mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-	if(setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0){
+	if(setsockopt(msocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,
+		sizeof(mreq)) < 0) {
+
 		perror("setsockopt");
 		exit(1);
 	}
@@ -275,14 +295,57 @@ int main(int argc, char *argv[])
 	pthread_create(&flusher_thread, NULL, flusher, NULL);
 #endif /* WORKING_PTHREAD */
 
+}
+
+static void
+mainloop()
+{
+	char   msgbuf[MSGBUFSIZE];
+	struct sockaddr_in addr;
+	int    nbytes=0, addrlen=0;
+
 	/* now just enter a read-print loop */
 	addrlen = sizeof(addr);
 	for(;;) {
-		if ((nbytes = recvfrom(fd, msgbuf, MSGBUFSIZE, 0,
+		if ((nbytes = recvfrom(msocket, msgbuf, MSGBUFSIZE, 0,
 			       (struct sockaddr *) & addr, &addrlen)) < 0) {
 			perror("recvfrom");
 			exit(1);
 		}
 		process(msgbuf);
 	}
+}
+
+static void
+usage(char *prog)
+{
+	fprintf(stderr, "Usage:  %s [-m multigroup] [-p multiport]\n", prog);
+	exit(1);
+}
+
+int main(int argc, char *argv[])
+{
+	char *multigroup=MLAN_GROUP;
+	int multiport=MLAN_PORT;
+	int c=0;
+	extern char *optarg;
+
+	/* Deal with the arguments here */
+	while( (c=getopt(argc, argv, "m:p:")) != -1) {
+		switch(c) {
+			case 'm':
+				multigroup=optarg;
+				break;
+			case 'p':
+				multiport=atoi(optarg);
+				break;
+			case '?':
+				usage(argv[0]);
+				break;
+		};
+	}
+
+	init(multigroup, multiport);
+	mainloop();
+	return(0);
 }

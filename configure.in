@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.12 2002/01/25 09:17:33 dustin Exp $
+dnl $Id: configure.in,v 1.13 2002/01/26 08:31:10 dustin Exp $
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(mlan.c)
 
@@ -20,10 +20,23 @@ AC_ARG_WITH(rrdtool, [  --with-rrdtool          path to rrdtool installation],
 		LDFLAGS="$LDFLAGS -L$withval/lib"
 	fi])
 
-dnl Do we do dynamically loading libs on this OS?
-DYNLIBS=0
-NEEDUNDERSCORE=0
-MAKESO=:
+AC_ARG_WITH(postgresql, [  --with-postgresql       path to postgresql installation],
+	[if test -d $withval/include && test -d $withval/lib
+	then
+		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		LDFLAGS="$LDFLAGS -L$withval/lib"
+	fi],
+	[
+		AC_MSG_CHECKING(postgres installation)
+		if test -d /usr/local/pgsql
+		then
+			CPPFLAGS="$CPPFLAGS -I/usr/local/pgsql/include"
+			LDFLAGS="$LDFLAGS -L/usr/local/pgsql/lib"
+			AC_MSG_RESULT(/usr/local/pgsql)
+		else
+			AC_MSG_RESULT(not found)
+		fi
+	])
 
 dnl I needed these for something, might as well not include them if they
 dnl don't exist.
@@ -35,58 +48,6 @@ if test -d /usr/local/lib
 then
 	LDFLAGS="$LDFLAGS -L/usr/local/lib"
 fi
-
-dnl What we on, boys?
-echo "Checking out your OS..."
-OS=`$UNAMEPROG|$TRPROG '[[A-Z]]' '[[a-z]]'`
-VER=`$UNAMEPROG -r`
-if test "$OS" = "sunos" && test "$VER" -ge 5
-then
-    OS="solaris"
-fi
-case "$OS" in
-    'sunos')
-        echo "Woohoo!  SunOS 4.x, one of my favs"
-	if test "$GCC" = "yes"
-	then
-	    echo "Using GCC, let's try to make shared libs."
-	    DYNLIBS=1
-	    NEEDUNDERSCORE=0
-	    MAKESO="$CC -shared"
-	    CFLAGS="$CFLAGS -fPIC"
-	fi
-	;;
-    'netbsd')
-	echo "NetBSD!  One of my favs."
-	;;
-    'solaris')
-	echo "Solaris?!?  Oh, alright..."
-	;;
-    'hp-ux')
-        echo "HP-UX, this should be fun..."
-        if test "$GCC" != "yes"
-        then
-            echo "Setting ANSI flags"
-            CFLAGS="$CFLAGS -Ae"
-        fi
-        BSDLIKE=0
-        ;;
-    'irix')
-	echo "Looks like IRIX it's going to be..."
-	if test "$GCC" = "yes"
-	then
-	    echo "That's odd, we're using gcc...  OK."
-	    echo "If you have the IDO, please set the environ CC to cc"
-	    echo "to use the native compiler."
-	else
-	    echo "Using the native IDO, let's set some CFLAGS"
-	    CFLAGS="$CFLAGS -fullwarn"
-	    DYNLIBS=1
-	    NEEDUNDERSCORE=0
-	    MAKESO="ld -shared"
-	fi
-	;;
-esac
 
 if test "$GCC" = "yes"
 then
@@ -131,14 +92,21 @@ AC_CHECK_LIB(rrd, rrd_update,
 	AC_DEFINE_UNQUOTED(RRDLIB, $RRDLIB)])
 AC_SUBST(RRDLIB)
 
+POSTGRESLIB=""
+AC_CHECK_LIB(pq, PQexec,
+	[POSTGRESLIB="-lpq"
+	AC_DEFINE_UNQUOTED(POSTGRESLIB, $POSTGRESLIB)])
+AC_SUBST(POSTGRESLIB)
+
 dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h sys/errno.h unistd.h getopt.h getopts.h pthread.h)
-AC_CHECK_HEADERS(rrd.h)
+AC_CHECK_HEADERS(rrd.h libpq-fe.h)
 
+dnl check for working pthreads
 SPY_PTHREAD
 
 dnl Checks for typedefs, structures, and compiler characteristics.

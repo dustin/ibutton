@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds2480.c,v 1.8 1999/12/09 08:40:34 dustin Exp $
+ * $Id: ds2480.c,v 1.9 1999/12/09 08:48:04 dustin Exp $
  */
 
 #include <stdio.h>
@@ -29,7 +29,6 @@ int _ds2480_detect(MLan *mlan)
 	mlan->setbaud(mlan, mlan->baud);
 	mlan->cbreak(mlan);
 	mlan->msDelay(mlan, 5);
-	mlan->flush(mlan);
 	
 	/* OK, get ready to send shite */
 	sendpacket[0] = 0xC1;

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: com.c,v 1.9 1999/12/09 08:18:36 dustin Exp $
+ * $Id: com.c,v 1.10 1999/12/09 08:48:03 dustin Exp $
  */
 
 #include <stdio.h>
@@ -164,11 +164,6 @@ int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 				} else {
 					perror("mlan->read");
 				}
-				printf("Read:  ");
-				for(i=0; i<rv; i++) {
-					printf("%02x ", inbuf[i]);
-				}
-				printf("\n");
 				break;
 			}
 		}

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.14 2001/08/02 21:33:28 dustin Exp $
+ * $Id: sample_devices.c,v 1.15 2001/10/04 05:48:07 dustin Exp $
  */
 
 #include <stdio.h>
@@ -324,15 +324,15 @@ main(int argc, char **argv)
 						snprintf(data_str, sizeof(data_str),
 							"%s\t%s\t%.2f\tl=%.2f,h=%.2f",
 							get_time_str(), get_serial(list[i]),
-							ctof(data.temp), ctof(data.temp_low),
-							ctof(data.temp_hi));
+							data.temp, data.temp_low,
+							data.temp_hi);
 						/* Log it */
 						fprintf(logfile, "%s\n", data_str);
 						/* Multicast it */
 						msend(data_str);
 						/* Now record the current */
 						snprintf(data_str, sizeof(data_str),
-							"%.2f", ctof(data.temp));
+							"%.2f", data.temp);
 						record_cur(get_serial(list[i]),data_str);
 					}
 				} break;

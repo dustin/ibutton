@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: com.c,v 1.5 1999/12/07 08:55:12 dustin Exp $
+ * $Id: com.c,v 1.6 1999/12/07 10:15:02 dustin Exp $
  */
 
 #include <stdio.h>
@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <time.h>
 #include <sys/uio.h>
 #include <unistd.h>
 #include <assert.h>
@@ -39,21 +40,27 @@ void _com_setbaud(MLan *mlan, int new_baud)
 			speed = B9600;
 			mlan->usec_per_byte = 833;
 			break;
+#ifdef B19200
 		case PARMSET_19200:
 			mlan_debug(mlan, 3, ("Setting baud to 19200\n") );
 			speed = B19200;
 			mlan->usec_per_byte = 416;
 			break;
+#endif
+#ifdef B57600
 		case PARMSET_57600:
 			mlan_debug(mlan, 3, ("Setting baud to 57600\n") );
 			speed = B57600;
 			mlan->usec_per_byte = 139;
 			break;
+#endif
+#ifdef B115200
 		case PARMSET_115200:
 			mlan_debug(mlan, 3, ("Setting baud to 115200\n") );
 			speed = B115200;
 			mlan->usec_per_byte = 69;
 			break;
+#endif
 		default:
 			mlan_debug(mlan, 3, ("Setting baud to 9600\n") );
 			speed = B9600;

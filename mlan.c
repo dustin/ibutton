@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.6 1999/12/07 10:09:02 dustin Exp $
+ * $Id: mlan.c,v 1.7 1999/12/07 10:15:03 dustin Exp $
  */
 
 #include <stdio.h>
@@ -344,8 +344,8 @@ _copy_serial(MLan *mlan, uchar *dest)
 	}
 }
 
-void
-_mlan_init_table()
+static void
+_mlan_init_table(void)
 {
 	serial_table = (char **)calloc(256, sizeof(char *));
 	assert(serial_table);

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings
  *
- * $Id: data.h,v 1.4 2002/01/26 08:24:39 dustin Exp $
+ * $Id: data.h,v 1.5 2002/01/28 08:47:44 dustin Exp $
  */
 
 #ifndef DATA_H
@@ -10,7 +10,7 @@
 #include <sys/time.h>
 
 #ifdef MYMALLOC
-#include "../mymalloc.h"
+#include <mymalloc.h>
 #endif /* MYMALLOC */
 
 /* Represents a log entry */

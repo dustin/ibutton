@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds2438.c,v 1.1 2001/08/29 09:27:54 dustin Exp $
+ * $Id: ds2438.c,v 1.2 2001/10/04 05:54:08 dustin Exp $
  */
 
 #include <stdio.h>
@@ -60,7 +60,7 @@ static int _ds2438_volt_ad(MLan *mlan, uchar *serial, int vdd) {
 	}
 
 	/* Calculate the CRC */
-	mlan->DOWCRC;
+	mlan->DOWCRC=0;
 	for(i=send_cnt-9; i<send_cnt; i++) {
 		mlan->dowcrc(mlan, send_block[i]);
 	}
@@ -178,7 +178,7 @@ static float _ds2438_reading(MLan *mlan, uchar *serial, int vdd)
 	}
 
 	/* Calculate the CRC */
-	mlan->DOWCRC;
+	mlan->DOWCRC=0;
 	for(i=2; i<send_cnt; i++) {
 		mlan->dowcrc(mlan, send_block[i]);
 	}
@@ -233,7 +233,7 @@ static double _ds2438_gettemp(MLan *mlan, uchar *serial)
 	}
 
 	/* Calculate the CRC */
-	mlan->DOWCRC;
+	mlan->DOWCRC=0;
 	for(i=2; i<send_cnt; i++) {
 		mlan->dowcrc(mlan, send_block[i]);
 	}

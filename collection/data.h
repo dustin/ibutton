@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings
  *
- * $Id: data.h,v 1.9 2002/01/29 23:07:18 dustin Exp $
+ * $Id: data.h,v 1.10 2002/01/30 20:33:42 dustin Exp $
  */
 
 #ifndef DATA_H
@@ -63,7 +63,7 @@ void freeList(char **list);
 int listLength(const char **list);
 
 /* Linked list stuff */
-struct data_queue *appendToRRDQueue(struct data_queue *dl, char *datum);
+struct data_queue *appendToRRDQueue(struct data_queue *dl, const char *datum);
 void disposeOfRRDQueue(struct data_queue *dl);
 
 #endif

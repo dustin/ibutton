@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.12 2002/01/30 02:37:22 dustin Exp $
+ * $Id: data.c,v 1.13 2002/01/30 20:33:40 dustin Exp $
  */
 
 #include <stdio.h>
@@ -220,7 +220,7 @@ logDatumPrint(struct log_datum *p)
  * Append the given string to the end of the data queue.  Return the new
  * data queue (may change if it was originally null). */
 struct data_queue *
-appendToRRDQueue(struct data_queue *dl, char *datum)
+appendToRRDQueue(struct data_queue *dl, const char *datum)
 {
 	struct data_queue *p=NULL;
 	struct data_queue *newe=NULL;

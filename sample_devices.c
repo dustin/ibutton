@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.8 2000/11/07 07:56:49 dustin Exp $
+ * $Id: sample_devices.c,v 1.9 2000/11/08 05:01:33 dustin Exp $
  */
 
 #include <stdio.h>
@@ -225,6 +225,8 @@ main(int argc, char **argv)
 					break;
 			}
 		}
+		/* Write the log */
+		fflush(logfile);
 
 		alarm(0);
 

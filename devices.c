@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.1 1999/12/07 10:09:02 dustin Exp $
+ * $Id: devices.c,v 1.2 1999/12/08 04:43:29 dustin Exp $
  */
 
 #include <stdio.h>
@@ -16,6 +16,43 @@
 #include <mlan.h>
 
 /* Stuff for a DS1920 */
+
+static float
+temp_convert_out(int in)
+{
+	return( ((float)in/2) - 0.25);
+}
+
+/*
+I'll uncomment this next time it's used.
+static int
+temp_convert_in(float in)
+{
+	float ret;
+	ret=in;
+	ret+=.25;
+	ret*=2;
+	return( (int)ret );
+}
+*/
+
+static float
+ctof(float in)
+{
+	float ret;
+	ret=(in*9/5) + 32;
+	return(ret);
+}
+
+/*
+static float
+ftoc(float in)
+{
+	float ret;
+	ret=(in-32) * 5/9;
+	return(ret);
+}
+*/
 
 /* Get a temperature reading from a DS1920 */
 static int
@@ -74,24 +111,32 @@ ds1920Sample(MLan *mlan, uchar *serial, float *temp)
 		return(FALSE);
 	}
 
+	mlan_debug(mlan, 2, ("TH=%f\n", temp_convert_out(send_block[3])) );
+	mlan_debug(mlan, 2, ("T=%f\n", temp_convert_out(send_block[1])) );
+	mlan_debug(mlan, 2, ("TL=%f\n", temp_convert_out(send_block[4])) );
+
 	/* Calculate the temperature from the scratchpad */
 	tsht = send_block[1];
 	if (send_block[2] & 0x01)
 		tsht |= -256;
-	tmp = (float)(tsht/2);
+	/* tmp = (float)(tsht/2); */
+	tmp=temp_convert_out(tsht);
 	cr = send_block[7];
 	cpc = send_block[8];
 	if(cpc == 0) {
 		mlan_debug(mlan, 1, ("CPC is zero, that sucks\n"));
 		return(FALSE);
 	} else {
-		tmp = tmp - (float)0.25 + (cpc - cr)/cpc;
+		/* tmp = tmp - (float)0.25 + (cpc - cr)/cpc; */
+		tmp = tmp + (cpc - cr)/cpc;
 	}
+	mlan_debug(mlan, 2, ("Celsius:  %f\n", tmp) );
 	/* Convert to Farenheit */
-	*temp=tmp*9/5 + 32;
+	*temp=ctof(tmp);
 	return(TRUE);
 }
 
+/* abstracted sampler */
 int
 sample(MLan *mlan, uchar *serial, void *data)
 {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.7 1999/12/07 10:15:03 dustin Exp $
+ * $Id: mlan.c,v 1.8 1999/12/08 04:43:30 dustin Exp $
  */
 
 #include <stdio.h>
@@ -58,6 +58,44 @@ dowcrc(MLan * mlan, uchar x)
 	assert(mlan);
 	mlan->DOWCRC = dscrc_table[mlan->DOWCRC ^ x];
 	return (mlan->DOWCRC);
+}
+
+/* Convert a hex string to binary thingy */
+static uchar *
+h2b(int size, char *buf, uchar *outbuf)
+{
+	int i=0, j=0;
+	int map[256];
+	assert(buf);
+	assert(outbuf);
+
+	for(i=0; i<256; i++) {
+		if (i >= '0' && i <= '9') {
+			map[i] = i - '0';
+		} else if (i >= 'a' && i <= 'f') {
+			map[i] = (i - 'a') + 10;
+		} else if (i >= 'A' && i <= 'F') {
+			map[i] = (i - 'A') + 10;
+		} else {
+			map[i] = -1;
+		}
+	}
+
+	for (i = 0; i < size * 2; i += 2) {
+		assert(map[(int) buf[i]] >= 0 && map[(int) buf[i + 1]] >= 0);
+		outbuf[j++]=(map[(int) buf[i]] << 4 | map[(int) buf[i + 1]]);
+	}
+	return(outbuf);
+}
+
+/* Parse a serial number */
+static char *
+_mlan_parseSerial(MLan *mlan, char *serial, uchar *serial_in)
+{
+	assert(mlan);
+	assert(serial);
+	assert(serial_in);
+	return(h2b(MLAN_SERIAL_SIZE, serial, serial_in));
 }
 
 /* Millisecond sleep */
@@ -537,6 +575,7 @@ mlan_init(char *port, int baud_rate)
 	mlan->copySerial = _copy_serial;
 	mlan->serialLookup = _mlan_serial_lookup;
 	mlan->registerSerial = _mlan_register_serial;
+	mlan->parseSerial = _mlan_parseSerial;
 
 	mlan->debug = 0;
 	mlan->mode = MODSEL_COMMAND;

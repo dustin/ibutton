@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.6 1999/12/07 10:09:04 dustin Exp $
+ * $Id: mlan.h,v 1.7 1999/12/08 04:43:31 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -244,6 +244,7 @@ struct __mlan {
 	void (*copySerial)(MLan *mlan, uchar *in);
 	char *(*serialLookup)(MLan *mlan, int which);
 	void (*registerSerial)(MLan *mlan, int id, char *value);
+	char *(*parseSerial)(MLan *mlan, char *serial, uchar *output);
 
 	/* misc crap */
 	uchar (*dowcrc)(MLan *mlan, uchar x);
@@ -253,6 +254,5 @@ MLan *mlan_init(char *port, int baud_rate);
 
 /* Devices */
 int sample(MLan *mlan, uchar *serial, void *data);
-
 
 #endif /* MLAN_H */

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.2 2002/01/24 10:10:23 dustin Exp $
+ * $Id: data.c,v 1.3 2002/01/25 09:05:18 dustin Exp $
  */
 
 #include <stdio.h>
@@ -139,6 +139,7 @@ void appendToRRDQueue(struct rrd_queue *dl, struct log_datum *datum)
 	newe->serial=strdup(datum->serial);
 	assert(newe->serial);
 	newe->reading=datum->reading;
+	newe->timestamp=datum->tv.tv_sec;
 
 	if(p==NULL) {
 		dl->list=newe;
@@ -165,44 +166,6 @@ void disposeOfRRDQueue(struct rrd_queue *dl)
 		freeDataList(dl->list);
 	}
 	free(dl);
-}
-
-char **getRRDQueueKeys(struct rrd_queue *dl)
-{
-	char **rv=NULL;
-	struct data_list *p=NULL;
-	int i=0;
-
-	rv=calloc(sizeof(char *), SPLITSIZE);
-	assert(rv);
-	for(i=0, p=dl->list; p!=NULL; i++, p=p->next) {
-		assert(i<SPLITSIZE);
-		rv[i]=strdup(p->serial);
-		assert(rv[i]);
-	}
-	rv[i]=NULL;
-
-	return(rv);
-}
-
-char **getRRDQueueValues(struct rrd_queue *dl)
-{
-	char **rv=NULL;
-	struct data_list *p=NULL;
-	int i=0;
-
-	rv=calloc(sizeof(char *), SPLITSIZE);
-	assert(rv);
-	for(i=0, p=dl->list; p!=NULL; i++, p=p->next) {
-		char buf[64];
-		assert(i<SPLITSIZE);
-		snprintf(buf, sizeof(buf), "%f", p->reading);
-		rv[i]=strdup(buf);
-		assert(rv[i]);
-	}
-	rv[i]=NULL;
-
-	return(rv);
 }
 
 struct rrd_queue *newRRDQueue()

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.9 2002/01/24 10:10:21 dustin Exp $
+dnl $Id: configure.in,v 1.10 2002/01/25 09:05:16 dustin Exp $
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(mlan.c)
 
@@ -35,6 +35,8 @@ if test -d /usr/local/lib
 then
 	LDFLAGS="$LDFLAGS -L/usr/local/lib"
 fi
+
+SPY_PTHREAD
 
 dnl What we on, boys?
 echo "Checking out your OS..."

@@ -44,6 +44,34 @@ create unique index samples_bytimeid on samples(ts, sensor_id);
 grant insert on samples to tempload;
 grant select on samples to nobody;
 
+create table rollups (
+	sensor_id integer not null,
+	min_reading float not null,
+	avg_reading float not null,
+	stddev_reading float not null,
+	max_reading float not null,
+	month date not null,
+	foreign key(sensor_id) references sensors(sensor_id)
+);
+create unique index rollups_senstype on rollups(sensor_id, month);
+grant select on rollups to nobody;
+
+-- Migration
+insert into rollups (sensor_id, month, min_reading, avg_reading,
+		stddev_reading, max_reading)
+	select sensor_id, date_trunc('mon', ts) as mon,
+		min(sample), avg(sample), stddev(sample), max(sample)
+	from samples
+		where ts > '12/1/2003'
+	group by sensor_id, mon
+;
+
+-- XXX:  Need to create a trigger to maintain the rollups table on insert to
+-- the samples table.
+
+-- where ts between (date_trunc('mon', now()))
+--		and (date_trunc('mon', now()) + '1 month'::reltime)
+
 -- View of the data
 create view sample_view as
 	select samples.ts, sensors.sensor_id, sensors.serial,

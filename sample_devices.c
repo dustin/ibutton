@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.21 2002/01/29 08:30:20 dustin Exp $
+ * $Id: sample_devices.c,v 1.22 2002/01/29 08:40:41 dustin Exp $
  */
 
 #include <stdio.h>
@@ -94,7 +94,9 @@ secondsSinceLastUpdate(uchar *serial)
 	assert(p);
 	p->last_read=now;
 
+	/*
 	printf("secondsSinceLastUpdate(%s) => %d\n", get_serial(serial), rv);
+	*/
 
 	return(rv);
 }
@@ -313,6 +315,58 @@ getoptions(int argc, char **argv)
 	}
 }
 
+static int
+dealWith(MLan *mlan, uchar *serial)
+{
+	int age=0;
+	int rv=0;
+
+	assert(mlan);
+	assert(serial);
+
+	age=secondsSinceLastUpdate(serial);
+
+	/* Short-circuit if the age is less than sixty seconds */
+	if(age<60) {
+		return(0);
+	}
+
+	switch(serial[0]) {
+		case 0x10: {
+			struct ds1920_data data;
+			alarm(5);
+			data=getDS1920Data(mlan, serial);
+			if(data.valid!=TRUE) {
+				rv=-1;
+				/* Log the failure */
+				fprintf(logfile, "%s\t%s\t%s\n",
+					get_time_str(), get_serial(serial),
+						"Error getting sample");
+			} else {
+				char data_str[8192];
+				snprintf(data_str, sizeof(data_str),
+					"%s\t%s\t%.2f\tl=%.2f,h=%.2f",
+					get_time_str(), get_serial(serial),
+					data.temp, data.temp_low,
+					data.temp_hi);
+				/* Log it */
+				fprintf(logfile, "%s\n", data_str);
+				/* Multicast it */
+				msend(data_str);
+				/* Now record the current */
+				snprintf(data_str, sizeof(data_str),
+					"%.2f", data.temp);
+				record_cur(get_serial(serial),data_str);
+			}
+		} break;
+		default:
+			/* Nothing */
+			break;
+	}
+
+	return(rv);
+}
+
 /* Main */
 int
 main(int argc, char **argv)
@@ -375,38 +429,8 @@ main(int argc, char **argv)
 		failures=0;
 		/* Loop through the list and gather samples */
 		for(i=0; i<list_count; i++) {
-			int age=secondsSinceLastUpdate(list[i]);
-			switch(list[i][0]) {
-				case 0x10: {
-					struct ds1920_data data;
-					alarm(5);
-					data=getDS1920Data(mlan, list[i]);
-					if(data.valid!=TRUE) {
-						failures++;
-						/* Log the failure */
-						fprintf(logfile, "%s\t%s\t%s\n",
-							get_time_str(), get_serial(list[i]),
-								"Error getting sample");
-					} else {
-						char data_str[8192];
-						snprintf(data_str, sizeof(data_str),
-							"%s\t%s\t%.2f\tl=%.2f,h=%.2f",
-							get_time_str(), get_serial(list[i]),
-							data.temp, data.temp_low,
-							data.temp_hi);
-						/* Log it */
-						fprintf(logfile, "%s\n", data_str);
-						/* Multicast it */
-						msend(data_str);
-						/* Now record the current */
-						snprintf(data_str, sizeof(data_str),
-							"%.2f", data.temp);
-						record_cur(get_serial(list[i]),data_str);
-					}
-				} break;
-				default:
-					/* Nothing */
-					break;
+			if(dealWith(mlan, list[i])<0) {
+				failures++;
 			}
 		}
 		/* Write the log */
@@ -426,7 +450,7 @@ main(int argc, char **argv)
 		}
 
 		/* Wait a while before the next sample */
-		sleep(59);
+		sleep(1);
 	}
 	/* NOT REACHED */
 }

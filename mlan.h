@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.9 1999/12/09 08:17:06 dustin Exp $
+ * $Id: mlan.h,v 1.10 2000/07/13 09:53:25 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -262,5 +262,8 @@ MLan *mlan_init(char *port, int baud_rate);
 
 /* Devices */
 char *get_sample(MLan *mlan, uchar *serial);
+
+float ctof(float);
+float temp_convert_out(int);
 
 #endif /* MLAN_H */

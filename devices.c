@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.3 1999/12/08 09:54:31 dustin Exp $
+ * $Id: devices.c,v 1.4 2000/07/13 09:53:23 dustin Exp $
  */
 
 #include <stdio.h>
@@ -17,7 +17,7 @@
 
 /* Stuff for a DS1920 */
 
-static float
+float
 temp_convert_out(int in)
 {
 	return( ((float)in/2) - 0.25);
@@ -36,7 +36,7 @@ temp_convert_in(float in)
 }
 */
 
-static float
+float
 ctof(float in)
 {
 	float ret;

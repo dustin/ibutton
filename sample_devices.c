@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.6 2000/07/15 23:14:26 dustin Exp $
+ * $Id: sample_devices.c,v 1.7 2000/11/07 06:39:02 dustin Exp $
  */
 
 #include <stdio.h>
@@ -14,6 +14,7 @@
 #define _BSD_SIGNALS
 #include <signal.h>
 #include <mlan.h>
+#include <ds1920.h>
 
 /* Globals because I have to move it out of the way in a signal handler */
 FILE		*logfile=NULL;
@@ -204,12 +205,22 @@ main(int argc, char **argv)
 					if(sample_str==NULL) {
 						failures++;
 						sample_str="Error getting sample";
+					} else {
+						/* Special handling for DS1920's */
+						struct ds1920_data data;
+						data=getDS1920Data(mlan, list[i]);
+						fprintf(logfile, "%s\t%s\t%s\tl=%.2f,h=%.2f\n",
+							get_time_str(), get_serial(list[i]), sample_str,
+							ctof(data.temp_low), ctof(data.temp_hi));
+						/* NULL it, it's already been handled */
+						sample_str=NULL;
 					}
 					break;
 				default:
 					sample_str=NULL;
 					break;
 			}
+			/* Handle anything that's not already been handled */
 			if(sample_str!=NULL) {
 				fprintf(logfile, "%s\t%s\t%s\n", get_time_str(),
 					get_serial(list[i]), sample_str);

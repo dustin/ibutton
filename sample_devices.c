@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.20 2002/01/27 02:53:00 dustin Exp $
+ * $Id: sample_devices.c,v 1.21 2002/01/29 08:30:20 dustin Exp $
  */
 
 #include <stdio.h>
@@ -38,6 +38,66 @@ struct sockaddr_in maddr;
 /* Prototypes */
 static void setsignals();
 static void log_error(char *str);
+
+/* This is the list of things being watched */
+struct watch_list {
+	uchar serial[MLAN_SERIAL_SIZE];
+	time_t last_read;
+	struct watch_list *next;
+};
+
+static struct watch_list *watching=NULL;
+
+/* Get the serial number as a string */
+static char*
+get_serial(uchar *serial)
+{
+	static char r[(MLAN_SERIAL_SIZE * 2) + 1];
+	char *map="0123456789ABCDEF";
+	int i=0, j=0;
+	assert(serial);
+	for(i=0; i<MLAN_SERIAL_SIZE; i++) {
+		r[j++]=map[((serial[i] & 0xf0) >> 4)];
+		r[j++]=map[(serial[i] & 0x0f)];
+	}
+	r[j]=0x00;
+	return(r);
+}
+
+static int
+secondsSinceLastUpdate(uchar *serial)
+{
+	int rv=86400;
+	struct watch_list *p=NULL;
+	time_t now=0;
+
+	assert(serial);
+
+	/* Search for a match */
+	for(p=watching; p!=NULL
+		&& (memcmp(serial, p->serial, MLAN_SERIAL_SIZE)!=0); p=p->next);
+
+	assert(p==NULL || memcmp(serial, p->serial, MLAN_SERIAL_SIZE)==0);
+
+	now=time(NULL);
+	if(p==NULL) {
+		p=calloc(sizeof(struct watch_list), 1);
+		assert(p);
+		memcpy(p->serial, serial, MLAN_SERIAL_SIZE);
+		p->next=watching;
+		watching=p;
+	} else {
+		rv=now-p->last_read;
+	}
+
+	/* Timestamp it */
+	assert(p);
+	p->last_read=now;
+
+	printf("secondsSinceLastUpdate(%s) => %d\n", get_serial(serial), rv);
+
+	return(rv);
+}
 
 /* NOTE:  The initialization may be called more than once */
 static MLan *
@@ -111,22 +171,6 @@ log_error(char *str)
 {
 	fprintf(stderr, "%s:  ERROR:  %s", get_time_str(), str);
 	fflush(stderr);
-}
-
-/* Get the serial number as a string */
-static char*
-get_serial(uchar *serial)
-{
-	static char r[(MLAN_SERIAL_SIZE * 2) + 1];
-	char *map="0123456789ABCDEF";
-	int i=0, j=0;
-	assert(serial);
-	for(i=0; i<MLAN_SERIAL_SIZE; i++) {
-		r[j++]=map[((serial[i] & 0xf0) >> 4)];
-		r[j++]=map[(serial[i] & 0x0f)];
-	}
-	r[j]=0x00;
-	return(r);
 }
 
 void
@@ -331,6 +375,7 @@ main(int argc, char **argv)
 		failures=0;
 		/* Loop through the list and gather samples */
 		for(i=0; i<list_count; i++) {
+			int age=secondsSinceLastUpdate(list[i]);
 			switch(list[i][0]) {
 				case 0x10: {
 					struct ds1920_data data;

@@ -29,12 +29,12 @@ struct ds1921_data getMissionData()
 	data.status.clock.day=tm.tm_wday+1;
 
 	/* One minute sample rate */
-	data.status.sample_rate=15;
+	data.status.sample_rate=1;
 
-	data.status.mission_delay=5;
+	data.status.mission_delay=0;
 
-	data.status.low_alarm=ftoc(60);
-	data.status.high_alarm=ftoc(86);
+	data.status.low_alarm=ftoc(40);
+	data.status.high_alarm=ftoc(60);
 
 	/* Various control stuff we want to use in this mission */
 	data.status.control=CONTROL_HI_ALARM_ENABLED|CONTROL_LOW_ALARM_ENABLED|

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.h,v 1.4 2000/07/14 09:46:45 dustin Exp $
+ * $Id: ds1921.h,v 1.5 2000/07/14 21:48:56 dustin Exp $
  */
 
 #ifndef DS1921_H
@@ -11,6 +11,14 @@
 #define HISTOGRAM_SIZE 64
 /* 2k of temperature */
 #define SAMPLE_SIZE 2048
+/* Alarm sizes */
+#define ALARMSIZE 12
+
+/* The alarm structures */
+struct temp_alarm {
+	int sample_offset;
+	int duration;
+};
 
 /* The structure we keep the DS1921 data in */
 
@@ -64,6 +72,10 @@ struct ds1921_data {
 	/* sample data, and the number of samples */
 	int n_samples;
 	float samples[SAMPLE_SIZE];
+
+	/* Temperature alarms */
+	struct temp_alarm low_alarms[ALARMSIZE];
+	struct temp_alarm hi_alarms[ALARMSIZE];
 
 	/* Textual summary */
 	char summary[80];

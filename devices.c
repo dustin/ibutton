@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.8 2000/07/14 18:17:54 dustin Exp $
+ * $Id: devices.c,v 1.9 2000/07/14 21:48:54 dustin Exp $
  */
 
 #include <stdio.h>
@@ -42,7 +42,7 @@ void dumpBlock(uchar *buffer, int size)
 	printf("Dumping %d bytes\n", size);
 	for(i=0; i<size; i++) {
 		printf("%02X ", buffer[i]);
-		if(i>0 && i%25==0) {
+		if((i+1)%16==0) {
 			puts("");
 		}
 	}

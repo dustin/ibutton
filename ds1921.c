@@ -146,17 +146,27 @@ static void showControl(int control)
 /* Decode the register stuff from the DS1921 */
 static void decodeRegister(uchar *buffer, struct ds1921_data *d)
 {
+	assert(buffer);
+
 	getTime1(buffer, d);
 	getTime2(buffer+21, d);
 
+	/* Low and high alarm values */
 	d->status.low_alarm=do1921temp_convert_out(buffer[11]);
 	d->status.high_alarm=do1921temp_convert_out(buffer[12]);
+
+	/* Control buffer */
 	d->status.control=buffer[14];
-	d->status.sample_rate=buffer[13];
+	/* Status buffer */
 	d->status.status=buffer[20];
 
+	/* Minutes per sample */
+	d->status.sample_rate=buffer[13];
+
+	/* Mission delay offset (minutes until the mission starts */
 	d->status.mission_delay=(buffer[19]<<8)|(buffer[18]);
 
+	/* Mission and device counters */
 	d->status.mission_s_counter=
 		(buffer[28]<<16)|(buffer[27]<<8)|(buffer[26]);
 	d->status.device_s_counter=
@@ -242,6 +252,28 @@ void printDS1921(struct ds1921_data d)
 	printf("Mission samples counter:  %d\n", d.status.mission_s_counter);
 	printf("Device samples counter:  %d\n", d.status.device_s_counter);
 
+	printf("Alarms:\n");
+
+	printf("\tToo cold:\n");
+	for(i=0; i<ALARMSIZE; i++) {
+		if(d.low_alarms[i].duration>0) {
+			printf("\t\t%s (%d) for %d minutes\n",
+				ds1921_sample_time(d.low_alarms[i].sample_offset, d),
+				d.low_alarms[i].sample_offset,
+				d.low_alarms[i].duration * d.status.sample_rate);
+		}
+	}
+
+	printf("\tToo hot:\n");
+	for(i=0; i<ALARMSIZE; i++) {
+		if(d.hi_alarms[i].duration>0) {
+			printf("\t\t%s (%d) for %d minutes\n",
+				ds1921_sample_time(d.hi_alarms[i].sample_offset, d),
+				d.hi_alarms[i].sample_offset,
+				d.hi_alarms[i].duration * d.status.sample_rate);
+		}
+	}
+
 	printf("Histogram:\n");
 	showHistogram(d.histogram);
 
@@ -252,6 +284,26 @@ void printDS1921(struct ds1921_data d)
 			printf("\tSample %03d from %s is %.2ff (%.2fc)\n",
 				i, ds1921_sample_time(i, d), temp, d.samples[i]);
 		}
+	}
+}
+
+static void decodeAlarms(uchar *buffer, struct ds1921_data *d)
+{
+	int i=0, j=0;
+
+	assert(buffer);
+	assert(d);
+
+	/* Low first */
+	for(j=0, i=0; i<32; i+=4, j++) {
+		d->low_alarms[j].sample_offset=
+			(buffer[i+2]<<16)|(buffer[i+1]<<8)|buffer[i];
+		d->low_alarms[j].duration=buffer[i+3];
+	}
+	for(j=0, i=32; i<96; i+=4, j++) {
+		d->hi_alarms[j].sample_offset=
+			(buffer[i+2]<<16)|(buffer[i+1]<<8)|buffer[i];
+		d->hi_alarms[j].duration=buffer[i+3];
 	}
 }
 
@@ -373,6 +425,10 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 	/* Register data is at 16 */
 	mlan->getBlock(mlan, serial, 16, 1, buffer);
 	decodeRegister(buffer, &data);
+
+	/* Temperature alarms are at 17 */
+	mlan->getBlock(mlan, serial, 17, 3, buffer);
+	decodeAlarms(buffer, &data);
 
 	/* Histogram is at 64 */
 	mlan->getBlock(mlan, serial, 64, 4, buffer);

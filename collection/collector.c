@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: collector.c,v 1.1 2002/01/26 08:24:37 dustin Exp $
+ * $Id: collector.c,v 1.2 2002/01/26 08:28:37 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -62,11 +62,17 @@ static void saveData(struct data_list *p)
 			(int)p->timestamp));
 
 #ifdef HAVE_RRD_H
+	verboseprint(2, ("Saving to RRD.\n"));
 	saveDataRRD(p);
 #endif /* HAVE_RRD_H */
 
 #ifdef HAVE_LIBPQ_FE_H
-	saveDataPostgres(p);
+	if((pg_config.dbhost!=NULL) || (pg_config.dbname!=NULL)) {
+		verboseprint(2, ("Saving to postgres.\n"));
+		saveDataPostgres(p);
+	} else {
+		verboseprint(2, ("Not saving to postgres, not configured.\n"));
+	}
 #endif /* HAVE_LIBPQ_FE_H */
 
 }
@@ -250,7 +256,9 @@ int main(int argc, char *argv[])
 	extern char *optarg;
 
 	/* Clear out the config */
+#ifdef HAVE_LIBPQ_FE_H
 	memset(&pg_config, 0x00, sizeof(pg_config));
+#endif /* HAVE_LIBPQ_FE_H */
 
 	/* Deal with the arguments here */
 	while( (c=getopt(argc, argv, OPTIONS)) != -1) {

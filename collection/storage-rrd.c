@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: storage-rrd.c,v 1.2 2002/01/26 08:38:02 dustin Exp $
+ * $Id: storage-rrd.c,v 1.3 2002/01/26 10:56:31 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -26,7 +26,7 @@
 #include "../utility.h"
 
 #define RRD_CREATE_STRING "create %s -s 60 -b now-5minutes " \
-	"DS:temp:GAUGE:900:-10:50 " \
+	"DS:temp:GAUGE:900:-20:75 " \
 	"RRA:AVERAGE:0.5:5:210240 " \
 	"RRA:MIN:0.5:5:210240 " \
 	"RRA:MAX:0.5:5:210240 " \

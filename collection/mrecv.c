@@ -1,8 +1,7 @@
 /*
- * listener.c -- joins a multicast group and echoes all data it receives from
- *		the group to its stdout...
+ * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * Antony Courtney,	25/11/94
+ * $Id: mrecv.c,v 1.3 2002/01/24 10:10:27 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -23,43 +22,118 @@
 #define HELLO_GROUP "225.0.0.37"
 #define MSGBUFSIZE 256
 
-void process(const char *msg)
-{
-	struct log_datum *d=NULL;
-	char **args;
-	char buf[1024];
-	int rv=0;
-	extern int optind;
-	assert(msg);
+static struct rrd_queue *queue=NULL;
 
-	d=parseLogEntry(msg);
-	assert(d);
+#define TIMETRUNC(t) (((int)t/60)*60)
+
+#ifndef RRDFILE
+# define RRDFILE "file.rrd"
+#endif /* RRDFILE */
+
+static void saveDataRRD()
+{
+	char **keys=NULL;
+	char **vals=NULL;
+	char **args=NULL;
+	int i=0, rv=0;
+	char buf[8192];
+	char timebuf[32];
+	extern int optind;
+
+	assert(queue);
+
+	memset(&buf, 0x00, sizeof(buf));
+	keys=getRRDQueueKeys(queue);
+	assert(keys);
+	vals=getRRDQueueValues(queue);
+	assert(vals);
+
+	snprintf(timebuf, sizeof(timebuf), "%d", queue->timestamp);
+
+	strcpy(buf, "update " RRDFILE " -t ");
+	for(i=0; keys[i]; i++) {
+		strcat(buf, keys[i]);
+		if(keys[i+1]!=NULL) {
+			strcat(buf, ":");
+		}
+		assert(strlen(buf)<sizeof(buf));
+	}
+	strcat(buf, " ");
+	strcat(buf, timebuf);
+
+	for(i=0; vals[i]; i++) {
+		strcat(buf, ":");
+		strcat(buf, vals[i]);
+		assert(strlen(buf)<sizeof(buf));
+	}
 
 	/* Do something with it */
-	sprintf(buf, "update file.rrd -t %s %d:%f",
-		d->serial, d->tv.tv_sec, d->reading);
-	puts(buf);
 	fflush(stdout);
 	args=split(buf, " ");
 	optind=0;
 	rv=rrd_update(listLength(args), args);
 	if(rv<0 || rrd_test_error()) {
+		puts(buf);
 		int i=0;
 		printf("ERROR:  %s\n", rrd_get_error());
 		for(i=0; i<listLength(args); i++) {
 			printf("\targs[%d]=``%s''\n", i, args[i]);
 		}
 		rrd_clear_error();
-	} else {
-		printf("OK\n");
 	}
+
+	/* Clean up */
+	freeList(keys);
+	freeList(vals);
 	freeList(args);
+}
+
+static void saveData() {
+	/* Do the RRD save */
+	saveDataRRD();
+}
+
+static void process(const char *msg)
+{
+	struct log_datum *d=NULL;
+	time_t t=0;
+
+	assert(msg);
+
+	d=parseLogEntry(msg);
+	assert(d);
+
+	t=TIMETRUNC(d->tv.tv_sec);
+
+	if(queue==NULL) {
+		queue=newRRDQueue();
+		queue->timestamp=t;
+		appendToRRDQueue(queue, d);
+	} else {
+		/* Figure out if the timestamp changed */
+		if(queue->timestamp == t) {
+			/* Timestamp's the same, just append the new entry */
+			appendToRRDQueue(queue, d);
+		} else {
+			/* Process the old */
+			saveData();
+
+			/* Get rid of the old and add the new */
+			disposeOfRRDQueue(queue);
+#ifdef MYMALLOC
+			_mdebug_dump();
+#endif /* MYMALLOC */
+			queue=newRRDQueue();
+			queue->timestamp=t;
+			appendToRRDQueue(queue, d);
+		}
+	}
 
 	/* Clean up */
 	disposeOfLogEntry(d);
 }
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	struct sockaddr_in addr;
 	int             fd=0, nbytes=0, addrlen=0, reuse=1;

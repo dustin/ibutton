@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.1 2002/01/23 22:36:13 dustin Exp $
+ * $Id: data.c,v 1.2 2002/01/24 10:10:23 dustin Exp $
  */
 
 #include <stdio.h>
@@ -120,6 +120,96 @@ void disposeOfLogEntry(struct log_datum *entry)
 
 	free(entry->serial);
 	free(entry);
+}
+
+void appendToRRDQueue(struct rrd_queue *dl, struct log_datum *datum)
+{
+	struct data_list *p=NULL;
+	struct data_list *newe=NULL;
+
+	assert(dl);
+	assert(datum);
+
+	/* Seek to the end of the list */
+	for(p=dl->list; p!=NULL && p->next!=NULL; p=p->next);
+
+	newe=calloc(sizeof(struct data_list), 1);
+	assert(newe);
+
+	newe->serial=strdup(datum->serial);
+	assert(newe->serial);
+	newe->reading=datum->reading;
+
+	if(p==NULL) {
+		dl->list=newe;
+	} else {
+		p->next=newe;
+	}
+
+}
+
+static void freeDataList(struct data_list *list)
+{
+	assert(list);
+	if(list->next != NULL) {
+		freeDataList(list->next);
+	}
+	free(list->serial);
+	free(list);
+}
+
+void disposeOfRRDQueue(struct rrd_queue *dl)
+{
+	assert(dl);
+	if(dl->list != NULL) {
+		freeDataList(dl->list);
+	}
+	free(dl);
+}
+
+char **getRRDQueueKeys(struct rrd_queue *dl)
+{
+	char **rv=NULL;
+	struct data_list *p=NULL;
+	int i=0;
+
+	rv=calloc(sizeof(char *), SPLITSIZE);
+	assert(rv);
+	for(i=0, p=dl->list; p!=NULL; i++, p=p->next) {
+		assert(i<SPLITSIZE);
+		rv[i]=strdup(p->serial);
+		assert(rv[i]);
+	}
+	rv[i]=NULL;
+
+	return(rv);
+}
+
+char **getRRDQueueValues(struct rrd_queue *dl)
+{
+	char **rv=NULL;
+	struct data_list *p=NULL;
+	int i=0;
+
+	rv=calloc(sizeof(char *), SPLITSIZE);
+	assert(rv);
+	for(i=0, p=dl->list; p!=NULL; i++, p=p->next) {
+		char buf[64];
+		assert(i<SPLITSIZE);
+		snprintf(buf, sizeof(buf), "%f", p->reading);
+		rv[i]=strdup(buf);
+		assert(rv[i]);
+	}
+	rv[i]=NULL;
+
+	return(rv);
+}
+
+struct rrd_queue *newRRDQueue()
+{
+	struct rrd_queue *rv;
+	rv=calloc(sizeof(struct rrd_queue), 1);
+	return(rv);
 }
 
 #ifdef DATA_MAIN

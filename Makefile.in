@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.18 2002/01/23 23:55:58 dustin Exp $
+# $Id: Makefile.in,v 1.19 2002/01/27 01:50:08 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -15,7 +15,7 @@ LDFLAGS=@LDFLAGS@ @LIBS@
 RRDLIB=@RRDLIB@
 
 OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o ds2406.o ds2438.o \
-	utility.o
+	utility.o mymalloc.o
 PROGS=search lookup sample_devices slew 1921dump 1921mission \
 	1920 storage 2406 2438 @GUILESTUFF@
 PROGO=search.o lookup.o sample_devices.o slew.o

@@ -15,7 +15,7 @@ PROGO=collector.o
 CC=@CC@
 
 collector: $(OBJ) collector.o
-	$(CC) -o $@ $(OBJ) collector.o ../utility.o \
+	$(CC) -o $@ $(OBJ) collector.o ../utility.o ../mymalloc.o \
 		$(LDFLAGS) $(RRDLIB) $(POSTGRESLIB)
 
 clean:

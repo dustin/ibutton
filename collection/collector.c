@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: collector.c,v 1.6 2002/01/26 23:39:46 dustin Exp $
+ * $Id: collector.c,v 1.7 2002/01/27 01:50:18 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -98,6 +98,9 @@ doFlush()
 		}
 
 		disposeOfRRDQueue(tmpqueue);
+#ifdef MYMALLOC
+		_mdebug_dump();
+#endif /* MYMALLOC */
 	}
 }
 
@@ -161,11 +164,8 @@ init(const char *multigroup, int multiport)
 	pthread_t		flusher_thread;
 #endif /* WORKING_PTHREAD */
 
-	fprintf(stderr, "Initializing multicast receiver with"
-#ifndef WORKING_PTHREAD
-		"out"
-#endif /* WORKING_PTHREAD */
-		" thread support at %s:%d.\n", multigroup, multiport);
+	fprintf(stderr, "Initializing multicast receiver on %s:%d.\n",
+		multigroup, multiport);
 
 	/* create what looks like an ordinary UDP socket */
 	if ((msocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -258,6 +258,9 @@ int main(int argc, char *argv[])
 
 	fprintf(stderr, "iButton data collector v " COLLECTOR_VERSION "\n");
 	fprintf(stderr, "\tOptions:  "
+#ifdef WORKING_PTHREAD
+		"pthread "
+#endif /* WORKING_PTHREAD */
 #ifdef HAVE_LIBPQ_FE_H
 		"postgresql "
 #endif /* HAVE_LIBPQ_FE_H */

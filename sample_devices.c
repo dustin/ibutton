@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.16 2001/12/24 08:12:13 dustin Exp $
+ * $Id: sample_devices.c,v 1.17 2002/01/27 01:50:16 dustin Exp $
  */
 
 #include <stdio.h>
@@ -280,6 +280,10 @@ main(int argc, char **argv)
 				mlan->destroy(mlan);
 			}
 			mlan=NULL;
+
+#ifdef MYMALLOC
+			_mdebug_dump();
+#endif /* MYMALLOC */
 
 			while(mlan==NULL) {
 				log_error("(re)initializing the 1wire bus.\n");

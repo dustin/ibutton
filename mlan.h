@@ -1,11 +1,15 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.16 2002/01/23 23:56:03 dustin Exp $
+ * $Id: mlan.h,v 1.17 2002/01/27 01:50:13 dustin Exp $
  */
 
 #ifndef MLAN_H
 #define MLAN_H 1
+
+#ifdef MYMALLOC
+# include "mymalloc.h"
+#endif
 
 #include "utility.h"
 

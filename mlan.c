@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.11 1999/12/09 08:17:04 dustin Exp $
+ * $Id: mlan.c,v 1.12 2000/07/13 23:44:27 dustin Exp $
  */
 
 #include <stdio.h>
@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include <mlan.h>
+#include <commands.h>
 
 extern void     _com_setbaud(MLan * mlan, int new_baud);
 extern void     _com_flush(MLan * mlan);
@@ -438,12 +439,11 @@ _mlan_block(MLan *mlan, int doreset, uchar *buf, int len)
 	assert(mlan);
 	assert(buf);
 
-	if(len>64) {
-		return(FALSE);
-	}
+	assert(len<64);
 
 	if(doreset) {
 		if(! (mlan->reset(mlan))) {
+			mlan_debug(mlan, 2, ("mlan_block: reset failed\n"));
 			return(FALSE);
 		}
 	}
@@ -468,6 +468,7 @@ _mlan_block(MLan *mlan, int doreset, uchar *buf, int len)
 
 	/* If the above failed, resync */
 	mlan->ds2480detect(mlan);
+	mlan_debug(mlan, 2, ("mlan_block: everything failed\n"));
 	return(FALSE);
 }
 
@@ -481,7 +482,7 @@ _mlan_access(MLan *mlan, uchar *serial)
 	assert(serial);
 
 	if(mlan->reset(mlan)) {
-		TranBuf[0]=0x55;
+		TranBuf[0]=MATCH_ROM;
 		for(i=1; i<MLAN_SERIAL_SIZE + 1; i++) {
 			TranBuf[i]=serial[i-1];
 		}
@@ -492,7 +493,7 @@ _mlan_access(MLan *mlan, uchar *serial)
 					return(FALSE);
 				}
 			}
-			if(TranBuf[0]!=0x55)
+			if(TranBuf[0]!=MATCH_ROM)
 				return(FALSE);
 			else
 				return(TRUE);

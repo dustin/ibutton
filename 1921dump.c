@@ -175,8 +175,6 @@ struct ds1921_data decodeRegister(uchar *buffer)
 	struct ds1921_data d;
 	memset(&d, 0x00, sizeof(d));
 
-	binDumpBlock(buffer, 32, 0x200);
-
 	getTime1(buffer, &d);
 	getTime2(buffer+21, &d);
 
@@ -189,10 +187,27 @@ struct ds1921_data decodeRegister(uchar *buffer)
 	d.status.mission_delay=(buffer[19]<<8)+(buffer[18]);
 
 	d.status.mission_s_counter=
-		(buffer[28]<<16)+(buffer[27]<<8)+(buffer[26]);
+		(buffer[28]<<16)|(buffer[27]<<8)|(buffer[26]);
 	d.status.device_s_counter=
-		(buffer[31]<<16)+(buffer[30]<<8)+(buffer[29]);
+		(buffer[31]<<16)|(buffer[30]<<8)|(buffer[29]);
 	return(d);
+}
+
+void showHistogram(int h[])
+{
+	int i;
+
+	for(i=0; i<HISTOGRAM_SIZE; i++) {
+
+		float temp, temp2;
+		
+		temp=do1921temp_convert_out(i<<2);
+		temp2=do1921temp_convert_out((i+1)<<2);
+
+		if(h[i]>0) {
+			printf("%.2f to %.2f:  %d\n", ctof(temp), ctof(temp2), h[i]);
+		}
+	}
 }
 
 void printDS1921(struct ds1921_data d)
@@ -225,6 +240,9 @@ void printDS1921(struct ds1921_data d)
 	printf("Mission samples counter:  %d\n", d.status.mission_s_counter);
 	printf("Device samples counter:  %d\n", d.status.device_s_counter);
 
+	printf("Histogram:\n");
+	showHistogram(d.histogram);
+
 	printf("Temperature samples:\n");
 	for(i=0; i<d.n_samples; i++) {
 		float temp=ctof(d.samples[i]);
@@ -236,69 +254,74 @@ void printDS1921(struct ds1921_data d)
 
 /* return the number of bytes read */
 int
-getBlock(MLan *mlan, uchar *serial, int page, uchar *buffer)
+getBlock(MLan *mlan, uchar *serial, int page, int pages, uchar *buffer)
 {
-	uchar send_block[1024];
+	uchar send_block[128];
 	int header=0;
-	int length=0, send_cnt=0, atmp=0;
+	int send_cnt=0, atmp=0;
+	int offset=0;
 	int i=0, j=0;
+	int ret=-1;
 
 	assert(mlan);
 	assert(serial);
 	assert(buffer);
 
-	/* Clear out the send set */
-	for(i=0; i<sizeof(send_block); i++) {
-		send_block[i]=0x00;
-	}
+	do {
+		/* Start back at zero */
+		send_cnt=0;
 
-	/* Access the bus */
-	if(!mlan->access(mlan, serial)) {
-		printf("Error reading from DS1920\n");
-		exit(-1);
-	}
+		/* Clear out the send set */
+		for(i=0; i<sizeof(send_block); i++) {
+			send_block[i]=0x00;
+		}
 
-	send_block[send_cnt++] = MATCH_ROM;
-	for(i=0; i<8; i++)
-		send_block[send_cnt++] = serial[i];
-	/* Now our command */
-	send_block[send_cnt++] = READ_MEMORY;
-	/* Calculate the position of the page...each page is 0x20 bytes, and
-	 * the second byte goes first. */
-	atmp=page*0x20;
-	send_block[send_cnt++] = atmp & 0xff;
-	send_block[send_cnt++] = atmp>>8;
-	printf("Fetching from page %d (0x%04x) (address %02x%02x)\n",
-		page, atmp, send_block[send_cnt-2], send_block[send_cnt-1]);
-	header=send_cnt;
-	for (i = 0; i < 32; i++)
-		send_block[send_cnt++]=0xff;
-	/* send the block */
-	if(! (mlan->block(mlan, TRUE, send_block, send_cnt)) ) {
-		printf("Error sending request for block!\n");
-		exit(-1);
-	}
+		mlan->DOWCRC=0;
+		send_block[send_cnt++] = MATCH_ROM;
+		for(i=0; i<8; i++)
+			send_block[send_cnt++] = serial[i];
+		/* Now our command */
+		send_block[send_cnt++] = READ_MEMORY;
+		/* Calculate the position of the page...each page is 0x20 bytes, and
+		 * the second byte goes first. */
+		atmp=page*0x20;
+		send_block[send_cnt++] = atmp & 0xff;
+		send_block[send_cnt++] = atmp>>8;
+		mlan->dowcrc(mlan, send_block[send_cnt-2]);
+		mlan->dowcrc(mlan, send_block[send_cnt-1]);
+		header=send_cnt;
 
-	/* Find the length */
-	length=send_block[header];
+		for (i = 0; i < 34; i++)
+			send_block[send_cnt++]=0xff;
+		/* send the block */
+		if(! (mlan->block(mlan, TRUE, send_block, send_cnt)) ) {
+			printf("Error sending request for block!\n");
+			return(-1);
+		}
 
-	/* Copy it into the return buffer */
-	for(j=0, i=header; i<header+length; i++) {
-		buffer[j++]=send_block[i];
-	}
+		for(i=0; i<34; i++) {
+			mlan->dowcrc(mlan, send_block[header+i+1]);
+		}
 
-	printf("Read %d bytes\n", length);
+		/* Copy it into the return buffer */
+		for(j=0, i=header; i<header+32; i++) {
+			buffer[offset+j++]=send_block[i];
+		}
 
-	return(length);
+		offset+=32;
+		pages--;
+		page++;
+	} while(pages>0);
+	return(ret);
 }
 
 int main(int argc, char **argv)
 {
 	MLan *mlan=NULL;
 	uchar serial[MLAN_SERIAL_SIZE];
-	uchar buffer[1024];
+	uchar buffer[8192];
 	char *serial_in=NULL, *dev=NULL;
-	int i=0, length=0;
+	int i=0, j=0, pages=0;
 	struct ds1921_data data;
 
 	if(argc<2) {
@@ -324,26 +347,33 @@ int main(int argc, char **argv)
 	}
 
 	/* Register page is at 16 */
-	length=getBlock(mlan, serial, 16, buffer);
-	printf("Register data:\n");
+	getBlock(mlan, serial, 16, 1, buffer);
 	data=decodeRegister(buffer);
 
 	/* Histogram is at 64 */
-	length=getBlock(mlan, serial, 64, buffer);
-	printf("Histogram data:\n");
-	dumpBlock(buffer, length);
+	getBlock(mlan, serial, 64, 4, buffer);
+	for(j=0, i=0; j<HISTOGRAM_SIZE; i+=2) {
+		int n;
 
-	/* 128 is the temperature samples */
-	while(data.n_samples<data.status.mission_s_counter) {
-		int location=128+(data.n_samples/32);
-		printf("Getting samples starting from page %d\n", location);
-		length=getBlock(mlan, serial, location, buffer);
-		for(i=0; i<length; i++) {
-			float temp=do1921temp_convert_out(buffer[i]);
+		n=buffer[i+1];
+		n<<=0;
+		n|=buffer[i];
 
-			assert(data.n_samples<SAMPLE_SIZE);
-			data.samples[data.n_samples++]=temp;
-		}
+		data.histogram[j++]=buffer[i];
+	}
+
+	/* 128 is the temperature samples.  The number of pages my vary based
+	 * on the amount of samples this mission has seen.  Let's figure out
+	 * how many we should grab... */
+	pages=(data.status.mission_s_counter/32)+1;
+	if(pages>64)
+		pages=64;
+	getBlock(mlan, serial, 128, pages, buffer);
+	for(i=0; i<data.status.mission_s_counter; i++) {
+		float temp=do1921temp_convert_out(buffer[i]);
+
+		assert(data.n_samples<SAMPLE_SIZE);
+		data.samples[data.n_samples++]=temp;
 	}
 
 	printDS1921(data);

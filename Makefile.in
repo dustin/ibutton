@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.4 1999/12/09 08:17:00 dustin Exp $
+# $Id: Makefile.in,v 1.5 1999/12/09 08:18:35 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -31,7 +31,7 @@ lookup: mlan.a lookup.o
 	$(CC) -o $@ lookup.o mlan.a
 
 mlan.a: $(OBJ) mlan.h
-	$(AR) rcs $@ $(OBJ)
+	$(AR) rc $@ $(OBJ)
 	$(RANLIB) $@
 
 com.o: mlan.h

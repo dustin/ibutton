@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: com.c,v 1.8 1999/12/09 08:17:02 dustin Exp $
+ * $Id: com.c,v 1.9 1999/12/09 08:18:36 dustin Exp $
  */
 
 #include <stdio.h>
@@ -12,6 +12,7 @@
 #include <time.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <string.h>
 #include <assert.h>
 
 #include <mlan.h>

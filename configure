@@ -1042,7 +1042,7 @@ fi
 
 if test "$GCC" = "yes"
 then
-	AC_MSG_NOTICE("GCC, setting -Wall")
+	echo "GCC, setting -Wall"
 	CPPFLAGS="$CPPFLAGS -Wall"
 fi
 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.21 2002/01/27 02:06:34 dustin Exp $
+ * $Id: mlan.c,v 1.22 2002/01/27 02:09:48 dustin Exp $
  */
 
 #include <stdio.h>
@@ -424,6 +424,8 @@ _mlan_init_table(void)
 	serial_table[0x23]=strdup("DS1973 4kbit EEPROM iButton");
 	assert(serial_table[0x96] == NULL);
 	serial_table[0x96]=strdup("DS199550-400 Java Button");
+
+	_table_initialized=1;
 }
 
 static void

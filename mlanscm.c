@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlanscm.c,v 1.2 2001/12/08 12:06:57 dustin Exp $
+ * $Id: mlanscm.c,v 1.3 2001/12/10 06:52:38 dustin Exp $
  */
 
 #include <stdio.h>
@@ -82,6 +82,18 @@ static MLan *mlan_getmlan(SCM mlan_smob, char *where)
 	assert(mlan);
 
 	return(mlan);
+}
+
+/* Is this what we think it is? */
+static SCM mlan_p(SCM mlan_smob)
+{
+	SCM rv=SCM_BOOL_F;
+
+	if(SCM_NIMP(mlan_smob) && SCM_CAR(mlan_smob) == mlan_tag) {
+		rv=SCM_BOOL_T;
+	}
+
+	return(rv);
 }
 
 static SCM mlan_search(SCM mlan_smob)
@@ -284,6 +296,7 @@ void init_mlan_type()
 	scm_set_smob_free(mlan_tag, free_mlan);
 
 	scm_make_gsubr("mlan-init", 1, 0, 1, make_mlan);
+	scm_make_gsubr("mlanp", 1, 0, 0, mlan_p);
 	scm_make_gsubr("mlan-search", 1, 0, 0, mlan_search);
 	scm_make_gsubr("mlan-access", 2, 0, 0, mlan_access);
 	scm_make_gsubr("mlan-touchbyte", 2, 0, 0, mlan_touchbyte);

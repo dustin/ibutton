@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.26 2002/01/30 09:22:10 dustin Exp $
+ * $Id: mlan.c,v 1.27 2002/01/30 09:44:02 dustin Exp $
  */
 
 #include <stdio.h>
@@ -728,7 +728,7 @@ _mlan_getblock(MLan *mlan, uchar *serial, int page, int pages, uchar *buffer)
 			send_block[i]=0x00;
 		}
 
-		mlan->DOWCRC=0;
+		mlan->CRC16=0;
 		send_block[send_cnt++] = MATCH_ROM;
 		for(i=0; i<8; i++)
 			send_block[send_cnt++] = serial[i];
@@ -739,8 +739,8 @@ _mlan_getblock(MLan *mlan, uchar *serial, int page, int pages, uchar *buffer)
 		atmp=page*0x20;
 		send_block[send_cnt++] = atmp & 0xff;
 		send_block[send_cnt++] = atmp>>8;
-		mlan->dowcrc(mlan, send_block[send_cnt-2]);
-		mlan->dowcrc(mlan, send_block[send_cnt-1]);
+		mlan->docrc16(mlan, send_block[send_cnt-2]);
+		mlan->docrc16(mlan, send_block[send_cnt-1]);
 		header=send_cnt;
 
 		for (i = 0; i < 34; i++)
@@ -753,33 +753,10 @@ _mlan_getblock(MLan *mlan, uchar *serial, int page, int pages, uchar *buffer)
 
 		mlan->DOWCRC=0;
 		for(i=0; i<34; i++) {
-			mlan->dowcrc(mlan, send_block[send_cnt-34]);
+			mlan->docrc16(mlan, send_block[header+i+1]);
 		}
-		if(mlan->DOWCRC!=0) {
-			/* dumpBlock(send_block, send_cnt); */
-			/*
-			fprintf(stderr, "CRC FAILURE (got 0x%x on page 0x%x, 0x%x pages)\n",
-				mlan->DOWCRC, page, pages);
-			*/
 
-			/* Scan for a good CRC */
-			/*
-			for(i=0; i<send_cnt; i++) {
-				int j=0;
-				mlan->DOWCRC=0;
-				for(j=0; j<send_cnt-i; j++) {
-					mlan->dowcrc(mlan, send_block[i+j]);
-					if(j>=31 && mlan->DOWCRC==0) {
-						fprintf(stderr, "CRC is 0 at %d (-%d) length %d\n",
-							i, j, (send_cnt-i));
-					}
-				}
-			}
-			*/
-
-			/* Return false here if we care */
-			/* return(FALSE); */
-		}
+		fprintf(stderr, "CRC16 is %x\n", mlan->CRC16);
 
 		/* Copy it into the return buffer */
 		for(j=offset, i=header; i<header+32; i++) {
@@ -852,6 +829,7 @@ mlan_init(char *port, int baud_rate)
 
 	/* Misc functions */
 	mlan->dowcrc = dowcrc;
+	mlan->docrc16 = docrc16;
 	mlan->msDelay = msDelay;
 	mlan->copySerial = _copy_serial;
 	mlan->serialLookup = _mlan_serial_lookup;

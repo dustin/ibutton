@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1920.c,v 1.6 2000/07/18 09:00:12 dustin Exp $
+ * $Id: ds1920.c,v 1.7 2002/01/29 19:19:05 dustin Exp $
  */
 
 #include <stdio.h>
@@ -20,9 +20,9 @@
 void
 printDS1920(struct ds1920_data d)
 {
-	printf("Temp:  %.2fc (%.2ff)\n", d.temp, ctof(d.temp));
-	printf("Low alarm:  %.2fc (%.2ff)\n", d.temp_low, ctof(d.temp_low));
-	printf("High alarm:  %.2fc (%.2ff)\n", d.temp_hi, ctof(d.temp_hi));
+	printf("Temp:  %.2fc (%.2ff)\n", d.temp, CTOF(d.temp));
+	printf("Low alarm:  %.2fc (%.2ff)\n", d.temp_low, CTOF(d.temp_low));
+	printf("High alarm:  %.2fc (%.2ff)\n", d.temp_hi, CTOF(d.temp_hi));
 }
 
 int
@@ -198,7 +198,7 @@ getDS1920Data(MLan *mlan, uchar *serial)
 	data.temp=tmp;
 	/* The string readings */
 	sprintf(data.reading_c, "%.2f", data.temp);
-	sprintf(data.reading_f, "%.2f", ctof(data.temp));
+	sprintf(data.reading_f, "%.2f", CTOF(data.temp));
 	data.valid=TRUE;
 	return(data);
 }

@@ -3,7 +3,7 @@ AR=@AR@
 RANLIB=@RANLIB@
 
 DEFS=@DEFS@
-CFLAGS=-I. -I../mymalloc @CFLAGS@ $(DEFS)
+CFLAGS=-I. -I.. -I../mymalloc @CFLAGS@ $(DEFS)
 LDFLAGS=@LDFLAGS@ @LIBS@
 RRDLIB=@RRDLIB@
 POSTGRESLIB=@POSTGRESLIB@
@@ -15,7 +15,7 @@ PROGO=collector.o
 CC=@CC@
 
 collector: $(OBJ) collector.o
-	$(CC) -o $@ $(OBJ) collector.o ../utility.o ../mymalloc/mymalloc.o \
+	$(CC) -o $@ $(OBJ) collector.o ../mlan.a \
 		$(LDFLAGS) $(RRDLIB) $(POSTGRESLIB)
 
 clean:

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.19 2002/01/29 08:52:59 dustin Exp $
+ * $Id: mlan.h,v 1.20 2002/01/29 19:19:08 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -207,6 +207,9 @@ typedef unsigned char uchar;
 #define mlan_debug(a, b, c) if(a->debug > b) { printf c; }
 #endif
 
+#define CTOF(a) (((float)a*9.0/5.0)+32.0)
+#define FTOC(a) (((float)a-32.0)*5.0/9.0)
+
 struct __mlan;
 typedef struct __mlan MLan;
 
@@ -289,10 +292,10 @@ MLan *mlan_init(char *port, int baud_rate);
 /* Devices */
 char *get_sample(MLan *mlan, uchar *serial);
 
-float ctof(float);
-float ftoc(float);
 void binDumpBlock(uchar *buffer, int size, int start_addr);
 void dumpBlock(uchar *buffer, int size);
+char *parseSerial(char *in, uchar *out);
+
 
 /* GMT offset (in seconds) */
 int findGMTOffset(void); 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.23 2002/01/27 02:23:58 dustin Exp $
+ * $Id: mlan.c,v 1.24 2002/01/29 19:19:07 dustin Exp $
  */
 
 #include <stdio.h>
@@ -67,8 +67,10 @@ h2b(int size, char *buf, uchar *outbuf)
 {
 	int i=0, j=0;
 	int map[256];
+
 	assert(buf);
 	assert(outbuf);
+	assert(strlen(buf)==(size*2));
 
 	for(i=0; i<256; i++) {
 		if (i >= '0' && i <= '9') {
@@ -89,14 +91,21 @@ h2b(int size, char *buf, uchar *outbuf)
 	return(outbuf);
 }
 
+/* External API for parsing serial numbers */
+char *
+parseSerial(char *in, uchar *out)
+{
+	assert(in);
+	assert(out);
+	assert(strlen(in)==(MLAN_SERIAL_SIZE*2));
+	return(h2b(MLAN_SERIAL_SIZE, in, out));
+}
+
 /* Parse a serial number */
 static char *
-_mlan_parseSerial(MLan *mlan, char *serial, uchar *serial_in)
+_mlan_parseSerial(MLan *mlan, char *in, uchar *out)
 {
-	assert(mlan);
-	assert(serial);
-	assert(serial_in);
-	return(h2b(MLAN_SERIAL_SIZE, serial, serial_in));
+	return(parseSerial(in, out));
 }
 
 /* Millisecond sleep */

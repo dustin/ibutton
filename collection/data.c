@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.5 2002/01/29 10:33:13 dustin Exp $
+ * $Id: data.c,v 1.6 2002/01/29 19:19:12 dustin Exp $
  */
 
 #include <stdio.h>
@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "mlan.h"
 #include "data.h"
 
 #define SPLITSIZE 64
@@ -72,6 +73,7 @@ struct log_datum *parseLogEntry(const char *line)
 	struct tm t;
 	char **fields;
 	char **ta;
+	uchar serial[MLAN_SERIAL_SIZE];
 
 	assert(line);
 
@@ -101,8 +103,10 @@ struct log_datum *parseLogEntry(const char *line)
 
 	rv->serial=strdup(fields[1]);
 	rv->reading=atof(fields[2]);
-	rv->low=0;
-	rv->high=0;
+
+	parseSerial(rv->serial, serial);
+
+	/* Do device-specific-stuff here */
 
 	freeList(fields);
 	freeList(ta);

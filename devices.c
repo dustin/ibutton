@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.16 2001/08/29 09:27:51 dustin Exp $
+ * $Id: devices.c,v 1.18 2002/01/29 19:19:04 dustin Exp $
  */
 
 #include <stdio.h>
@@ -19,22 +19,6 @@
 #include <ds1920.h>
 #include <ds1921.h>
 #include <ds2406.h>
-
-float
-ctof(float in)
-{
-	float ret;
-	ret=(in*9/5) + 32;
-	return(ret);
-}
-
-float
-ftoc(float in)
-{
-	float ret;
-	ret=(in-32) * 5/9;
-	return(ret);
-}
 
 int
 findGMTOffset(void)
@@ -122,8 +106,8 @@ get_sample(MLan *mlan, uchar *serial)
 				struct ds1920_data d;
 				d=getDS1920Data(mlan, serial);
 				if(d.valid) {
-					assert(strlen(d.reading_f)<sizeof(buffer));
-					strcpy(buffer, d.reading_f);
+					assert(strlen(d.reading_c)<sizeof(buffer));
+					strcpy(buffer, d.reading_c);
 					ret=buffer;
 				}
 			}

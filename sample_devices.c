@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.25 2002/01/29 10:33:12 dustin Exp $
+ * $Id: sample_devices.c,v 1.26 2002/01/29 19:19:09 dustin Exp $
  */
 
 #include <stdio.h>
@@ -284,17 +284,35 @@ static void
 msend(const char *msg)
 {
 	static int sent=0;
+	int i=0, cont=1;
+	extern int errno;
 
 	if(msocket>=0) {
-		/* length of the string +1 to send the NULL */
-		if(sendto(msocket, msg, (strlen(msg)+1), 0,
-			(struct sockaddr *)&maddr, sizeof(maddr)) < 0) {
-			perror("sendto");
+		/* Try up to three times to send the packet */
+		for(i=0; i<3 && cont==1; i++) {
+			/* length of the string +1 to send the NULL */
+			if(sendto(msocket, msg, (strlen(msg)+1), 0,
+				(struct sockaddr *)&maddr, sizeof(maddr)) < 0) {
+				switch(errno) {
+					case ENOBUFS:
+						/* Slow it down a bit, try again */
+						usleep(10);
+						break;
+					default:
+						/* Any other error is fatal */
+						cont=0;
+						break;
+				}
+				perror("sendto");
+			} else {
+				/* Don't continue the loop, we have success! */
+				cont=0;
+			}
 		}
 
-		/* Sleep a bit after a few packets */
+		/* Sleep a bit after a few packets, just to be courteous */
 		if( (++sent%100) ) {
-			usleep(100);
+			usleep(10);
 		}
 	}
 }

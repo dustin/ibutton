@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.14 2000/07/14 09:46:47 dustin Exp $
+ * $Id: mlan.c,v 1.15 2000/07/15 07:34:59 dustin Exp $
  */
 
 #include <stdio.h>
@@ -270,9 +270,9 @@ _mlan_next(MLan * mlan, int DoReset, int OnlyAlarmingDevices)
 	}
 	/* Search command */
 	if (OnlyAlarmingDevices) {
-		sendpacket[sendlen++] = 0xEC;	/* Alarm search */
+		sendpacket[sendlen++] = CONDITIONAL_SEARCH_ROM;
 	} else {
-		sendpacket[sendlen++] = 0xF0;	/* regular search command */
+		sendpacket[sendlen++] = SEARCH_ROM;
 	}
 
 	/* Back to command mode */
@@ -475,25 +475,26 @@ _mlan_block(MLan *mlan, int doreset, uchar *buf, int len)
 static int
 _mlan_access(MLan *mlan, uchar *serial)
 {
-	uchar TranBuf[MLAN_SERIAL_SIZE + 1];
+	uchar send_block[MLAN_SERIAL_SIZE + 5];
+	int send_cnt=0;
 	int i;
 
 	assert(mlan);
 	assert(serial);
 
 	if(mlan->reset(mlan)) {
-		TranBuf[0]=MATCH_ROM;
-		for(i=1; i<MLAN_SERIAL_SIZE + 1; i++) {
-			TranBuf[i]=serial[i-1];
+		send_block[send_cnt++]=MATCH_ROM;
+		for(i=0; i<MLAN_SERIAL_SIZE; i++) {
+			send_block[send_cnt++]=serial[i];
 		}
 
-		if(mlan->block(mlan, FALSE, TranBuf, MLAN_SERIAL_SIZE + 1)) {
-			for(i=1; i<MLAN_SERIAL_SIZE + 1; i++) {
-				if(TranBuf[i] != serial[i-1]) {
+		if(mlan->block(mlan, FALSE, send_block, send_cnt)) {
+			for(i=0; i<MLAN_SERIAL_SIZE ; i++) {
+				if(send_block[i+1] != serial[i]) {
 					return(FALSE);
 				}
 			}
-			if(TranBuf[0]!=MATCH_ROM)
+			if(send_block[0]!=MATCH_ROM)
 				return(FALSE);
 			else
 				return(TRUE);

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.2 1999/12/09 02:04:01 dustin Exp $
+ * $Id: sample_devices.c,v 1.3 1999/12/09 08:17:07 dustin Exp $
  */
 
 #include <stdio.h>
@@ -11,7 +11,14 @@
 #include <assert.h>
 #include <time.h>
 #include <sys/time.h>
+#define _BSD_SIGNALS
+#include <signal.h>
 #include <mlan.h>
+
+/* Globals because I have to move it out of the way in a signal handler */
+FILE		*logfile=NULL;
+char		*logfilename=NULL;
+static void setsignals();
 
 /* NOTE:  The initialization may be called more than once */
 static MLan *
@@ -89,6 +96,27 @@ get_serial(uchar *serial)
 	return(r);
 }
 
+void
+_sighup(int sig)
+{
+	char logfiletmp[1024];
+	if(logfile != NULL) {
+		fclose(logfile);
+	}
+	assert(strlen(logfilename) < 1000);
+	sprintf(logfiletmp, "%s.old", logfilename);
+	rename(logfilename, logfiletmp);
+	logfile=fopen(logfilename, "w");
+	assert(logfile);
+	setsignals();
+}
+
+static void
+setsignals()
+{
+	signal(SIGHUP, _sighup);
+}
+
 /* Main */
 int
 main(int argc, char **argv)
@@ -98,7 +126,6 @@ main(int argc, char **argv)
 	int			rslt=0;
 	const char	*sample_str=NULL;
 	char		*busdev=NULL, *curdir=NULL;
-	FILE		*logfile=NULL;
 	MLan		*mlan=NULL;
 
 	/* Make sure we have enough arguments */
@@ -114,9 +141,12 @@ main(int argc, char **argv)
 
 	/* Deal with the arguments. */
 	busdev = argv[1];
-	logfile = fopen(argv[2], "a");
+	logfilename = argv[2];
+	logfile = fopen(logfilename, "a");
 	assert(logfile);
 	curdir = argv[3];
+	/* Set signal handlers */
+	setsignals();
 
 	if( (mlan=init(busdev)) == NULL ) {
 		fprintf(stderr, "Unable to initialize 9097, not a good start.\n");

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds2480.c,v 1.6 1999/12/09 04:58:37 dustin Exp $
+ * $Id: ds2480.c,v 1.7 1999/12/09 08:17:03 dustin Exp $
  */
 
 #include <stdio.h>
@@ -29,6 +29,7 @@ int _ds2480_detect(MLan *mlan)
 	mlan->setbaud(mlan, mlan->baud);
 	mlan->cbreak(mlan);
 	mlan->msDelay(mlan, 5);
+	mlan->flush(mlan);
 	
 	/* OK, get ready to send shite */
 	sendpacket[0] = 0xC1;
@@ -38,7 +39,7 @@ int _ds2480_detect(MLan *mlan)
 	}
 
 	/* Set up all the stuff we needs. */
-	sendpacket[sendlen++] = CMD_CONFIG | PARMSEL_SLEW | PARMSET_Slew1p65Vus;
+	sendpacket[sendlen++] = CMD_CONFIG | PARMSEL_SLEW | mlan->slew_rate;
 	sendpacket[sendlen++] = CMD_CONFIG | PARMSEL_WRITE1LOW | PARMSET_Write12us;
 	sendpacket[sendlen++] = CMD_CONFIG | PARMSEL_SAMPLEOFFSET |
 							PARMSET_SampOff7us;
@@ -48,6 +49,7 @@ int _ds2480_detect(MLan *mlan)
 
 	sendpacket[sendlen++] = CMD_COMM | FUNCTSEL_BIT | mlan->baud | BITPOL_ONE;
 
+	mlan->flush(mlan);
 	if(mlan->write(mlan, sendlen, sendpacket)) {
 		if(mlan->read(mlan, 5, readbuffer) == 5) {
 			if (((readbuffer[3] & 0xF1) == 0x00) &&
@@ -82,6 +84,7 @@ int _ds2480_changebaud(MLan *mlan, uchar newbaud)
 
 		sendpacket[sendlen++] = CMD_CONFIG | PARMSEL_BAUDRATE | newbaud;
 
+		mlan->flush(mlan);
 		if(mlan->write(mlan, sendlen, sendpacket)) {
 			mlan->msDelay(mlan, 10);
 

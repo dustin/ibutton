@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.8 1999/12/08 09:54:35 dustin Exp $
+ * $Id: mlan.h,v 1.9 1999/12/09 08:17:06 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -198,6 +198,7 @@ struct __mlan {
 
 	/* config stuff */
 	int	usec_per_byte;
+	int slew_rate;
 
 	/* Search stuff */
 	int LastDiscrepancy;

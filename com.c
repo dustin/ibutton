@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: com.c,v 1.7 1999/12/09 04:58:36 dustin Exp $
+ * $Id: com.c,v 1.8 1999/12/09 08:17:02 dustin Exp $
  */
 
 #include <stdio.h>
@@ -96,9 +96,6 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 	assert(mlan);
 	assert(outbuf);
 	
-	/* Flush before we write */
-	/* mlan->flush(mlan); */
-
 	mlan_debug(mlan, 2, ("Calling write(%d)\n", outlen));
 
 	if(mlan->debug>3) {

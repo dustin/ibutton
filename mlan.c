@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.10 1999/12/09 04:58:38 dustin Exp $
+ * $Id: mlan.c,v 1.11 1999/12/09 08:17:04 dustin Exp $
  */
 
 #include <stdio.h>
@@ -597,6 +597,8 @@ mlan_init(char *port, int baud_rate)
 	mlan->baud = PARMSET_9600;
 	mlan->speed = SPEEDSEL_FLEX;
 	mlan->level = MODE_NORMAL;
+	mlan->slew_rate = PARMSET_Slew1p65Vus;
+	mlan->usec_per_byte = 860;
 
 	mlan->readTimeout = MLAN_DEFAULT_TIMEOUT;
 	mlan->writeTimeout = MLAN_DEFAULT_TIMEOUT;

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.6 2000/07/14 05:49:16 dustin Exp $
+ * $Id: devices.c,v 1.7 2000/07/14 06:18:18 dustin Exp $
  */
 
 #include <stdio.h>
@@ -16,6 +16,7 @@
 #include <mlan.h>
 #include <commands.h>
 #include <ds1920.h>
+#include <ds1921.h>
 
 float
 ctof(float in)
@@ -84,6 +85,11 @@ get_sample(MLan *mlan, uchar *serial)
 				ret=d.reading_f;
 			}
 			break;
+		case 0x21: {
+				struct ds1921_data d;
+				d=getDS1921Data(mlan, serial);
+				ret=d.summary;
+		}
 	}
 	return(ret);
 }

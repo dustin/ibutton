@@ -79,60 +79,60 @@ static void getTime2(uchar *buffer, struct ds1921_data *d)
 
 static void showStatus(int status)
 {
-	if(status&0x80) {
+	if(status&STATUS_TEMP_CORE_BUSY) {
 		printf("\tTemperature core is busy.\n");
 	}
-	if(status&0x40) {
+	if(status&STATUS_MEMORY_CLEARED) {
 		printf("\tMemory has been cleared.\n");
 	}
-	if(status&0x20) {
+	if(status&STATUS_MISSION_IN_PROGRESS) {
 		printf("\tMission is in progress.\n");
 	}
-	if(status&0x10) {
+	if(status&STATUS_SAMPLE_IN_PROGRESS) {
 		printf("\tSample is in progress.\n");
 	}
 	/* Skip, unused
-	if(status&0x08) {
+	if(status&STATUS_UNUSED) {
 		printf("\t.\n");
 	}
 	*/
-	if(status&0x04) {
+	if(status&STATUS_LOW_ALARM) {
 		printf("\tLow temperature alarm has occurred.\n");
 	}
-	if(status&0x02) {
+	if(status&STATUS_HI_ALARM) {
 		printf("\tHigh temperature alarm has occurred.\n");
 	}
-	if(status&0x01) {
+	if(status&STATUS_REALTIME_ALARM) {
 		printf("\tRealtime alarm has occurred\n");
 	}
 }
 
 static void showControl(int control)
 {
-	if(control&0x80) {
+	if(control&CONTROL_RTC_OSC_DISABLED) {
 		printf("\tReal-time clock oscillator is disabled.\n");
 	}
-	if(control&0x40) {
+	if(control&CONTROL_MEMORY_CLR_ENABLED) {
 		printf("\tMemory clear is enabled.\n");
 	}
 	/* unused
-	if(control&0x20) {
+	if(control&CONTROL_UNUSED) {
 		printf("\tMission is in progress.\n");
 	}
 	*/
-	if(control&0x10) {
+	if(control&CONTROL_MISSION_ENABLED) {
 		printf("\tMission enabled.\n");
 	}
-	if(control&0x08) {
+	if(control&CONTROL_ROLLOVER_ENABLED) {
 		printf("\tRollover enabled\n");
 	}
-	if(control&0x04) {
+	if(control&CONTROL_LOW_ALARM_ENABLED) {
 		printf("\tTemperature low alarm search enabled.\n");
 	}
-	if(control&0x02) {
+	if(control&CONTROL_HI_ALARM_ENABLED) {
 		printf("\tTemperature high alarm search enabled.\n");
 	}
-	if(control&0x01) {
+	if(control&CONTROL_TIMER_ALARM_ENABLED) {
 		printf("\tTimer alarm enabled.\n");
 	}
 }
@@ -243,6 +243,19 @@ void printDS1921(struct ds1921_data d)
 	}
 }
 
+static void getSummary(struct ds1921_data *d)
+{
+	if(d->status.status&STATUS_MISSION_IN_PROGRESS) {
+		sprintf(d->summary, "Mission in progress since "
+							"%04d/%02d/%02d %02d:%02d:00",
+			d->status.mission_ts.year, d->status.mission_ts.month,
+			d->status.mission_ts.date,
+			d->status.mission_ts.hours, d->status.mission_ts.minutes);
+	} else {
+		sprintf(d->summary, "%s", "No mission in progress.");
+	}
+}
+
 struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 {
 	struct ds1921_data data;
@@ -282,6 +295,8 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 		assert(data.n_samples<SAMPLE_SIZE);
 		data.samples[data.n_samples++]=temp;
 	}
+
+	getSummary(&data);
 
 	return(data);
 }

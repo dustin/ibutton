@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 		printf("\n");
 
 		if( (s=get_sample(mlan, list[i])) != NULL) {
-			printf("\tTemperature reading:  %s\n", s);
+			printf("\tStatus reading:  %s\n", s);
 		}
 	}
 

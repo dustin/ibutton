@@ -43,5 +43,6 @@ int main(int argc, char **argv)
 	printf("Done!\n");
 
 	mlan->destroy(mlan);
-	return(0);
+
+	exit(0);
 }

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.h,v 1.2 2000/07/14 05:49:19 dustin Exp $
+ * $Id: ds1921.h,v 1.3 2000/07/14 06:18:22 dustin Exp $
  */
 
 #ifndef DS1921_H
@@ -66,8 +66,32 @@ struct ds1921_data {
 	float samples[SAMPLE_SIZE];
 
 	/* Textual summary */
+	char summary[80];
 };
 
+#define BIT(a) (1<<a)
+
+/* bitmasks for checking the status */
+#define STATUS_REALTIME_ALARM BIT(0)
+#define STATUS_HI_ALARM BIT(1)
+#define STATUS_LOW_ALARM BIT(2)
+#define STATUS_UNUSED BIT(3)
+#define STATUS_SAMPLE_IN_PROGRESS BIT(4)
+#define STATUS_MISSION_IN_PROGRESS BIT(5)
+#define STATUS_MEMORY_CLEARED BIT(6)
+#define STATUS_TEMP_CORE_BUSY BIT(7)
+
+/* Bitmasks for control */
+#define CONTROL_TIMER_ALARM_ENABLED BIT(0)
+#define CONTROL_HI_ALARM_ENABLED BIT(1)
+#define CONTROL_LOW_ALARM_ENABLED BIT(2)
+#define CONTROL_ROLLOVER_ENABLED BIT(3)
+#define CONTROL_MISSION_ENABLED BIT(4)
+#define CONTROL_UNUSED BIT(5)
+#define CONTROL_MEMORY_CLR_ENABLED BIT(6)
+#define CONTROL_RTC_OSC_DISABLED BIT(7)
+
+/* prototypes */
 struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial);
 void printDS1921(struct ds1921_data d);
 

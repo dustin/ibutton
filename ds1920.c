@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1920.c,v 1.1 2000/07/14 05:49:17 dustin Exp $
+ * $Id: ds1920.c,v 1.2 2000/07/14 06:18:19 dustin Exp $
  */
 
 #include <stdio.h>
@@ -34,6 +34,9 @@ ds1920Sample(MLan *mlan, uchar *serial)
 
 	assert(mlan);
 	assert(serial);
+
+	/* Make sure this is a DS1920 */
+	assert(serial[0] == 0x10);
 
 	memset(&data, 0x00, sizeof(data));
 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds2480.c,v 1.7 1999/12/09 08:17:03 dustin Exp $
+ * $Id: ds2480.c,v 1.8 1999/12/09 08:40:34 dustin Exp $
  */
 
 #include <stdio.h>
@@ -49,7 +49,6 @@ int _ds2480_detect(MLan *mlan)
 
 	sendpacket[sendlen++] = CMD_COMM | FUNCTSEL_BIT | mlan->baud | BITPOL_ONE;
 
-	mlan->flush(mlan);
 	if(mlan->write(mlan, sendlen, sendpacket)) {
 		if(mlan->read(mlan, 5, readbuffer) == 5) {
 			if (((readbuffer[3] & 0xF1) == 0x00) &&
@@ -84,7 +83,6 @@ int _ds2480_changebaud(MLan *mlan, uchar newbaud)
 
 		sendpacket[sendlen++] = CMD_CONFIG | PARMSEL_BAUDRATE | newbaud;
 
-		mlan->flush(mlan);
 		if(mlan->write(mlan, sendlen, sendpacket)) {
 			mlan->msDelay(mlan, 10);
 

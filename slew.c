@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 	char *slew_names[]={
 		"PARMSET_Slew0p55Vus", "PARMSET_Slew0p7Vus", "PARMSET_Slew0p83Vus",
 		"PARMSET_Slew1p1Vus", "PARMSET_Slew1p37Vus", "PARMSET_Slew1p65Vus",
-		"PARMSET_Slew2p2Vus", "PARMSET_Slew2p2Vus"
+		"PARMSET_Slew2p2Vus", "PARMSET_Slew15Vus", NULL
 	};
 	int i=0, rslt=0;
 	char *s;
@@ -24,21 +24,23 @@ int main(int argc, char **argv)
 	assert(mlan);
 	mlan->debug=0;
 
-	for(i=0; i<sizeof(slews); i++) {
+	for(i=0; slew_names[i]; i++) {
+		mlan->slew_rate = slews[i];
+		printf("Trying %s\n", slew_names[i]);
 		if(mlan->ds2480detect(mlan)==TRUE) {
 			printf("Found DS2480 at %s\n", slew_names[i]);
-		}
-		rslt=mlan->first(mlan, TRUE, FALSE);
-		while(rslt) {
-			mlan->copySerial(mlan, sn);
-			/* See if there's a DS1920 on the bus */
-			if(sn[0] == 0x10) {
+			rslt=mlan->first(mlan, TRUE, FALSE);
+			while(rslt) {
+				mlan->copySerial(mlan, sn);
+				/* See if there's a DS1920 on the bus */
+				if(sn[0] == 0x10) {
+					break;
+				}
+			}
+			if( (s=get_sample(mlan, sn)) != NULL) {
+				printf("Sample was %s\n", s);
 				break;
 			}
-		}
-		if( (s=get_sample(mlan, sn)) != NULL) {
-			printf("Sample was %s\n", s);
-			break;
 		}
 	}
 

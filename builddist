@@ -1,0 +1,12 @@
+#!/bin/sh
+# arch-tag: 435F17CE-77E9-11D8-8F7C-000A957659CC
+
+fn=ibutton.tar
+
+rm -f $fn
+pax -wvf $fn -s ',^,ibutton/,' `tla inventory -s`
+pax -wvaf $fn -s ',^mymalloc/,ibutton/mymalloc/,' \
+	`tla inventory -s mymalloc`
+gzip -9v $fn
+
+echo "Tree is `tla logs -f | tail -1`"

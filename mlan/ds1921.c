@@ -382,8 +382,8 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 	uchar buffer[64];
 	int year=0;
 	int control=0;
-	time_t t;
-	struct tm *tm;
+	time_t t=0;
+	struct tm *tm=NULL;
 
 	assert(mlan);
 	assert(serial);

@@ -175,10 +175,12 @@ run1921MissionCommand(MLan *mlan, struct client *client, int argc, char **args)
 	char usage[160];
 	extern char *optarg;
 	extern int optind;
-	char temp, *tmp;
+	char temp=0, *tmp=NULL;
 	int ch=0;
 
 	optind=1;
+
+	memset(&data, 0x00, sizeof(struct ds1921_data));
 
 	/* Let's go ahead and assume the usage is incorrect */
 	snprintf(usage, sizeof(usage), ":( incorrect arguments.  "

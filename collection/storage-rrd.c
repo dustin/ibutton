@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: storage-rrd.c,v 1.6 2002/01/30 05:06:09 dustin Exp $
+ * $Id: storage-rrd.c,v 1.7 2002/01/30 20:34:37 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -91,7 +91,7 @@ rrdNewFile(struct log_datum *p)
 
 	/* I don't like this, but I'm going with it because I'm tired of
 	 * looking at this line of code. */
-	heartbeat=sample_rate*30;
+	heartbeat=sample_rate*60*10;
 
 	rra[0][0]=1;
 	if(sample_rate<5) {
@@ -103,11 +103,12 @@ rrdNewFile(struct log_datum *p)
 		rra[0][1]=sample_rate*10;
 	}
 	rra[1][1]=8760/sample_rate;
+
 	rra[0][2]=1440/sample_rate;
-	if(rra[0][1]<2) {
+	if(rra[0][2]<2) {
 		rra[0][2]=sample_rate*100;
 	}
-	rra[1][2]=3650/sample_rate;
+	rra[1][2]=(2*3650)/sample_rate;
 
 	/* If not, create it  */
 	snprintf(buf, sizeof(buf), RRD_TEMPLATE_STRING,

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.22 2002/01/28 08:47:37 dustin Exp $
+# $Id: Makefile.in,v 1.23 2002/01/29 07:48:42 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -69,6 +69,9 @@ mlanscm: mlanscm.o mlan.a
 mlan.a: $(OBJ) mlan.h
 	$(AR) rc $@ $(OBJ)
 	$(RANLIB) $@
+
+mymalloc/mymalloc.o: mymalloc/mymalloc.c
+	cd mymalloc && $(CC) $(CFLAGS) -c -o mymalloc.o mymalloc.c
 
 com.o: mlan.h ds1920.h ds1921.h
 

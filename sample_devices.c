@@ -1,10 +1,11 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.11 2001/07/28 08:26:32 dustin Exp $
+ * $Id: sample_devices.c,v 1.12 2001/07/28 09:02:12 dustin Exp $
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>

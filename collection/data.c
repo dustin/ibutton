@@ -1,13 +1,14 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.11 2002/01/29 23:07:17 dustin Exp $
+ * $Id: data.c,v 1.12 2002/01/30 02:37:22 dustin Exp $
  */
 
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <assert.h>
 
 #include "mlan.h"
@@ -207,7 +208,7 @@ logDatumPrint(struct log_datum *p)
 			break;
 		case DEVICE_1921:
 			printf("\tStart time:  %d\n\tSample rate:  %d\n",
-				p->dev.dev_1921.mission_ts, p->dev.dev_1921.sample_rate);
+				(int)p->dev.dev_1921.mission_ts, p->dev.dev_1921.sample_rate);
 			break;
 		default:
 			printf("\tUnknown device type:  %x\n", p->type);

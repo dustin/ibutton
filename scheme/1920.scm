@@ -1,15 +1,49 @@
 #!./mlanscm -s
 !#
 ; Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
-; $Id: 1920.scm,v 1.1 2001/12/10 08:11:19 dustin Exp $
+; $Id: 1920.scm,v 1.2 2001/12/11 07:27:31 dustin Exp $
 (define ds1920-convert-temperature #x44)
 (define ds1920-read-scratchpad #xbe)
+(define ds1920-write-scratchpad #x4e)
+(define ds1920-copy-scratchpad #x48)
+(define ds1920-match-rom #x55)
 
+; This needs to be in the common libs
+(define (mlan-parse-serial-old ser)
+  (do
+	((rv '() rv) (i 0 (+ i 2)))
+	((>= i (string-length ser)) rv)
+	(set! rv (append rv (list (string->number (substring ser i (+ i 2)) 16))))))
+
+
+; Debug printer
 (define (mlan-debug . x)
   (display "!!!SCM!!! ")
   (for-each display x)
   (display " !!!SCM!!!\n"))
 
+
+; Set the high and low values in a 1920
+(define (mlan-ds1920-set-values mcon serial low hi)
+  (let ((hv hi) (lv low))
+	(mlan-access mcon serial)
+	(if (<= hv 0)
+	  (set! hv (logior #x80 (abs hv))))
+	(if (<= lv 0)
+	  (set! lv (logior #x80 (abs lv))))
+	; Put the data in the scratch pad
+	(mlan-block mcon #f (list ds1920-write-scratchpad hv lv))
+	; match ROM -- not sure why, but this is what I did in C
+	(mlan-block mcon #f (append
+						  (list ds1920-match-rom)
+						  (mlan-parse-serial serial)
+						  (list ds1920-copy-scratchpad)))
+	(mlan-setlevel mcon mlan-mode-strong5)
+	(mlan-msdelay mcon 500)
+	(mlan-setlevel mcon mlan-mode-normal)))
+
+
+; Get the raw data from a DS 1920
 (define (mlan-ds1920-data mcon serial)
   (mlan-access mcon serial)
   (mlan-touchbyte mcon ds1920-convert-temperature)

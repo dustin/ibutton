@@ -401,7 +401,7 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
 		return(FALSE);
 	}
 	if(mlan->copyScratchpad(mlan, serial, 16, 32) != TRUE) {
-		printf("Write scratchpad failed.\n");
+		printf("Copy scratchpad failed.\n");
 		return(FALSE);
 	}
 

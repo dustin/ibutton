@@ -426,6 +426,90 @@ getoptions(int argc, char **argv)
 	}
 }
 
+static int dealWith1920(MLan *mlan, uchar *serial)
+{
+	struct ds1920_data data;
+	int rv=0;
+
+	data=getDS1920Data(mlan, serial);
+	if(data.valid!=TRUE) {
+		rv=-1;
+		/* Log the failure */
+		fprintf(logfile, "%s\t%s\t%s\n",
+			get_time_str_now(), get_serial(serial),
+				"Error getting sample");
+	} else {
+		char data_str[8192];
+		snprintf(data_str, sizeof(data_str),
+			"%s\t%s\t%.2f\tl=%.2f,h=%.2f",
+			get_time_str_now(), get_serial(serial),
+			data.temp, data.temp_low,
+			data.temp_hi);
+		/* Log it */
+		fprintf(logfile, "%s\n", data_str);
+		/* Multicast it */
+		msend(data_str);
+		/* Now record the current */
+		snprintf(data_str, sizeof(data_str),
+			"%.2f", data.temp);
+		record_cur(get_serial(serial), data_str, time(NULL));
+	}
+	/* Mark it as updated */
+	updateSerial(serial, time(NULL));
+
+	return(rv);
+}
+
+static int
+dealWith1921(MLan *mlan, uchar *serial)
+{
+	struct ds1921_data data;
+	int i=0;
+	int rv=0;
+
+	data=getDS1921Data(mlan, serial);
+	if(data.valid==TRUE) {
+		time_t last_update=timeOfLastUpdate(serial);
+		time_t last_record=0;
+		float last_reading=0;
+		char data_str[8192];
+		/*
+		printf("Got the data, preparing to write it out.\n");
+		*/
+		/* Disable alarms for recording the data.  Nothing should
+		 * block here, and if it doesn't finish properly, we're
+		 * going to lose our timestamp thingy.  It can take a while
+		 * when there's a lot of data, but ooooh well.  */
+		alarm(0);
+		for(i=0; i<data.n_samples; i++) {
+			/* Only send data we haven't seen */
+			if(data.samples[i].timestamp>last_update) {
+				snprintf(data_str, sizeof(data_str),
+					"%s\t%s\t%.2f\ts=%d,r=%d",
+					get_time_str(data.samples[i].timestamp),
+					get_serial(serial), data.samples[i].sample,
+					(int)data.status.mission_ts.clock,
+					data.status.sample_rate);
+				/* Log it */
+				fprintf(logfile, "%s\n", data_str);
+				/* Multicast it */
+				msend(data_str);
+			}
+			last_record=data.samples[i].timestamp;
+			last_reading=data.samples[i].sample;
+		}
+		/* Mark it as updated */
+		updateSerial(serial, last_record);
+		snprintf(data_str, sizeof(data_str), "%.2f", last_reading);
+		record_cur(get_serial(serial), data_str, last_record);
+		/*
+		printf("Finished writing the data.\n");
+		*/
+	}
+
+	return(rv);
+}
+
 static int
 dealWith(MLan *mlan, uchar *serial)
 {
@@ -437,101 +521,132 @@ dealWith(MLan *mlan, uchar *serial)
 
 	age=secondsSinceLastUpdate(serial);
 
-	/* Short-circuit if the age is less than sixty seconds */
-	if(age<60) {
-		return(0);
-	}
-
-	switch(serial[0]) {
-		case DEVICE_1920: {
-			struct ds1920_data data;
-			data=getDS1920Data(mlan, serial);
-			if(data.valid!=TRUE) {
-				rv=-1;
-				/* Log the failure */
-				fprintf(logfile, "%s\t%s\t%s\n",
-					get_time_str_now(), get_serial(serial),
-						"Error getting sample");
-			} else {
-				char data_str[8192];
-				snprintf(data_str, sizeof(data_str),
-					"%s\t%s\t%.2f\tl=%.2f,h=%.2f",
-					get_time_str_now(), get_serial(serial),
-					data.temp, data.temp_low,
-					data.temp_hi);
-				/* Log it */
-				fprintf(logfile, "%s\n", data_str);
-				/* Multicast it */
-				msend(data_str);
-				/* Now record the current */
-				snprintf(data_str, sizeof(data_str),
-					"%.2f", data.temp);
-				record_cur(get_serial(serial), data_str, time(NULL));
-			}
-			/* Mark it as updated */
-			updateSerial(serial, time(NULL));
-		} break;
-		case DEVICE_1921: {
-			struct ds1921_data data;
-			int i=0;
-			data=getDS1921Data(mlan, serial);
-			if(data.valid==TRUE) {
-				time_t last_update=timeOfLastUpdate(serial);
-				time_t last_record=0;
-				float last_reading=0;
-				char data_str[8192];
-				/*
-				printf("Got the data, preparing to write it out.\n");
-				*/
-				/* Disable alarms for recording the data.  Nothing should
-				 * block here, and if it doesn't finish properly, we're
-				 * going to lose our timestamp thingy.  It can take a while
-				 * when there's a lot of data, but ooooh well.  */
-				alarm(0);
-				for(i=0; i<data.n_samples; i++) {
-					/* Only send data we haven't seen */
-					if(data.samples[i].timestamp>last_update) {
-						snprintf(data_str, sizeof(data_str),
-							"%s\t%s\t%.2f\ts=%d,r=%d",
-							get_time_str(data.samples[i].timestamp),
-							get_serial(serial), data.samples[i].sample,
-							(int)data.status.mission_ts.clock,
-							data.status.sample_rate);
-						/* Log it */
-						fprintf(logfile, "%s\n", data_str);
-						/* Multicast it */
-						msend(data_str);
-					}
-					last_record=data.samples[i].timestamp;
-					last_reading=data.samples[i].sample;
-				}
+	/* Don't process this device if we've seen it in the last 60 seconds */
+	if(age>=60) {
+		switch(serial[0]) {
+			case DEVICE_1920:
+				rv=dealWith1920(mlan, serial);
+				break;
+			case DEVICE_1921:
+				rv=dealWith1921(mlan, serial);
+				break;
+			default:
 				/* Mark it as updated */
-				updateSerial(serial, last_record);
-				snprintf(data_str, sizeof(data_str), "%.2f", last_reading);
-				record_cur(get_serial(serial), data_str, last_record);
-				/*
-				printf("Finished writing the data.\n");
-				*/
-			}
-		} break;
-		default:
-			/* Mark it as updated */
-			updateSerial(serial, time(NULL));
-			break;
+				updateSerial(serial, time(NULL));
+				break;
+		}
 	}
 
 	return(rv);
+}
+
+static int
+busLoop(MLan *mlan)
+{
+	uchar list[MAX_SERIAL_NUMS][MLAN_SERIAL_SIZE];
+	int failures=0;
+	int list_count=0;
+	int i=0;
+	int rslt=0;
+
+	/* Set the timer for the first */
+	alarm(5);
+	rslt=mlan->first(mlan, TRUE, FALSE);
+	while(rslt) {
+		/* Copy the serial number into our list */
+		mlan->copySerial(mlan, list[list_count++]);
+		/* Don't go too far */
+		assert(list_count<sizeof(list)-1);
+		/* Grab the next device, reset the timer */
+		alarm(5);
+		rslt = mlan->next(mlan, TRUE, FALSE);
+	}
+
+	/* Loop through the list and gather samples */
+	for(i=0; i<list_count; i++) {
+		/* Give it fifteen seconds to get its sample */
+		alarm(15);
+		if(dealWith(mlan, list[i])<0) {
+			failures++;
+		}
+	}
+
+	/* Disable alarms */
+	alarm(0);
+
+	if(list_count==0) {
+		log_error("Didn't find any devices, indicating failure.\n");
+		failures++;
+	}
+
+	return(failures);
+}
+
+static MLan*
+mlanReinit(MLan *mlan)
+{
+	if(mlan) {
+		mlan->destroy(mlan);
+	}
+	mlan=NULL;
+
+#ifdef MYMALLOC
+	_mdebug_dump();
+#endif /* MYMALLOC */
+
+	while(mlan==NULL) {
+		log_error("(re)initializing the 1wire bus.\n");
+		mlan=init(busdev);
+		if(mlan==NULL) {
+			log_error("Init failed, sleeping...\n");
+			sleep(15);
+		} else {
+			log_error("Initialization successful.\n");
+			need_to_reinit=0;
+		}
+	}
+	/* Wait a second */
+	sleep(1);
+
+	return(mlan);
+}
+
+static void
+mainLoop()
+{
+	int			failures=0;
+	MLan		*mlan=NULL;
+
+	/* Do the initial initialization of the bus */
+	mlan=mlanReinit(mlan);
+
+	/* Loop forever */
+	for(;;) {
+
+		/* Look over the bus, see if there's any news there */
+		if(mlan != NULL && need_to_reinit == 0) {
+			failures=busLoop(mlan);
+		}
+
+		/* Write the log */
+		fflush(logfile);
+
+		if(failures>0 || need_to_reinit != 0) {
+			/* Wait five seconds before reopening the device. */
+			log_error("There were failures, requesting reinitialization.\n");
+			mlan=mlanReinit(mlan);
+		}
+
+		/* Wait a while before the next sample */
+		sleep(1);
+	}
+	/* NOT REACHED */
 }
 
 /* Main */
 int
 main(int argc, char **argv)
 {
-	uchar		list[MAX_SERIAL_NUMS][MLAN_SERIAL_SIZE];
-	int			list_count=0, i=0, failures=0;
-	int			rslt=0;
-	MLan		*mlan=NULL;
-
 	/* process the arguments */
 	getoptions(argc, argv);
 
@@ -541,78 +656,8 @@ main(int argc, char **argv)
 	/* Set signal handlers */
 	setsignals();
 
-	/* Loop forever */
-	for(;;) {
-		/* If we need to reinitialize the bus, do so */
-		if(need_to_reinit) {
-			if(mlan) {
-				mlan->destroy(mlan);
-			}
-			mlan=NULL;
+	mainLoop();
 
-#ifdef MYMALLOC
-			_mdebug_dump();
-#endif /* MYMALLOC */
-
-			while(mlan==NULL) {
-				log_error("(re)initializing the 1wire bus.\n");
-				mlan=init(busdev);
-				if(mlan==NULL) {
-					log_error("Init failed, sleeping...\n");
-					sleep(15);
-				} else {
-					log_error("Initialization successful.\n");
-					need_to_reinit=0;
-				}
-			}
-			/* Wait a second */
-			sleep(1);
-		}
-		/* Try three times to get a list of devices.  I don't know why this
-		 * doesn't work the first time, but whatever.  */
-		list_count=0;
-		/* Set the timer for the first */
-		alarm(5);
-		rslt=mlan->first(mlan, TRUE, FALSE);
-		while(rslt) {
-			/* Copy the serial number into our list */
-			mlan->copySerial(mlan, list[list_count++]);
-			/* Don't go too far */
-			assert(list_count<sizeof(list)-1);
-			/* Grab the next device, reset the timer */
-			alarm(5);
-			rslt = mlan->next(mlan, TRUE, FALSE);
-		}
-		failures=0;
-		/* Loop through the list and gather samples */
-		for(i=0; i<list_count; i++) {
-			/* Give it fifteen seconds to get its sample */
-			alarm(15);
-			if(dealWith(mlan, list[i])<0) {
-				failures++;
-			}
-		}
-
-		/* Disable alarms */
-		alarm(0);
-
-		/* Write the log */
-		fflush(logfile);
-
-		if(failures>0) {
-			/* Wait five seconds before reopening the device. */
-			log_error("There were failures, requesting reinitialization.\n");
-			need_to_reinit=1;
-		}
-
-		if(list_count==0) {
-			log_error("Didn't find any devices, reinitializing.\n");
-			need_to_reinit=1;
-		}
-
-		/* Wait a while before the next sample */
-		sleep(1);
-	}
 	/* NOT REACHED */
 }
 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.4 2000/07/13 09:53:23 dustin Exp $
+ * $Id: devices.c,v 1.5 2000/07/13 21:39:20 dustin Exp $
  */
 
 #include <stdio.h>
@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include <mlan.h>
+#include <commands.h>
 
 /* Stuff for a DS1920 */
 
@@ -70,7 +71,7 @@ ds1920Sample(MLan *mlan, uchar *serial)
 		return(FALSE);
 	}
 
-	tmpbyte=mlan->touchbyte(mlan, 0x44);
+	tmpbyte=mlan->touchbyte(mlan, CONVERT_TEMPERATURE);
 	mlan_debug(mlan, 3, ("Got %02x back from touchbyte\n", tmpbyte));
 
 	if(mlan->setlevel(mlan, MODE_STRONG5) != MODE_STRONG5) {

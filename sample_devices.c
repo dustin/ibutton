@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.7 2000/11/07 06:39:02 dustin Exp $
+ * $Id: sample_devices.c,v 1.8 2000/11/07 07:56:49 dustin Exp $
  */
 
 #include <stdio.h>
@@ -29,13 +29,6 @@ static MLan *
 init(char *port)
 {
 	return(mlan_init(port, PARMSET_9600));
-}
-
-static void
-log_error(char *str)
-{
-	fprintf(stderr, str);
-	fflush(stderr);
 }
 
 /* Record the current sample into a file unique to the serial number */
@@ -82,6 +75,13 @@ get_time_str()
 		(seconds <10 ? "0" : ""),
 		seconds);
 	return(str);
+}
+
+static void
+log_error(char *str)
+{
+	fprintf(stderr, "%s:  ERROR:  %s", get_time_str(), str);
+	fflush(stderr);
 }
 
 /* Get the serial number as a string */
@@ -139,7 +139,6 @@ main(int argc, char **argv)
 	uchar		list[MAX_SERIAL_NUMS][MLAN_SERIAL_SIZE];
 	int			list_count=0, i=0, failures=0;
 	int			rslt=0;
-	const char	*sample_str=NULL;
 	char		*busdev=NULL, *curdir=NULL;
 	MLan		*mlan=NULL;
 
@@ -183,6 +182,8 @@ main(int argc, char **argv)
 					need_to_reinit=0;
 				}
 			}
+			/* Wait a second */
+			sleep(1);
 		}
 		alarm(5);
 		rslt=mlan->first(mlan, TRUE, FALSE);
@@ -197,35 +198,31 @@ main(int argc, char **argv)
 		failures=0;
 		/* Loop through the list and gather samples */
 		for(i=0; i<list_count; i++) {
-			sample_str=NULL;
 			switch(list[i][0]) {
-				case 0x10:
+				case 0x10: {
+					struct ds1920_data data;
 					alarm(5);
-					sample_str=get_sample(mlan, list[i]);
-					if(sample_str==NULL) {
+					data=getDS1920Data(mlan, list[i]);
+					if(data.valid!=TRUE) {
 						failures++;
-						sample_str="Error getting sample";
+						/* Log the failure */
+						fprintf(logfile, "%s\t%s\t%s\n",
+							get_time_str(), get_serial(list[i]),
+								"Error getting sample");
 					} else {
-						/* Special handling for DS1920's */
-						struct ds1920_data data;
-						data=getDS1920Data(mlan, list[i]);
-						fprintf(logfile, "%s\t%s\t%s\tl=%.2f,h=%.2f\n",
-							get_time_str(), get_serial(list[i]), sample_str,
+						char current_sample[80];
+						fprintf(logfile, "%s\t%s\t%.2f\tl=%.2f,h=%.2f\n",
+							get_time_str(), get_serial(list[i]),
+							ctof(data.temp),
 							ctof(data.temp_low), ctof(data.temp_hi));
-						/* NULL it, it's already been handled */
-						sample_str=NULL;
+						snprintf(current_sample, sizeof(current_sample),
+							"%.2f", ctof(data.temp));
+						record_cur(curdir, get_serial(list[i]),current_sample);
 					}
-					break;
+				} break;
 				default:
-					sample_str=NULL;
+					/* Nothing */
 					break;
-			}
-			/* Handle anything that's not already been handled */
-			if(sample_str!=NULL) {
-				fprintf(logfile, "%s\t%s\t%s\n", get_time_str(),
-					get_serial(list[i]), sample_str);
-				record_cur(curdir, get_serial(list[i]), sample_str);
-				fflush(logfile);
 			}
 		}
 

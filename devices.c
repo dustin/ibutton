@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.14 2000/07/19 21:55:57 dustin Exp $
+ * $Id: devices.c,v 1.15 2000/09/17 09:20:06 dustin Exp $
  */
 
 #include <stdio.h>
@@ -18,6 +18,7 @@
 #include <commands.h>
 #include <ds1920.h>
 #include <ds1921.h>
+#include <ds2406.h>
 
 float
 ctof(float in)
@@ -133,6 +134,15 @@ get_sample(MLan *mlan, uchar *serial)
 				if(d.valid) {
 					assert(strlen(d.reading_f)<sizeof(buffer));
 					strcpy(buffer, d.reading_f);
+					ret=buffer;
+				}
+			}
+			break;
+		case 0x12: {
+				int status=0;
+				status=getDS2406Status(mlan, serial);
+				if(status!=0) {
+					sprintf(buffer, "Value:  %x", status);
 					ret=buffer;
 				}
 			}

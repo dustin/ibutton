@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: commands.h,v 1.2 2000/07/14 19:35:29 dustin Exp $
+ * $Id: commands.h,v 1.3 2000/09/17 09:20:04 dustin Exp $
  */
 
 #ifndef COMMANDS_H
@@ -30,5 +30,9 @@
 #define DS1920CONVERT_TEMPERATURE  0x44
 #define DS1920RECALL 0xb8
 
+/* Special 2406/2407 stuff */
+#define DS2406CHANNEL_ACCESS 0xf5
+#define DS2406READ_STATUS 0xaa
+#define DS2406WRITE_STATUS 0x55
 
 #endif /* COMMANDS_H */

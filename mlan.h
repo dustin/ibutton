@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.1 1999/09/20 02:52:53 dustin Exp $
+ * $Id: mlan.h,v 1.2 1999/09/22 07:49:59 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -169,7 +169,13 @@ typedef unsigned char uchar;
 #define MODE_BREAK                     0x08
 
 /* Macros */
+#ifndef msDelay
 #define msDelay(a) usleep(a * 1000)
+#endif
+
+#ifndef mlan_debug
+#define mlan_debug(a, b, c) if(a->debug > b) { printf c; }
+#endif
 
 struct __mlan;
 typedef struct __mlan MLan;
@@ -187,9 +193,15 @@ struct __mlan {
 	/* config stuff */
 	int	usec_per_byte;
 
+	/* Search stuff */
+	int LastDiscrepancy;
+	int LastDevice;
+	int LastFamilyDiscrepancy;
+
 	unsigned short CRC16;	/* Storage for CRC 16 */
 	uchar SerialNum[8];		/* Serial numbers */
 	uchar DOWCRC;			/* more CRC stuff */
+	int ProgramAvailable;	/* Whether programming is available. */
 
 	/* Serial Functions */
 	void (*setbaud)(MLan *mlan, int newbaud); /* Set the baud rate */
@@ -201,6 +213,25 @@ struct __mlan {
 	/* DS2480 functions */
 	int (*ds2480detect)(MLan *mlan);
 	int (*ds2480changebaud)(MLan *mlan, uchar new_baud);
+
+	/* Search functions */
+	int (*first)(MLan *mlan, int DoReset, int OnlyAlarmingDevices);
+	int (*next)(MLan *mlan, int DoReset, int OnlyAlarmingDevices);
+
+	/* Misc commands and stuff */
+	int (*reset)(MLan *mlan);
+	int (*setlevel)(MLan *mlan,int newlevel);
+	int (*touchbit)(MLan *mlan, int sendbit);
+	int (*writebyte)(MLan *mlan, int sendbyte);
+	int (*readbyte)(MLan *mlan);
+	int (*touchbyte)(MLan *mlan, int sendbyte);
+	int (*setspeed)(MLan *mlan, int newspeed);
+	int (*programpulse)(MLan *mlan);
+
+	/* misc crap */
+	uchar (*dowcrc)(MLan *mlan, uchar x);
 };
+
+MLan *mlan_init(char *port, int baud_rate);
 
 #endif /* MLAN_H */

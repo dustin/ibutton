@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds2480.c,v 1.1 1999/09/20 02:52:52 dustin Exp $
+ * $Id: ds2480.c,v 1.2 1999/09/22 07:49:56 dustin Exp $
  */
 
 #include <stdio.h>
@@ -18,18 +18,22 @@ int _ds2480_detect(MLan *mlan)
 	uchar sendpacket[10],readbuffer[10];
 	int sendlen=0;
 
+	mlan_debug(mlan, 2, ("Calling ds2480_detect\n"));
+
 	mlan->mode = MODSEL_COMMAND;
 	mlan->speed = SPEEDSEL_FLEX;
 
-	mlan->setbaud(mlan, PARMSET_9600);
+	mlan->setbaud(mlan, mlan->baud);
 	mlan->cbreak(mlan);
 	msDelay(2);
 	mlan->flush(mlan);
 	
 	/* OK, get ready to send shite */
 	sendpacket[0] = 0xC1;
-	if(mlan->write(mlan, 1, sendpacket) != 1)
+	if(mlan->write(mlan, 1, sendpacket) != 1) {
+		mlan_debug(mlan, 2, ("Returning from ds2480_detect - FALSE\n"));
 		return(FALSE);
+	}
 
 	/* Set up all the stuff we needs. */
 	sendpacket[sendlen++] = CMD_CONFIG | PARMSEL_SLEW | PARMSET_Slew1p65Vus;
@@ -50,11 +54,13 @@ int _ds2480_detect(MLan *mlan)
 				((readbuffer[3] & 0x0E) == mlan->baud) &&
 				((readbuffer[4] & 0xF0) == 0x90) &&
 				((readbuffer[4] & 0x0C) == mlan->baud)) {
+				mlan_debug(mlan, 2, ("Returning from ds2480_detect - TRUE\n"));
 				return(TRUE);
 			}
 		}
 	}
 
+	mlan_debug(mlan, 2, ("Returning from ds2480_detect - FALSE\n"));
 	return(FALSE);
 }
 

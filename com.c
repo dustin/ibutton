@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: com.c,v 1.1 1999/09/20 02:52:51 dustin Exp $
+ * $Id: com.c,v 1.2 1999/09/22 07:49:55 dustin Exp $
  */
 
 #include <stdio.h>
@@ -18,6 +18,8 @@ void _com_setbaud(MLan *mlan, int new_baud)
 {
 	struct termios com;
 	int speed;
+
+	mlan_debug(mlan, 2, ("Calling setbaud (%d)\n", new_baud));
 
 	memset(&com,0x00,sizeof(com));
 
@@ -51,6 +53,7 @@ void _com_setbaud(MLan *mlan, int new_baud)
 	}
 
 	/* Set both in and out */
+	speed=mlan->speed;
 	cfsetispeed(&com, speed);
 	cfsetospeed(&com, speed);
 
@@ -59,17 +62,30 @@ void _com_setbaud(MLan *mlan, int new_baud)
 	tcsetattr(mlan->fd, TCSANOW, &com);
 
 	mlan->baud = new_baud;
+
+	mlan_debug(mlan, 2, ("Returning from setbaud\n"));
 }
 
 void _com_flush(MLan *mlan)
 {
-	tcdrain(mlan->fd);
+	mlan_debug(mlan, 2, ("Calling flush\n"));
 	tcflush(mlan->fd, TCIOFLUSH);
+	mlan_debug(mlan, 2, ("Returning from flush\n"));
 }
 
 int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 {
-	int rv;
+	int rv, i;
+
+	mlan_debug(mlan, 2, ("Calling write(%d)\n", outlen));
+
+	if(mlan->debug>3) {
+		printf("Sending:  ");
+		for(i=0; i<outlen; i++) {
+			printf("%02x ", outbuf[i]);
+		}
+		printf("\n");
+	}
 	
 	rv = write(mlan->fd, outbuf, outlen);
 	if(rv>0) {
@@ -90,12 +106,15 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 		}
 	}
 	mlan->flush(mlan);
+	mlan_debug(mlan, 2, ("Returning from write (%d - %d)\n", rv, errno));
 	return(rv==outlen);
 }
 
 int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 {
-	int rv;
+	int rv, i;
+
+	mlan_debug(mlan, 2, ("Calling read(%d)\n", inlen));
 
 	/* Give it some time... */
 	usleep(mlan->usec_per_byte * (inlen+5) + 800);
@@ -109,6 +128,7 @@ int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 				rv += tmp;
 			} else {
 				if(errno==EAGAIN) {
+					mlan_debug(mlan, 4, ("EAGAIN while doing read\n"));
 					msDelay(5);
 					errno=0;
 				} else {
@@ -119,10 +139,21 @@ int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 		}
 	}
 
+	if(mlan->debug>3) {
+		printf("Read:  ");
+		for(i=0; i<rv; i++) {
+			printf("%02x ", inbuf[i]);
+		}
+		printf("\n");
+	}
+
+	mlan_debug(mlan, 2, ("Returning from read (%d)\n", rv));
 	return(rv);
 }
 
 void _com_cbreak(MLan *mlan)
 {
+	mlan_debug(mlan, 2, ("Calling break\n"));
 	tcsendbreak(mlan->fd, 1);
+	mlan_debug(mlan, 2, ("Returning from break\n"));
 }

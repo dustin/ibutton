@@ -1,0 +1,108 @@
+dnl $Id: configure.in,v 1.1 1999/12/08 22:20:37 dustin Exp $
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(mlan.c)
+
+dnl Checks for programs.
+AC_PROG_CC(-g)
+AC_PROG_RANLIB
+AC_PATH_PROG(AR, ar, /bin/ar, $PATH)
+AC_PATH_PROG(LINT, lint, /bin/lint, $PATH)
+AC_PROGRAM_CHECK(UNAMEPROG, uname, uname, )
+AC_PROGRAM_CHECK(TRPROG, tr, tr, )
+AC_PROGRAM_CHECK(SEDPROG, sed, sed, )
+AC_PROGRAM_CHECK(CUTPROG, cut, cut, )
+
+dnl Do we do dynamically loading libs on this OS?
+DYNLIBS=0
+NEEDUNDERSCORE=0
+MAKESO=:
+
+CPPFLAGS="$CPPFLAGS -I/usr/local/include"
+LDFLAGS="$LDFLAGS -L/usr/local/lib"
+
+dnl What we on, boys?
+echo "Checking out your OS..."
+OS=`$UNAMEPROG|$TRPROG '[[A-Z]]' '[[a-z]]'`
+VER=`$UNAMEPROG -r`
+if test "$OS" = "sunos" && test "$VER" -ge 5
+then
+    OS="solaris"
+fi
+case "$OS" in
+    'sunos')
+        echo "Woohoo!  SunOS 4.x, one of my favs"
+	if test "$GCC" = "yes"
+	then
+	    echo "Using GCC, let's try to make shared libs."
+	    DYNLIBS=1
+	    NEEDUNDERSCORE=0
+	    MAKESO="$CC -shared"
+	    CFLAGS="$CFLAGS -fPIC"
+	fi
+	;;
+    'netbsd')
+	echo "NetBSD!  One of my favs, setting -Wall"
+	CFLAGS="$CFLAGS -Wall -Werror"
+	;;
+    'solaris')
+	echo "Solaris?!?  Oh, alright..."
+	;;
+    'hp-ux')
+        echo "HP-UX, this should be fun..."
+        if test "$GCC" != "yes"
+        then
+            echo "Setting ANSI flags"
+            CFLAGS="$CFLAGS -Ae"
+        fi
+        BSDLIKE=0
+        ;;
+    'irix')
+	echo "Looks like IRIX it's going to be..."
+	if test "$GCC" = "yes"
+	then
+	    echo "That's odd, we're using gcc...  OK."
+	    echo "If you have the IDO, please set the environ CC to cc"
+	    echo "to use the native compiler."
+	else
+	    echo "Using the native IDO, let's set some CFLAGS"
+	    CFLAGS="$CFLAGS -fullwarn"
+	    DYNLIBS=1
+	    NEEDUNDERSCORE=0
+	    MAKESO="ld -shared"
+	fi
+	;;
+esac
+
+AC_DEFINE_UNQUOTED(DYNLIBS, $DYNLIBS)
+AC_SUBST(DYNLIBS)
+
+AC_DEFINE_UNQUOTED(NEEDUNDERSCORE, $NEEDUNDERSCORE)
+AC_SUBST(NEEDUNDERSCORE)
+
+AC_DEFINE_UNQUOTED(MAKESO, $MAKESO)
+AC_SUBST(MAKESO)
+
+if test "$OS" = "unixware"
+then
+    AC_CHECK_LIB(ucb, main)
+    AC_CHECK_LIB(gen, main)
+fi
+
+dnl Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_HEADER_TIME
+AC_CHECK_HEADERS(sys/time.h sys/errno.h unistd.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_STRUCT_TM
+AC_C_BIGENDIAN
+
+dnl Checks for library functions.
+AC_TYPE_SIGNAL
+AC_CHECK_FUNCS(getopt vsprintf vsnprintf snprintf sprintf strerror)
+
+CFLAGS="$CFLAGS $CPPFLAGS"
+
+AC_OUTPUT(Makefile)

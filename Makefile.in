@@ -2,16 +2,19 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile,v 1.8 1999/12/08 09:54:30 dustin Exp $
+# $Id: Makefile.in,v 1.1 1999/12/08 22:20:35 dustin Exp $
 
 SHELL=/bin/sh
-AR=/usr/bin/ar
+AR=@AR@
+RANLIB=@RANLIB@
 
-CFLAGS=-g -I. -Wall -Werror
+DEFS=@DEFS@
+CFLAGS=-I. @CFLAGS@ $(DEFS)
 
 OBJ=com.o ds2480.o mlan.o devices.o
 PROGS=search lookup
 PROGO=search.o lookup.o
+CC=@CC@
 
 all: search lookup
 
@@ -23,6 +26,7 @@ lookup: mlan.a lookup.o
 
 mlan.a: $(OBJ) mlan.h
 	$(AR) rcs $@ $(OBJ)
+	$(RANLIB) $@
 
 com.o: mlan.h
 
@@ -31,6 +35,9 @@ ds2480.o: mlan.h
 mlan.o: mlan.h
 
 devices.o: mlan.h
+
+distclean: clean
+	rm -f Makefile config.cache config.status config.log
 
 clean:
 	rm -f $(OBJ) mlan.a $(PROGS) $(PROGO)

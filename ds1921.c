@@ -220,7 +220,7 @@ static char *ds1921_sample_time(int i, struct ds1921_data d)
 	tm.tm_isdst=-1;
 	tm.tm_gmtoff=0;
 
-	strftime(result, 80, "%F %T", &tm);
+	strftime(result, 80, "%Y-%d-%m %T", &tm);
 
 	return(result);
 }

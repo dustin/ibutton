@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.1 1999/12/08 22:20:35 dustin Exp $
+# $Id: Makefile.in,v 1.2 1999/12/09 02:04:00 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -16,7 +16,10 @@ PROGS=search lookup
 PROGO=search.o lookup.o
 CC=@CC@
 
-all: search lookup
+all: search lookup sample_devices
+
+sample_devices: mlan.a sample_devices.o
+	$(CC) -o $@ sample_devices.o mlan.a
 
 search: mlan.a search.o
 	$(CC) -o $@ search.o mlan.a

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.13 2000/07/14 05:49:20 dustin Exp $
+ * $Id: mlan.c,v 1.14 2000/07/14 09:46:47 dustin Exp $
  */
 
 #include <stdio.h>
@@ -189,7 +189,7 @@ _mlan_setlevel(MLan *mlan, int newlevel)
 	return(mlan->level);
 }
 
-int
+static int
 _mlan_touchreset(MLan *mlan)
 {
 	uchar readbuffer[10],sendpacket[10];
@@ -433,7 +433,7 @@ _mlan_serial_lookup(MLan *mlan, int id)
 static int
 _mlan_block(MLan *mlan, int doreset, uchar *buf, int len)
 {
-	uchar sendpacket[150];
+	uchar sendpacket[80];
 	int sendlen=0, pos=0, i=0;
 
 	assert(mlan);
@@ -530,6 +530,148 @@ _mlan_touchbyte(MLan *mlan, int byte)
 	}
 	mlan->ds2480detect(mlan);
 	return(0);
+}
+
+static int
+_mlan_writescratchpad(MLan *mlan, uchar *serial, int page,int size,uchar *data)
+{
+	uchar send_block[128];
+	int send_cnt=0;
+	int i=0, atmp=0;
+
+	assert(mlan);
+	assert(serial);
+	assert(data);
+
+	mlan_debug(mlan, 2, ("-- writeScratchpad, %d bytes at page %d --\n",
+		size, page));
+
+	if(mlan->reset(mlan)==FALSE) {
+		return(FALSE);
+	}
+
+	send_block[send_cnt++] = MATCH_ROM;
+	for(i=0; i<8; i++)
+		send_block[send_cnt++] = serial[i];
+	/* Our command */
+	send_block[send_cnt++] = WRITE_SCRATCHPAD;
+	/* Where will we be writing? */
+	atmp=page*0x20;
+	send_block[send_cnt++] = atmp & 0xff;
+	send_block[send_cnt++] = atmp>>8;
+	mlan_debug(mlan, 3, ("writeScratchpad using address %02X%02X\n",
+		send_block[send_cnt-2], send_block[send_cnt-1]));
+	/* Give it our data */
+	for(i=0; i<size; i++) {
+		send_block[send_cnt++]=data[i];
+	}
+	if(! (mlan->block(mlan, TRUE, send_block, send_cnt))) {
+		printf("Error writing to scratchpad!\n");
+		return(FALSE);
+	}
+
+	/* Read it back */
+	send_cnt=0;
+	send_block[send_cnt++] = MATCH_ROM;
+	for(i=0; i<8; i++)
+		send_block[send_cnt++] = serial[i];
+	send_block[send_cnt++] = READ_SCRATCHPAD;
+	for (i = 0; i < (size + 3); i++)
+		send_block[send_cnt++] = 0xFF;
+	if(! (mlan->block(mlan, TRUE, send_block, send_cnt))) {
+		printf("Error reading from scratchpad!\n");
+		return(FALSE);
+	}
+
+	/* Verify it */
+	if(send_block[10] != (atmp&0xff)) {
+		printf("writescratchpad: First half of start page was incorrect.\n");
+		return(FALSE);
+	}
+	if(send_block[11] != (atmp>>8)) {
+		printf("writescratchpad: Second half of start page was incorrect.\n");
+		return(FALSE);
+	}
+	if(send_block[12] != (size-1)) {
+		printf("writescratchpad: Size was incorrect.\n");
+		return(FALSE);
+	}
+
+	for(i=0; i<size; i++) {
+		if(send_block[13+i] != data[i]) {
+			printf("writescratchpad: Byte %d was incorrect during read.\n", i);
+			return(FALSE);
+		}
+	}
+
+	return(TRUE);
+}
+
+static int
+_mlan_copyscratchpad(MLan *mlan, uchar *serial, int page, int length)
+{
+	uchar send_block[128];
+	int send_cnt=0;
+	int i=0, atmp=0;
+
+	assert(mlan);
+	assert(serial);
+	assert(length>0);
+
+	i=0;
+
+	mlan_debug(mlan, 2, ("-- copyScratchpad (%d %d) --\n", page, length));
+
+	send_block[send_cnt++] = MATCH_ROM;
+	for(i=0; i<8; i++)
+		send_block[send_cnt++] = serial[i];
+	send_block[send_cnt++] = COPY_SCRATCHPAD;
+	atmp=page*0x20;
+	send_block[send_cnt++] = atmp & 0xff;
+	send_block[send_cnt++] = atmp>>8;
+	send_block[send_cnt++] = length-1;
+	send_block[send_cnt++] = 0xff;
+
+	if(! (mlan->block(mlan, TRUE, send_block, send_cnt)) ) {
+		printf("Error copying scratchpad!\n");
+		return(FALSE);
+	}
+
+	if(send_block[10] != (atmp & 0xff)) {
+		printf("copyscratchpad: First position byte was incorrect.\n");
+		return(FALSE);
+	}
+	if(send_block[11] != (atmp>>8)) {
+		printf("copyscratchpad: Second position byte was incorrect.\n");
+		return(FALSE);
+	}
+	if(send_block[12] != (length-1)) {
+		printf("copyscratchpad: length was incorrect.\n");
+		return(FALSE);
+	}
+
+	return(TRUE);
+}
+
+static int
+_mlan_clearmemory(MLan *mlan, uchar *serial)
+{
+	uchar send_block[80];
+	int send_cnt=0, i=0;
+
+	assert(mlan);
+	assert(serial);
+
+	send_block[send_cnt++] = MATCH_ROM;
+	for(i=0; i<8; i++)
+		send_block[send_cnt++] = serial[i];
+	send_block[send_cnt++] = CLEAR_MEMORY;
+
+	if(mlan->block(mlan, TRUE, send_block, send_cnt)==FALSE) {
+		return(FALSE);
+	}
+
+	return(TRUE);
 }
 
 static int
@@ -654,6 +796,9 @@ mlan_init(char *port, int baud_rate)
 	mlan->registerSerial = _mlan_register_serial;
 	mlan->parseSerial = _mlan_parseSerial;
 	mlan->getBlock = _mlan_getblock;
+	mlan->writeScratchpad = _mlan_writescratchpad;
+	mlan->copyScratchpad = _mlan_copyscratchpad;
+	mlan->clearMemory = _mlan_clearmemory;
 
 	mlan->debug = 0;
 	mlan->mode = MODSEL_COMMAND;

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.11 2000/07/14 05:49:22 dustin Exp $
+ * $Id: mlan.h,v 1.12 2000/07/14 09:46:48 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -250,6 +250,9 @@ struct __mlan {
 	void (*registerSerial)(MLan *mlan, int id, char *value);
 	char *(*parseSerial)(MLan *mlan, char *serial, uchar *output);
 	int (*getBlock)(MLan *mlan, uchar *serial, int page, int pages, uchar *);
+	int (*writeScratchpad)(MLan *mlan, uchar *serial, int page, int, uchar *);
+	int (*copyScratchpad)(MLan *mlan, uchar *serial, int page, int size);
+	int (*clearMemory)(MLan *mlan, uchar *serial);
 
 	/* misc crap */
 	uchar (*dowcrc)(MLan *mlan, uchar x);

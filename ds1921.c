@@ -149,7 +149,7 @@ static void decodeRegister(uchar *buffer, struct ds1921_data *d)
 	d->status.sample_rate=buffer[13];
 	d->status.status=buffer[20];
 
-	d->status.mission_delay=(buffer[19]<<8)+(buffer[18]);
+	d->status.mission_delay=(buffer[19]<<8)|(buffer[18]);
 
 	d->status.mission_s_counter=
 		(buffer[28]<<16)|(buffer[27]<<8)|(buffer[26]);
@@ -216,7 +216,9 @@ void printDS1921(struct ds1921_data d)
 		d.status.mission_ts.year, d.status.mission_ts.month,
 		d.status.mission_ts.date,
 		d.status.mission_ts.hours, d.status.mission_ts.minutes);
-	printf("Mission was delayed %d minutes.\n", d.status.mission_delay);
+	if(d.status.mission_delay) {
+		printf("Mission begins in %d minutes.\n", d.status.mission_delay);
+	}
 	printf("Current sample rate is one sample per %d minutes\n",
 		d.status.sample_rate);
 	printf("Mission status:\n");
@@ -254,6 +256,85 @@ static void getSummary(struct ds1921_data *d)
 	} else {
 		sprintf(d->summary, "%s", "No mission in progress.");
 	}
+}
+
+int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data)
+{
+	uchar buffer[64];
+	struct ds1921_data data2;
+	int year=0;
+
+	assert(mlan);
+	assert(serial);
+
+	memset(&data2, 0x00, sizeof(data2));
+	memset(&buffer, 0x00, sizeof(buffer));
+
+	buffer[0]= ((data.status.clock.seconds/10)<<4)
+		| (data.status.clock.seconds%10);
+	buffer[1]= ((data.status.clock.minutes/10)<<4)
+		| (data.status.clock.minutes%10);
+	buffer[2]= ((data.status.clock.hours/10)<<4)
+		| (data.status.clock.hours%10);
+	buffer[3]=data.status.clock.day;
+	buffer[4]= ((data.status.clock.date/10)<<4)
+		| (data.status.clock.date%10);
+	buffer[5]=((data.status.clock.month/10)<<4)
+		| (data.status.clock.month%10);
+	/* The year is slightly more tricky */
+	year=data.status.clock.year-1900;
+	if(year>=100) {
+		buffer[5]|=0x80;
+		year-=100;
+	}
+	buffer[6]=((year/10)<<4) | (year%10);
+
+	/* Control data */
+	buffer[14]=CONTROL_ROLLOVER_ENABLED|CONTROL_MISSION_ENABLED
+		|CONTROL_MEMORY_CLR_ENABLED;
+
+	printf("Mission delay is %d minutes\n", data.status.mission_delay);
+	buffer[19]=(data.status.mission_delay>>8);
+	buffer[18]=(data.status.mission_delay & 0xFF);
+	printf("Mission delay is %02X %02X\n", buffer[18], buffer[19]);
+
+	/* Set the sample rate */
+	buffer[13]=data.status.sample_rate;
+
+	printf("This is the mission data:\n");
+	binDumpBlock(buffer, 16, 0x200);
+	decodeRegister(buffer, &data2);
+	printDS1921(data2);
+
+	/* Send it on */
+	if(mlan->writeScratchpad(mlan, serial, 16, 32, buffer)!=TRUE) {
+		printf("Write scratchpad failed.\n");
+		return(FALSE);
+	}
+	if(mlan->copyScratchpad(mlan, serial, 16, 32) != TRUE) {
+		printf("Write scratchpad failed.\n");
+		return(FALSE);
+	}
+
+	/* Clear memory */
+	if(mlan->clearMemory(mlan, serial)!=TRUE) {
+		printf("Clear memory failed.\n");
+		return(FALSE);
+	}
+
+	buffer[14]=CONTROL_ROLLOVER_ENABLED|CONTROL_MISSION_ENABLED;
+
+	/* OK, turn it on! */
+	if(mlan->writeScratchpad(mlan, serial, 16, 32, buffer)!=TRUE) {
+		printf("Write scratchpad failed.\n");
+		return(FALSE);
+	}
+	if(mlan->copyScratchpad(mlan, serial, 16, 32) != TRUE) {
+		printf("Write scratchpad failed.\n");
+		return(FALSE);
+	}
+
+	return(TRUE);
 }
 
 struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)

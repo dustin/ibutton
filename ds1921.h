@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
  *
- * $Id: ds1921.h,v 1.3 2000/07/14 06:18:22 dustin Exp $
+ * $Id: ds1921.h,v 1.4 2000/07/14 09:46:45 dustin Exp $
  */
 
 #ifndef DS1921_H
@@ -94,5 +94,6 @@ struct ds1921_data {
 /* prototypes */
 struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial);
 void printDS1921(struct ds1921_data d);
+int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data);
 
 #endif /* DS1921_H */

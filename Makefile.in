@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.6 2000/07/14 06:18:17 dustin Exp $
+# $Id: Makefile.in,v 1.8 2000/07/14 09:46:43 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -12,7 +12,7 @@ DEFS=@DEFS@
 CFLAGS=-I. @CFLAGS@ $(DEFS)
 
 OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o
-PROGS=search lookup sample_devices slew 1921dump
+PROGS=search lookup sample_devices slew 1921dump 1921mission
 PROGO=search.o lookup.o sample_devices.o slew.o
 CC=@CC@
 
@@ -31,7 +31,10 @@ lookup: mlan.a lookup.o
 	$(CC) -o $@ lookup.o mlan.a
 
 1921dump: mlan.a 1921dump.o
-	$(CC) -o $@ mlan.a 1921dump.o
+	$(CC) -o $@ 1921dump.o mlan.a
+
+1921mission: mlan.a 1921mission.o
+	$(CC) -o $@ 1921mission.o mlan.a
 
 mlan.a: $(OBJ) mlan.h
 	$(AR) rc $@ $(OBJ)

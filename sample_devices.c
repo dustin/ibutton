@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.26 2002/01/29 19:19:09 dustin Exp $
+ * $Id: sample_devices.c,v 1.27 2002/01/29 23:19:00 dustin Exp $
  */
 
 #include <stdio.h>
@@ -442,9 +442,11 @@ dealWith(MLan *mlan, uchar *serial)
 					if(data.samples[i].timestamp>last_update) {
 						char data_str[8192];
 						snprintf(data_str, sizeof(data_str),
-							"%s\t%s\t%.2f",
+							"%s\t%s\t%.2f\ts=%d,r=%d",
 							get_time_str(data.samples[i].timestamp),
-							get_serial(serial), data.samples[i].sample);
+							get_serial(serial), data.samples[i].sample,
+							data.status.mission_ts.clock,
+							data.status.sample_rate);
 						/* Log it */
 						fprintf(logfile, "%s\n", data_str);
 						/* Multicast it */

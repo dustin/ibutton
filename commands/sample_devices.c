@@ -4,11 +4,14 @@
  * $Id: sample_devices.c,v 1.32 2002/01/30 00:46:21 dustin Exp $
  */
 
+/*{{{ Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <assert.h>
 #include <time.h>
 #include <sys/time.h>
@@ -26,26 +29,47 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+/* My extra clibs */
+#include <stringlib.h>
+
 /* Local */
 #include <mlan.h>
 #include <ds1920.h>
 #include <ds1921.h>
+#include <ds2406.h>
+#include "sample_devices.h"
+/*}}}*/
+
+/* Globals and defines {{{ */
 
 /* Globals because I have to move it out of the way in a signal handler */
-FILE		*logfile=NULL;
-char		*logfilename=NULL;
-int			need_to_reinit=1;
-char		*busdev=NULL;
-char		*curdir=NULL;
+static FILE		*logfile=NULL;
+static char		*logfilename=NULL;
+static int			need_to_reinit=1;
+static char		*busdev=NULL;
+static char		*curdir=NULL;
 
 /* The multicast stuff */
-int msocket=-1;
-struct sockaddr_in maddr;
+static int msocket=-1;
+static struct sockaddr_in maddr;
 
-/* Prototypes */
+/* Server socket */
+static int serverSocket=-1;
+
+static struct watch_list *watching=NULL;
+
+/* The maximum amount of time we'll keep a device on the watch list */
+#define MAX_AGE 900
+/* Number of seconds between samples */
+#define SAMPLE_FREQUENCY 60
+
+/*}}}*/
+
+/* Prototypes {{{ */
 static void setsignals();
-static void log_error(char *str);
+/*}}}*/
 
+/* Data structures {{{*/
 /* This is the list of things being watched */
 struct watch_list {
 	uchar serial[MLAN_SERIAL_SIZE];
@@ -53,24 +77,9 @@ struct watch_list {
 	struct watch_list *next;
 };
 
-static struct watch_list *watching=NULL;
+/*}}}*/
 
-/* Get the serial number as a string */
-static char*
-get_serial(uchar *serial)
-{
-	static char r[(MLAN_SERIAL_SIZE * 2) + 1];
-	char *map="0123456789ABCDEF";
-	int i=0, j=0;
-	assert(serial);
-	for(i=0; i<MLAN_SERIAL_SIZE; i++) {
-		r[j++]=map[((serial[i] & 0xf0) >> 4)];
-		r[j++]=map[(serial[i] & 0x0f)];
-	}
-	r[j]=0x00;
-	return(r);
-}
-
+/* Logging and reporting {{{ */
 static time_t
 getSerialFileTimestamp(uchar *serial)
 {
@@ -95,10 +104,6 @@ getSerialFileTimestamp(uchar *serial)
 		rv=sb.st_mtime;
 	}
 
-	/*
-	printf("getSerialFileTimestamp(%s) => %d\n", fn, rv);
-	*/
-
 	return(rv);
 }
 
@@ -115,6 +120,7 @@ timeOfLastUpdate(uchar *serial)
 	assert(p==NULL || memcmp(serial, p->serial, MLAN_SERIAL_SIZE)==0);
 
 	if(p==NULL) {
+		log_info("Adding %s to the watch list.\n", get_serial(serial));
 		p=calloc(sizeof(struct watch_list), 1);
 		assert(p);
 		memcpy(p->serial, serial, MLAN_SERIAL_SIZE);
@@ -126,17 +132,35 @@ timeOfLastUpdate(uchar *serial)
 	return(p->last_read);
 }
 
-static int
-secondsSinceLastUpdate(uchar *serial)
+static void cleanWatchList()
 {
-	int rv=0;
+	struct watch_list *p=NULL;
+	int now=(int)time(NULL);
+	/* The minimum timestamp that we will keep */
+	int min_last = now - MAX_AGE;
 
-	rv=(time(NULL) - timeOfLastUpdate(serial));
-	/*
-	printf("secondsSinceLastUpdate(%s) => %d\n", get_serial(serial), rv);
-	*/
+	/* Deal with stuff at the front of the list */
+	while(watching != NULL && watching->last_read < min_last) {
+		p=watching;
+		watching = p->next;
+		log_error("Removing %s from the watch list (too old)\n",
+			get_serial(p->serial));
+		free(p);
+	}
 
-	return(rv);
+	/* Remove anything else in the list */
+	if(watching != NULL) {
+		struct watch_list *tmp=NULL;
+		for(p=watching; p->next != NULL; p=p->next) {
+			if(p->last_read < min_last) {
+				tmp=p->next;
+				p->next=tmp->next;
+				log_error("Removing %s from the watch list (too old)\n",
+					get_serial(tmp->serial));
+				free(tmp);
+			}
+		}
+	}
 }
 
 static void
@@ -153,30 +177,6 @@ updateSerial(uchar *serial, time_t when)
 	assert(p!=NULL && memcmp(serial, p->serial, MLAN_SERIAL_SIZE)==0);
 
 	p->last_read=when;
-	/*
-	printf("updateSerial(%s, %lu)\n", get_serial(serial), when);
-	*/
-}
-
-/* NOTE:  The initialization may be called more than once */
-static MLan *
-init(char *port)
-{
-	MLan *m=NULL;
-
-	m=mlan_init(port, PARMSET_9600);
-
-	if(m!=NULL) {
-		if(m->ds2480detect(m)!=TRUE) {
-			log_error("Did not detect DS2480.\n");
-			m->destroy(m);
-			m=NULL;
-		}
-	} else {
-		log_error("Failed to open device.\n");
-	}
-
-	return(m);
 }
 
 /* Record the current sample into a file unique to the serial number */
@@ -255,12 +255,33 @@ get_time_str(time_t t)
 }
 
 static void
-log_error(char *str)
+log_msg(const char *level, const char *fmt, va_list ap)
 {
-	fprintf(stderr, "%s:  ERROR:  %s", get_time_str_now(), str);
+	fprintf(stderr, "%s:  %s:  ", get_time_str_now(), level);
+	vfprintf(stderr, fmt, ap);
 	fflush(stderr);
 }
 
+void
+log_error(char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	log_msg("ERROR", fmt, ap);
+	va_end(ap);
+}
+
+void
+log_info(char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	log_msg("INFO", fmt, ap);
+	va_end(ap);
+}
+/* }}} */
+
+/* Signal handling {{{ */
 void
 _sighup(int sig)
 {
@@ -292,7 +313,9 @@ setsignals()
 	signal(SIGHUP, _sighup);
 	signal(SIGALRM, _sigalarm);
 }
+/* }}} */
 
+/* Multicast handling {{{ */
 /* Initialize the multicast socket and addr.  */
 static void
 initMulti(const char *group, int port, int mttl)
@@ -362,70 +385,9 @@ msend(const char *msg)
 		}
 	}
 }
+/* }}} */
 
-static void
-usage(const char *name)
-{
-	fprintf(stderr, "Usage:  %s -b busdev -l logfile -c logdir "
-		"[-m multigroup] [-p multiport] [-t multittl]\n", name);
-	fprintf(stderr, "  busdev - serial device containing the bus to poll\n");
-	fprintf(stderr, "  logfile - file to write log entries\n");
-	fprintf(stderr, "  logdir - directory to write indivual snapshots\n");
-	fprintf(stderr, "  multigroup - multicast group to announce readings\n");
-	fprintf(stderr, "  multiport - port for sending multicast [1313]\n");
-	fprintf(stderr, "  multittl - multicast TTL [0]\n");
-	fprintf(stderr,
-		"By default, if no multicast group is defined, there will be\n"
-		"no multicast announcements.\n");
-	exit(1);
-}
-
-static void
-getoptions(int argc, char **argv)
-{
-	int c;
-	extern char *optarg;
-	char *multigroup=NULL;
-	int multiport=1313;
-	int multittl=0;
-
-	while( (c=getopt(argc, argv, "b:l:c:m:p:t:")) != -1) {
-		switch(c) {
-			case 'b':
-				busdev=optarg;
-				break;
-			case 'l':
-				logfilename=optarg;
-				break;
-			case 'c':
-				curdir=optarg;
-				break;
-			case 'm':
-				multigroup=optarg;
-				break;
-			case 'p':
-				multiport=atoi(optarg);
-				break;
-			case 't':
-				multittl=atoi(optarg);
-				break;
-			case '?':
-				usage(argv[0]);
-				break;
-		}
-	}
-
-	/* Make sure the required options are supplied */
-	if(busdev==NULL || logfilename==NULL || curdir==NULL) {
-		usage(argv[0]);
-	}
-
-	/* If we got multicast config, initialize it */
-	if(multigroup!=NULL) {
-		initMulti(multigroup, multiport, multittl);
-	}
-}
-
+/* Device handling {{{ */
 static int dealWith1920(MLan *mlan, uchar *serial)
 {
 	struct ds1920_data data;
@@ -435,9 +397,7 @@ static int dealWith1920(MLan *mlan, uchar *serial)
 	if(data.valid!=TRUE) {
 		rv=-1;
 		/* Log the failure */
-		fprintf(logfile, "%s\t%s\t%s\n",
-			get_time_str_now(), get_serial(serial),
-				"Error getting sample");
+		log_error("Did not return valid data from %s.\n", get_serial(serial));
 	} else {
 		char data_str[8192];
 		snprintf(data_str, sizeof(data_str),
@@ -465,7 +425,8 @@ dealWith1921(MLan *mlan, uchar *serial)
 {
 	struct ds1921_data data;
 	int i=0;
-	int rv=0;
+	/* Error until we determine otherwise */
+	int rv=-1;
 
 	data=getDS1921Data(mlan, serial);
 	if(data.valid==TRUE) {
@@ -473,9 +434,6 @@ dealWith1921(MLan *mlan, uchar *serial)
 		time_t last_record=0;
 		float last_reading=0;
 		char data_str[8192];
-		/*
-		printf("Got the data, preparing to write it out.\n");
-		*/
 		/* Disable alarms for recording the data.  Nothing should
 		 * block here, and if it doesn't finish properly, we're
 		 * going to lose our timestamp thingy.  It can take a while
@@ -502,9 +460,11 @@ dealWith1921(MLan *mlan, uchar *serial)
 		updateSerial(serial, last_record);
 		snprintf(data_str, sizeof(data_str), "%.2f", last_reading);
 		record_cur(get_serial(serial), data_str, last_record);
-		/*
-		printf("Finished writing the data.\n");
-		*/
+
+		/* OK, if we got this far, it wasn't an error */
+		rv=0;
+	} else {
+		log_error("Did not return valid data from %s.\n", get_serial(serial));
 	}
 
 	return(rv);
@@ -513,28 +473,22 @@ dealWith1921(MLan *mlan, uchar *serial)
 static int
 dealWith(MLan *mlan, uchar *serial)
 {
-	int age=0;
 	int rv=0;
 
 	assert(mlan);
 	assert(serial);
 
-	age=secondsSinceLastUpdate(serial);
-
-	/* Don't process this device if we've seen it in the last 60 seconds */
-	if(age>=60) {
-		switch(serial[0]) {
-			case DEVICE_1920:
-				rv=dealWith1920(mlan, serial);
-				break;
-			case DEVICE_1921:
-				rv=dealWith1921(mlan, serial);
-				break;
-			default:
-				/* Mark it as updated */
-				updateSerial(serial, time(NULL));
-				break;
-		}
+	switch(serial[0]) {
+		case DEVICE_1920:
+			rv=dealWith1920(mlan, serial);
+			break;
+		case DEVICE_1921:
+			rv=dealWith1921(mlan, serial);
+			break;
+		default:
+			/* Mark it as updated */
+			updateSerial(serial, time(NULL));
+			break;
 	}
 
 	return(rv);
@@ -544,10 +498,14 @@ static int
 busLoop(MLan *mlan)
 {
 	uchar list[MAX_SERIAL_NUMS][MLAN_SERIAL_SIZE];
+	struct watch_list *wtmp=NULL;
 	int failures=0;
 	int list_count=0;
 	int i=0;
 	int rslt=0;
+	/* Devices are eligible for sampling if the last time they were seen is
+	 * more than SAMPLE_FREQUENCY seconds ago */
+	time_t eligibility_age=time(NULL) - SAMPLE_FREQUENCY;
 
 	/* Set the timer for the first */
 	alarm(5);
@@ -562,12 +520,19 @@ busLoop(MLan *mlan)
 		rslt = mlan->next(mlan, TRUE, FALSE);
 	}
 
-	/* Loop through the list and gather samples */
+	/* Loop through the list and make sure all serials are in the watch list */
 	for(i=0; i<list_count; i++) {
-		/* Give it fifteen seconds to get its sample */
-		alarm(15);
-		if(dealWith(mlan, list[i])<0) {
-			failures++;
+		/* This will make sure the device is in the watch list */
+		timeOfLastUpdate(list[i]);
+	}
+
+	/* Loop through the watch list and gather samples */
+	for(wtmp=watching; wtmp != NULL; wtmp=wtmp->next) {
+		if(wtmp->last_read <= eligibility_age) {
+			alarm(15);
+			if(dealWith(mlan, wtmp->serial) < 0) {
+				failures++;
+			}
 		}
 	}
 
@@ -579,7 +544,33 @@ busLoop(MLan *mlan)
 		failures++;
 	}
 
+	/* Clean the watch list after a loop */
+	cleanWatchList();
+
 	return(failures);
+}
+/* }}} */
+
+/* Bus handling {{{ */
+/* NOTE:  The initialization may be called more than once */
+static MLan *
+init(char *port)
+{
+	MLan *m=NULL;
+
+	m=mlan_init(port, PARMSET_9600);
+
+	if(m!=NULL) {
+		if(m->ds2480detect(m)!=TRUE) {
+			log_error("Did not detect DS2480.\n");
+			m->destroy(m);
+			m=NULL;
+		}
+	} else {
+		log_error("Failed to open device.\n");
+	}
+
+	return(m);
 }
 
 static MLan*
@@ -595,13 +586,13 @@ mlanReinit(MLan *mlan)
 #endif /* MYMALLOC */
 
 	while(mlan==NULL) {
-		log_error("(re)initializing the 1wire bus.\n");
+		log_info("(re)initializing the 1wire bus.\n");
 		mlan=init(busdev);
 		if(mlan==NULL) {
 			log_error("Init failed, sleeping...\n");
 			sleep(15);
 		} else {
-			log_error("Initialization successful.\n");
+			log_info("Initialization successful.\n");
 			need_to_reinit=0;
 		}
 	}
@@ -610,37 +601,202 @@ mlanReinit(MLan *mlan)
 
 	return(mlan);
 }
+/* }}} */
 
+/* Main loop {{{*/
 static void
 mainLoop()
 {
 	int			failures=0;
+	int			selected=0, i=0;
 	MLan		*mlan=NULL;
+	time_t		thisTime=0, lastTime=0;
+	struct client *clients[MAX_CONNECTIONS];
+
+	memset(&clients, 0x00, sizeof(clients));
 
 	/* Do the initial initialization of the bus */
 	mlan=mlanReinit(mlan);
 
 	/* Loop forever */
 	for(;;) {
+		fd_set rfdset, wfdset, efdset;
+		struct timeval tv;
+		int highestFd=serverSocket;
 
-		/* Look over the bus, see if there's any news there */
-		if(mlan != NULL && need_to_reinit == 0) {
-			failures=busLoop(mlan);
+		FD_ZERO(&rfdset);
+		FD_ZERO(&wfdset);
+		FD_ZERO(&efdset);
+		/* Listen to the server socket */
+		if(serverSocket > 0) {
+			FD_SET(serverSocket, &rfdset);
+		}
+		/* Check for any client sockets that need to be added */
+		for(i=0; i<MAX_CONNECTIONS; i++) {
+			if(clients[i] != NULL) {
+				if(clients[i]->s > highestFd) {
+					highestFd=clients[i]->s;
+				}
+				/* Always queue for reading and exception */
+				if(clients[i]->connState == FINISHED) {
+					closeConnection(clients[i]);
+					free(clients[i]);
+					clients[i]=NULL;
+				} else {
+					if(clients[i]->connState == CONNECTED) {
+						FD_SET(clients[i]->s, &rfdset);
+						FD_SET(clients[i]->s, &efdset);
+					}
+					/* If this client has nothing to write, let it go, else
+					   queue the write */
+					if(clients[i]->msgs == NULL) {
+						if(clients[i]->connState == QUITTING) {
+							/* Nothing to say, nothing to hear...shut down */
+							clients[i]->connState=FINISHED;
+						}
+					} else {
+						/* We're interested in writing to this fd */
+						FD_SET(clients[i]->s, &wfdset);
+					}
+				} /* Not in the finished state */
+			} /* Examining a valid connection */
+		} /* Examining all known connections */
+
+		tv.tv_sec=1;
+		tv.tv_usec=0;
+
+		selected=select(highestFd+1, &rfdset, &wfdset, &efdset, &tv);
+		thisTime=time(NULL);
+
+		if(selected > 0) {
+			if(FD_ISSET(serverSocket, &rfdset)) {
+				int client=0;
+				struct sockaddr_in fsin;
+				int fromlen=sizeof(fsin);
+
+				client=accept(serverSocket, (struct sockaddr *)&fsin, &fromlen);
+				if(client < 0) {
+					perror("accept");
+				} else {
+					clients[client]=calloc(1, sizeof(struct client));
+					assert(clients[client]);
+					clients[client]->s=client;
+					handleNewConnection(clients[client], fsin);
+					log_info("Accepted a connection on %d from %s\n",
+						client, clients[client]->ip);
+				}
+			}
+
+			/* OK, look for reads */
+			for(i=0; i<highestFd+1; i++) {
+				if(i != serverSocket && FD_ISSET(i, &rfdset)) {
+					assert(clients[i]);
+					if(handleRead(mlan, clients[i]) == CLIENT_DONE) {
+						clients[i]->connState=QUITTING;
+					}
+				} if(FD_ISSET(i, &wfdset)) {
+					handleWrite(clients[i]);
+				} if(FD_ISSET(i, &efdset)) {
+					clients[i]->connState=QUITTING;
+				}
+			}
 		}
 
-		/* Write the log */
-		fflush(logfile);
+		/* If it's been at least a second, check the bus */
+		if(thisTime != lastTime) {
+			/* Look over the bus, see if there's any news there */
+			if(mlan != NULL && need_to_reinit == 0) {
+				failures=busLoop(mlan);
+			}
 
-		if(failures>0 || need_to_reinit != 0) {
-			/* Wait five seconds before reopening the device. */
-			log_error("There were failures, requesting reinitialization.\n");
-			mlan=mlanReinit(mlan);
+			/* Write the log */
+			fflush(logfile);
+
+			if(failures>0 || need_to_reinit != 0) {
+				/* Wait five seconds before reopening the device. */
+				log_error("There were failures, reinitializing.\n");
+				mlan=mlanReinit(mlan);
+			}
+			lastTime=thisTime;
 		}
-
-		/* Wait a while before the next sample */
-		sleep(1);
 	}
 	/* NOT REACHED */
+}
+/*}}}*/
+
+/* Main/usage/etc... {{{*/
+static void
+usage(const char *name)
+{
+	fprintf(stderr, "Usage:  %s -b busdev -l logfile -c logdir "
+		"[-m multigroup] [-p multiport] [-t multittl] [-s serverPort]\n", name);
+	fprintf(stderr, "  busdev - serial device containing the bus to poll\n");
+	fprintf(stderr, "  logfile - file to write log entries\n");
+	fprintf(stderr, "  logdir - directory to write indivual snapshots\n");
+	fprintf(stderr, "  multigroup - multicast group to announce readings\n");
+	fprintf(stderr, "  multiport - port for sending multicast [1313]\n");
+	fprintf(stderr, "  multittl - multicast TTL [0]\n");
+	fprintf(stderr, "  serverPort - port for TCP server [-1]\n"
+		"By default, if no serverPort is specified, there will be no "
+		"server listening.\n"
+		"Likewise, if no multicast group is defined, there will be "
+		"no multicast\n"
+		"announcements.\n");
+	exit(1);
+}
+
+static void
+getoptions(int argc, char **argv)
+{
+	int c;
+	extern char *optarg;
+	char *multigroup=NULL;
+	int multiport=1313;
+	int multittl=0;
+	int serverPort=0;
+
+	while( (c=getopt(argc, argv, "b:l:c:m:p:t:s:")) != -1) {
+		switch(c) {
+			case 'b':
+				busdev=optarg;
+				break;
+			case 'l':
+				logfilename=optarg;
+				break;
+			case 'c':
+				curdir=optarg;
+				break;
+			case 'm':
+				multigroup=optarg;
+				break;
+			case 'p':
+				multiport=atoi(optarg);
+				break;
+			case 't':
+				multittl=atoi(optarg);
+				break;
+			case 's':
+				serverPort=atoi(optarg);
+				break;
+			case '?':
+				usage(argv[0]);
+				break;
+		}
+	}
+
+	/* Make sure the required options are supplied */
+	if(busdev==NULL || logfilename==NULL || curdir==NULL) {
+		usage(argv[0]);
+	}
+
+	/* If we got multicast config, initialize it */
+	if(multigroup!=NULL) {
+		initMulti(multigroup, multiport, multittl);
+	}
+
+	if(serverPort > 0) {
+		serverSocket=getServerSocket(serverPort);
+	}
 }
 
 /* Main */
@@ -659,8 +815,11 @@ main(int argc, char **argv)
 	mainLoop();
 
 	/* NOT REACHED */
+	return(1);
 }
+/*}}}*/
 
 /*
  * arch-tag: 205805D4-13E5-11D8-ADF3-000393CFE6B8
+ * vim: foldmethod=marker
  */

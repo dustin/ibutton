@@ -12,7 +12,7 @@ GUILECONF=@GUILECONF@
 TOPDIR=@top_srcdir@
 
 DEFS=@DEFS@
-CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mlan -I$(TOPDIR)/mymalloc \
+CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mlan -I$(TOPDIR)/stringlib -I$(TOPDIR)/mymalloc \
 	@CFLAGS@ @GUILEINC@ $(DEFS)
 LDFLAGS=@LDFLAGS@ @LIBS@
 RRDLIB=@RRDLIB@
@@ -23,7 +23,7 @@ VPATH=$(TOPDIR)/commands:.
 
 PROGS=search lookup sample_devices slew 1921dump 1921mission \
 	1920 storage 2406 2438 @GUILESTUFF@
-PROGO=search.o lookup.o sample_devices.o slew.o 1920.o 1921dump.o \
+PROGO=search.o lookup.o sample_devices.o sd_server.o slew.o 1920.o 1921dump.o \
 	1921mission.o 2406.o 2438.o storage.o
 CC=@CC@
 
@@ -34,8 +34,8 @@ all: $(PROGS)
 slew: $(MLANLIB) slew.o
 	$(CC) -o $@ slew.o $(MLANLIB) $(LDFLAGS)
 
-sample_devices: $(MLANLIB) sample_devices.o
-	$(CC) -o $@ sample_devices.o $(MLANLIB) $(LDFLAGS)
+sample_devices: $(MLANLIB) sample_devices.o sd_server.o sample_devices.h
+	$(CC) -o $@ sample_devices.o sd_server.o $(MLANLIB) $(LDFLAGS)
 
 search: $(MLANLIB) search.o
 	$(CC) -o $@ search.o $(MLANLIB) $(LDFLAGS)

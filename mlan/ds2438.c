@@ -47,7 +47,7 @@ static int _ds2438_volt_ad(MLan *mlan, uchar *serial, int vdd) {
 		mlan_debug(mlan, 1, ("Error reading from DS2438\n"));
 		return(FALSE);
 	}
-	send_block[send_cnt++]=DS2438RECALL;
+	send_block[send_cnt++]=RECALL;
 	send_block[send_cnt++]=0x00; /* Read from the start */
 	/* We want to read this */
 	for(i=0; i<9; i++) {
@@ -151,7 +151,7 @@ static float _ds2438_reading(MLan *mlan, uchar *serial, int vdd)
 	}
 
 	/* Not sure why this is happening */
-	send_block[send_cnt++]=DS2438RECALL;
+	send_block[send_cnt++]=RECALL;
 	send_block[send_cnt++]=0x00;
 	/* Write 'em and read 'em */
 	if(!(mlan->block(mlan, FALSE, send_block, send_cnt)) ) {

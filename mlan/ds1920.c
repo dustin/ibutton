@@ -122,7 +122,7 @@ getDS1920Data(MLan *mlan, uchar *serial)
 		return(data);
 	}
 
-	tmpbyte=mlan->touchbyte(mlan, DS1920CONVERT_TEMPERATURE);
+	tmpbyte=mlan->touchbyte(mlan, CONVERT_TEMPERATURE);
 	mlan_debug(mlan, 3, ("Got %02x back from touchbyte\n", tmpbyte));
 
 	if(mlan->setlevel(mlan, MODE_STRONG5) != MODE_STRONG5) {

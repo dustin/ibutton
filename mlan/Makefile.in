@@ -12,7 +12,7 @@ GUILECONF=@GUILECONF@
 TOPDIR=@top_srcdir@
 
 DEFS=@DEFS@
-CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mlan -I$(TOPDIR)/mymalloc \
+CFLAGS=-I$(TOPDIR) -I$(TOPDIR)/mlan -I$(TOPDIR)/stringlib -I$(TOPDIR)/mymalloc \
 	@CFLAGS@ @GUILEINC@ $(DEFS)
 LDFLAGS=@LDFLAGS@ @LIBS@
 RRDLIB=@RRDLIB@
@@ -20,7 +20,8 @@ RRDLIB=@RRDLIB@
 VPATH=$(TOPDIR)/mlan:.
 
 OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o ds2406.o ds2438.o \
-	utility.o mymalloc/mymalloc.o
+	utility.o common.o mymalloc/mymalloc.o \
+	stringlib/strlists.o stringlib/strhash.o
 CC=@CC@
 
 .SUFFIXES: .c .o .l .a .ln
@@ -32,8 +33,16 @@ mlan.a: $(OBJ) mlan.h
 	$(RANLIB) $@
 
 mymalloc/mymalloc.o: $(TOPDIR)/mymalloc/mymalloc.c
-	-mkdir mymalloc
+	test -d mymalloc || mkdir mymalloc
 	$(CC) $(CFLAGS) -c -o mymalloc/mymalloc.o $(TOPDIR)/mymalloc/mymalloc.c
+
+stringlib/strlists.o: $(TOPDIR)/stringlib/strlists.c
+	test -d stringlib || mkdir stringlib
+	$(CC) $(CFLAGS) -c -o stringlib/strlists.o $(TOPDIR)/stringlib/strlists.c
+
+stringlib/strhash.o: $(TOPDIR)/stringlib/strhash.c
+	test -d stringlib || mkdir stringlib
+	$(CC) $(CFLAGS) -c -o stringlib/strhash.o $(TOPDIR)/stringlib/strhash.c
 
 com.o: mlan.h ds1920.h ds1921.h
 

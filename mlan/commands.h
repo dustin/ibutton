@@ -22,13 +22,12 @@
 #define READ_MEMORY_CRC 0xa5
 #define CLEAR_MEMORY 0x3c
 #define CONVERT_TEMPERATURE 0x44
+#define RECALL 0xb8
 
 /* Special stuff the 1920 uses */
 #define DS1920WRITE_SCRACTHPAD 0x4e
 #define DS1920READ_SCRATCHPAD  0xbe
 #define DS1920COPY_SCRATCHPAD  0x48
-#define DS1920CONVERT_TEMPERATURE  0x44
-#define DS1920RECALL 0xb8
 
 /* Special 2406/2407 stuff */
 #define DS2406CHANNEL_ACCESS 0xf5
@@ -39,8 +38,7 @@
 /* Convert voltage */
 #define DS2438CONVERTV 0xb4
 /* Convert temperature */
-#define DS2438CONVERTT 0x44
-#define DS2438RECALL 0xb8
+#define DS2438CONVERTT CONVERT_TEMPERATURE
 #define DS2438WRITE_SCRATCHPAD 0x4e
 #define DS2438READ_SCRATCHPAD 0xbe
 

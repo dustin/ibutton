@@ -1,0 +1,8 @@
+sample_devices Server:
+	Build a test suite to validate integrity and stuff.
+	Add max connection lifetime and read timeouts and stuff.
+	Add a live update mode.
+	Add 1921 mission summary command.
+
+--
+# arch-tag: 5341807-599-118-82-0030187026

@@ -9,6 +9,9 @@
 #ifndef UTILITY_H
 #define UTILITY_H 1
 
+/* Need a uchar */
+typedef unsigned char uchar;
+
 #if !defined(HAVE_VSNPRINTF)
 # if defined(HAVE_VSPRINTF)
 #  define vsnprintf(a, b, c, d) vsprintf(a, c, d)
@@ -21,6 +24,8 @@
 #if !defined(HAVE_SNPRINTF)
 int snprintf(char *s, size_t n, const char *format, ...);
 #endif
+
+char *get_serial(uchar *serial);
 
 #endif /* UTILITY_H */
 

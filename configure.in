@@ -121,7 +121,7 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h sys/errno.h unistd.h getopt.h getopts.h pthread.h)
-AC_CHECK_HEADERS(utime.h utimes.h)
+AC_CHECK_HEADERS(utime.h utimes.h alloca.h)
 AC_CHECK_HEADERS(rrd.h libpq-fe.h)
 
 dnl check for working pthreads
@@ -133,6 +133,7 @@ AC_STRUCT_TM
 dnl Checks for library functions.
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS(getopt vsprintf vsnprintf snprintf sprintf strerror utime utimes)
+AC_CHECK_FUNCS(vasprintf)
 
 CFLAGS="$CFLAGS $CPPFLAGS"
 

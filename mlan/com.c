@@ -64,9 +64,11 @@ static void _com_debug_attr(MLan *mlan, char *message) {
 	PRINT_FLAG(com.c_oflag, ONLRET);
 	PRINT_FLAG(com.c_oflag, ONOCR);
 	*/
+	/*
 	PRINT_FLAG(com.c_oflag, ONOEOT);
 	PRINT_FLAG(com.c_oflag, OPOST);
 	PRINT_FLAG(com.c_oflag, OXTABS);
+	*/
 	/*
 	PRINT_FLAG(com.c_oflag, TABDLY);
 	PRINT_FLAG(com.c_oflag, VTDLY);
@@ -74,8 +76,10 @@ static void _com_debug_attr(MLan *mlan, char *message) {
 	printf("\n");
 
 	printf("\tcflags:  ");
+	/*
 	PRINT_FLAG(com.c_cflag, CIGNORE);
 	PRINT_FLAG(com.c_cflag, CLOCAL);
+	*/
 	PRINT_FLAG(com.c_cflag, CS5);
 	PRINT_FLAG(com.c_cflag, CS6);
 	PRINT_FLAG(com.c_cflag, CS7);
@@ -86,13 +90,17 @@ static void _com_debug_attr(MLan *mlan, char *message) {
 	PRINT_FLAG(com.c_cflag, CSIZE);
 	PRINT_FLAG(com.c_cflag, CSTOPB);
 	PRINT_FLAG(com.c_cflag, HUPCL);
+	/*
 	PRINT_FLAG(com.c_cflag, MDMBUF);
+	*/
 	PRINT_FLAG(com.c_cflag, PARENB);
 	PRINT_FLAG(com.c_cflag, PARODD);
 	printf("\n");
 
 	printf("\tlflags:  ");
+	/*
 	PRINT_FLAG(com.c_lflag, ALTWERASE);
+	*/
 	PRINT_FLAG(com.c_lflag, ECHO);
 	PRINT_FLAG(com.c_lflag, ECHOCTL);
 	PRINT_FLAG(com.c_lflag, ECHOE);
@@ -105,7 +113,9 @@ static void _com_debug_attr(MLan *mlan, char *message) {
 	PRINT_FLAG(com.c_lflag, IEXTEN);
 	PRINT_FLAG(com.c_lflag, ISIG);
 	PRINT_FLAG(com.c_lflag, NOFLSH);
+	/*
 	PRINT_FLAG(com.c_lflag, NOKERNINFO);
+	*/
 	PRINT_FLAG(com.c_lflag, PENDIN);
 	PRINT_FLAG(com.c_lflag, TOSTOP);
 	/*

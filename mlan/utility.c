@@ -11,6 +11,7 @@
 #include <strings.h>
 
 #include "utility.h"
+#include "mlan-defines.h"
 
 #include <assert.h>
 
@@ -26,6 +27,22 @@ snprintf(char *s, size_t n, const char *format,...)
 	assert(strlen(s)<n);
 }
 #endif
+
+/* Get the serial number as a string */
+char*
+get_serial(uchar *serial)
+{
+	static char r[(MLAN_SERIAL_SIZE * 2) + 1];
+	char *map="0123456789ABCDEF";
+	int i=0, j=0;
+	assert(serial);
+	for(i=0; i<MLAN_SERIAL_SIZE; i++) {
+		r[j++]=map[((serial[i] & 0xf0) >> 4)];
+		r[j++]=map[(serial[i] & 0x0f)];
+	}
+	r[j]=0x00;
+	return(r);
+}
 
 /*
  * arch-tag: 206E5026-13E5-11D8-ABCC-000393CFE6B8

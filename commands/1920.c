@@ -9,30 +9,11 @@
 #include <commands.h>
 #include <ds1920.h>
 
-static void recall(MLan *mlan, uchar *serial)
-{
-	uchar send_buffer[16];
-	int send_cnt=0;
-	assert(mlan);
-	assert(serial);
-
-	if(!mlan->access(mlan, serial)) {
-		fprintf(stderr, "Error accessing device for recall command.\n");
-		exit(-1);
-	}
-
-	send_buffer[send_cnt++]=DS1920RECALL;
-	if(! (mlan->block(mlan, FALSE, send_buffer, send_cnt))) {
-		fprintf(stderr, "Error issuing recall command!\n");
-		exit(-1);
-	}
-}
-
 int main(int argc, char **argv)
 {
 	MLan *mlan=NULL;
 	uchar serial[MLAN_SERIAL_SIZE];
-	char *serial_in=NULL, *dev=NULL;
+	char *serial_in=NULL;
 	struct ds1920_data data;
 
 	if(argc<2 || argc==3 || argc>4) {

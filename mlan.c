@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.c,v 1.8 1999/12/08 04:43:30 dustin Exp $
+ * $Id: mlan.c,v 1.9 1999/12/08 09:54:33 dustin Exp $
  */
 
 #include <stdio.h>
@@ -531,6 +531,18 @@ _mlan_touchbyte(MLan *mlan, int byte)
 	return(0);
 }
 
+static void
+_mlan_destroy(MLan *mlan)
+{
+	assert(mlan);
+	if(mlan->fd>0) {
+		if(close(mlan->fd) < 0) {
+			perror("close");
+		}
+	}
+	free(mlan);
+}
+
 MLan           *
 mlan_init(char *port, int baud_rate)
 {
@@ -544,6 +556,9 @@ mlan_init(char *port, int baud_rate)
 
 	mlan = calloc(1, sizeof(MLan));
 	assert(mlan);
+
+	/* Destroy */
+	mlan->destroy=_mlan_destroy;
 
 	/* Serial functions */
 	mlan->setbaud = _com_setbaud;

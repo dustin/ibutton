@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile,v 1.7 1999/12/08 04:43:27 dustin Exp $
+# $Id: Makefile,v 1.8 1999/12/08 09:54:30 dustin Exp $
 
 SHELL=/bin/sh
 AR=/usr/bin/ar
@@ -23,6 +23,14 @@ lookup: mlan.a lookup.o
 
 mlan.a: $(OBJ) mlan.h
 	$(AR) rcs $@ $(OBJ)
+
+com.o: mlan.h
+
+ds2480.o: mlan.h
+
+mlan.o: mlan.h
+
+devices.o: mlan.h
 
 clean:
 	rm -f $(OBJ) mlan.a $(PROGS) $(PROGO)

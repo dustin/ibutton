@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 	}
 
 	for(i=0; i<current; i++) {
-		char *what;
+		char *what=NULL, *s=NULL;
 		printf("Serial[%d]:  ", i);
 		for(j=0; j<MLAN_SERIAL_SIZE; j++) {
 			printf("%02X", list[i][j]);
@@ -35,13 +35,8 @@ int main(int argc, char **argv)
 		}
 		printf("\n");
 
-		/* Sample is abstracted, but the application needs to know what to
-		 * do with it, we'll just look at DS1920's here.  */
-		if((int)list[i][0]==0x10) {
-			float temp;
-			if(sample(mlan, list[i], (void *)&temp)) {
-				printf("\tTemperature reading:  %2f\n", temp);
-			}
+		if( (s=get_sample(mlan, list[i])) != NULL) {
+			printf("\tTemperature reading:  %s\n", s);
 		}
 	}
 

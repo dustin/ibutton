@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.2 1999/12/08 04:43:29 dustin Exp $
+ * $Id: devices.c,v 1.3 1999/12/08 09:54:31 dustin Exp $
  */
 
 #include <stdio.h>
@@ -55,12 +55,12 @@ ftoc(float in)
 */
 
 /* Get a temperature reading from a DS1920 */
-static int
-ds1920Sample(MLan *mlan, uchar *serial, float *temp)
+static char*
+ds1920Sample(MLan *mlan, uchar *serial)
 {
 	uchar send_block[30], tmpbyte;
 	int send_cnt=0, tsht, i;
-	float tmp,cr,cpc;
+	float temp, tmp,cr,cpc;
 
 	assert(mlan);
 	assert(serial);
@@ -132,22 +132,23 @@ ds1920Sample(MLan *mlan, uchar *serial, float *temp)
 	}
 	mlan_debug(mlan, 2, ("Celsius:  %f\n", tmp) );
 	/* Convert to Farenheit */
-	*temp=ctof(tmp);
-	return(TRUE);
+	temp=ctof(tmp);
+	sprintf(mlan->sample_buffer, "%f", temp);
+	return(mlan->sample_buffer);
 }
 
 /* abstracted sampler */
-int
-sample(MLan *mlan, uchar *serial, void *data)
+char *
+get_sample(MLan *mlan, uchar *serial)
 {
-	int ret=FALSE;
+	char *ret=NULL;
 
 	assert(mlan);
 	assert(serial);
 
 	switch(serial[0]) {
 		case 0x10:
-			ret=ds1920Sample(mlan, serial, data);
+			ret=ds1920Sample(mlan, serial);
 			break;
 	}
 	return(ret);

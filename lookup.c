@@ -7,7 +7,7 @@ int main(int argc, char **argv)
 {
 	MLan *mlan;
 	uchar serial[MLAN_SERIAL_SIZE];
-	char *serial_in;
+	char *serial_in=NULL, *s=NULL;
 	int i;
 
 	if(argc<2) {
@@ -31,14 +31,10 @@ int main(int argc, char **argv)
 	}
 	printf("\n");
 
-	/* Sample is abstracted, but the application needs to know what to
-	 * do with it, we'll just look at DS1920's here.  */
-	if((int)serial[0]==0x10) {
-		float temp;
-		if(sample(mlan, serial, (void *)&temp)) {
-			printf("\tTemperature reading:  %2f\n", temp);
-		}
+	if( (s=get_sample(mlan, serial)) != NULL) {
+		printf("\tTemperature reading:  %s\n", s);
 	}
 
+	mlan->destroy(mlan);
 	return(0);
 }

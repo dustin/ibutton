@@ -2,14 +2,15 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.13 2001/08/29 09:27:49 dustin Exp $
+# $Id: Makefile.in,v 1.14 2001/12/08 11:26:54 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
 RANLIB=@RANLIB@
+GUILECONF=@GUILECONF@
 
 DEFS=@DEFS@
-CFLAGS=-I. @CFLAGS@ $(DEFS)
+CFLAGS=-I. @CFLAGS@ `$(GUILECONF) compile` $(DEFS)
 
 OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o ds2406.o ds2438.o
 PROGS=search lookup sample_devices slew 1921dump 1921mission \
@@ -48,6 +49,9 @@ storage: mlan.a storage.o
 
 1921mission: mlan.a 1921mission.o ds1921.h
 	$(CC) -o $@ 1921mission.o mlan.a
+
+mlanscm: mlanscm.o mlan.a
+	$(CC) -g -o $@ mlanscm.o mlan.a $(LDFLAGS) `$(GUILECONF) link`
 
 mlan.a: $(OBJ) mlan.h
 	$(AR) rc $@ $(OBJ)

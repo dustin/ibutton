@@ -319,9 +319,9 @@ void printDS1921(struct ds1921_data d)
 	printf("Temperature samples:\n");
 	for(i=0; i<d.n_samples; i++) {
 		if(d.samples[i].sample>-40.0) {
-			printf("\tSample %04d from %s is %.2f\n",
+			printf("\tSample %04d from %s is %.2fc (%.2ff)\n",
 				i, ds1921_sample_time(d.samples[i].timestamp),
-				d.samples[i].sample);
+				d.samples[i].sample, CTOF(d.samples[i].sample));
 		}
 	}
 }

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.18 2002/01/28 08:47:39 dustin Exp $
+ * $Id: mlan.h,v 1.19 2002/01/29 08:52:59 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -30,6 +30,25 @@ typedef unsigned char uchar;
 #define FALSE          0
 #define TRUE           1
 #endif
+
+/* The devices */
+#define DEVICE_1990 0x01
+#define DEVICE_1991 0x02
+#define DEVICE_1992 0x04
+#define DEVICE_9097 0x09
+#define DEVICE_1995 0x0a
+#define DEVICE_1985 0x0b
+#define DEVICE_1986_MEM 0x0c
+#define DEVICE_1986_ADD 0x0c
+#define DEVICE_1920 0x10
+#define DEVICE_2406 0x12
+#define DEVICE_1971 0x14
+#define DEVICE_1962 0x18
+#define DEVICE_1963 0x1a
+#define DEVICE_1921 0x21
+#define DEVICE_2438 0x26
+#define DEVICE_1973 0x23
+#define DEVICE_199550 0x96
 
 /* DS2480 modes */
 #define MODE_DATA                      0xE1

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlanscm.c,v 1.3 2001/12/10 06:52:38 dustin Exp $
+ * $Id: mlanscm.c,v 1.4 2001/12/10 07:08:31 dustin Exp $
  */
 
 #include <stdio.h>
@@ -295,6 +295,7 @@ void init_mlan_type()
 	scm_set_smob_print(mlan_tag, print_mlan);
 	scm_set_smob_free(mlan_tag, free_mlan);
 
+	/* Subs */
 	scm_make_gsubr("mlan-init", 1, 0, 1, make_mlan);
 	scm_make_gsubr("mlanp", 1, 0, 0, mlan_p);
 	scm_make_gsubr("mlan-search", 1, 0, 0, mlan_search);
@@ -304,6 +305,13 @@ void init_mlan_type()
 	scm_make_gsubr("mlan-msdelay", 2, 0, 0, mlan_msdelay);
 	scm_make_gsubr("mlan-block", 3, 0, 0, mlan_block);
 	scm_make_gsubr("mlan-getblock", 4, 0, 0, mlan_getblock);
+
+	/* Constants */
+	gh_define("mlan-mode-normal", gh_int2scm(0x00));
+	gh_define("mlan-mode-overdrive", gh_int2scm(0x01));
+	gh_define("mlan-mode-strong5", gh_int2scm(0x02));
+	gh_define("mlan-mode-program", gh_int2scm(0x04));
+	gh_define("mlan-mode-break", gh_int2scm(0x08));
 }
 
 static void inner_main(int argc, char **argv)

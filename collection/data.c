@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: data.c,v 1.14 2002/01/30 21:09:15 dustin Exp $
+ * $Id: data.c,v 1.15 2002/01/31 00:53:03 dustin Exp $
  */
 
 #include <stdio.h>
@@ -123,7 +123,7 @@ struct log_datum *parseLogEntry(const char *line)
 	}
 	/* Verify the content of the serial number */
 	for(i=0; i<strlen(rv->serial); i++) {
-		if(!isxdigit(rv->serial[i])) {
+		if(!isxdigit((int)rv->serial[i])) {
 			rv->errorMsg="Invalid serial number.";
 			goto finished;
 		}

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: com.c,v 1.10 1999/12/09 08:48:03 dustin Exp $
+ * $Id: com.c,v 1.11 2000/07/15 23:12:17 dustin Exp $
  */
 
 #include <stdio.h>
@@ -124,11 +124,12 @@ int _com_write(MLan *mlan, int outlen, uchar *outbuf)
 		}
 		current=time(NULL);
 		if( (current-start) > mlan->writeTimeout ) {
-			mlan_debug(mlan, 1, ("Timed out on write.\n") );
+			fprintf(stderr, "Timed out on write.\n");
 			break;
 		}
 	}
-	mlan_debug(mlan, 2, ("Returning from write (%d - %d)\n", rv, errno));
+	mlan_debug(mlan, 2, ("Returning from write (%d==%d - %d)\n",
+		rv, outlen, errno));
 	return(rv==outlen);
 }
 
@@ -169,7 +170,7 @@ int _com_read(MLan *mlan, int inlen, uchar *inbuf)
 		}
 		current=time(NULL);
 		if( (current-start) > mlan->readTimeout) {
-			mlan_debug(mlan, 1, ("Timed out on read.") );
+			fprintf(stderr, "Timed out on read.\n");
 			break;
 		}
 	}

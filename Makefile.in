@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
 #
-# $Id: Makefile.in,v 1.15 2001/12/11 09:49:04 dustin Exp $
+# $Id: Makefile.in,v 1.16 2001/12/24 08:03:10 dustin Exp $
 
 SHELL=/bin/sh
 AR=@AR@
@@ -10,7 +10,8 @@ RANLIB=@RANLIB@
 GUILECONF=@GUILECONF@
 
 DEFS=@DEFS@
-CFLAGS=-I. @CFLAGS@ `$(GUILECONF) compile` $(DEFS)
+CFLAGS=-I. @CFLAGS@ @GUILEINC@ $(DEFS)
+LDFLAGS=@LDFLAGS@ @LIBS@
 
 OBJ=com.o ds2480.o mlan.o devices.o ds1920.o ds1921.o ds2406.o ds2438.o
 PROGS=search lookup sample_devices slew 1921dump 1921mission \
@@ -21,34 +22,34 @@ CC=@CC@
 all: $(PROGS)
 
 slew: mlan.a slew.o
-	$(CC) -o $@ slew.o mlan.a
+	$(CC) -o $@ slew.o mlan.a $(LDFLAGS)
 
 sample_devices: mlan.a sample_devices.o
-	$(CC) -o $@ sample_devices.o mlan.a
+	$(CC) -o $@ sample_devices.o mlan.a $(LDFLAGS)
 
 search: mlan.a search.o
-	$(CC) -o $@ search.o mlan.a
+	$(CC) -o $@ search.o mlan.a $(LDFLAGS)
 
 lookup: mlan.a lookup.o
-	$(CC) -o $@ lookup.o mlan.a
+	$(CC) -o $@ lookup.o mlan.a $(LDFLAGS)
 
 storage: mlan.a storage.o
-	$(CC) -o $@ storage.o mlan.a
+	$(CC) -o $@ storage.o mlan.a $(LDFLAGS)
 
 1920: mlan.a 1920.o ds1920.h
-	$(CC) -o $@ 1920.o mlan.a
+	$(CC) -o $@ 1920.o mlan.a $(LDFLAGS)
 
 2406: mlan.a 2406.o ds2406.h
-	$(CC) -o $@ 2406.o mlan.a
+	$(CC) -o $@ 2406.o mlan.a $(LDFLAGS)
 
 2438: mlan.a 2438.o ds2438.h
-	$(CC) -o $@ 2438.o mlan.a
+	$(CC) -o $@ 2438.o mlan.a $(LDFLAGS)
 
 1921dump: mlan.a 1921dump.o ds1921.h
-	$(CC) -o $@ 1921dump.o mlan.a
+	$(CC) -o $@ 1921dump.o mlan.a $(LDFLAGS)
 
 1921mission: mlan.a 1921mission.o ds1921.h
-	$(CC) -o $@ 1921mission.o mlan.a
+	$(CC) -o $@ 1921mission.o mlan.a $(LDFLAGS)
 
 mlanscm: mlanscm.o mlan.a
 	$(CC) -g -o $@ mlanscm.o mlan.a $(LDFLAGS) `$(GUILECONF) link`

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.5 2001/12/11 09:47:17 dustin Exp $
+dnl $Id: configure.in,v 1.6 2001/12/24 08:03:15 dustin Exp $
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(mlan.c)
 
@@ -78,10 +78,13 @@ dnl If there's guile, build the guile stuff.
 if test "$GUILECONF" = ""
 then
 	GUILESTUFF=""
+	GUILEINC=""
 else
 	GUILESTUFF="mlanscm"
+	GUILEINC=`$GUILECONF compile`
 fi
 AC_SUBST(GUILESTUFF)
+AC_SUBST(GUILEINC)
 
 AC_DEFINE_UNQUOTED(DYNLIBS, $DYNLIBS)
 AC_SUBST(DYNLIBS)
@@ -97,6 +100,10 @@ then
     AC_CHECK_LIB(ucb, main)
     AC_CHECK_LIB(gen, main)
 fi
+
+dnl Solaris stuff
+AC_CHECK_LIB(socket, socket)
+AC_CHECK_LIB(nsl, gethostbyname)
 
 dnl Checks for header files.
 AC_HEADER_DIRENT

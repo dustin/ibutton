@@ -8,16 +8,6 @@
 #include <mlan.h>
 #include <ds1921.h>
 
-static long getGMTOffset()
-{
-	struct tm *tm;
-	time_t t;
-
-	t=time(NULL);
-	tm=localtime(&t);
-	return(tm->tm_gmtoff);
-}
-
 /* This is for the realtime clock */
 static void getTime1(uchar *buffer, struct ds1921_data *d)
 {
@@ -58,7 +48,7 @@ static void getTime1(uchar *buffer, struct ds1921_data *d)
 	/* Add a time_t */
 	d->status.clock.clock=mktime(&tm);
 	/* Adjust it for the GMT offset */
-	d->status.clock.clock+=getGMTOffset();
+	d->status.clock.clock+=findGMTOffset();
 
 	/* Stick it in the structure */
 	d->status.clock.year=year;
@@ -75,7 +65,6 @@ static void getTime2(uchar *buffer, struct ds1921_data *d)
 {
 	int minutes=0, hours=0, date=0, month=0, year=0;
 	struct tm tm;
-	long gmtoff=0;
 
 	assert(buffer);
 	assert(d);
@@ -90,9 +79,6 @@ static void getTime2(uchar *buffer, struct ds1921_data *d)
 		year+=100;
 	}
 
-	/* get the gmt offset */
-	gmtoff=getGMTOffset();
-
 	/* Calculate the time_t */
 	memset(&tm, 0x00, sizeof(tm));
 	tm.tm_min=minutes;
@@ -100,14 +86,13 @@ static void getTime2(uchar *buffer, struct ds1921_data *d)
 	tm.tm_mday=date;
 	tm.tm_mon=month-1;
 	tm.tm_year=year-1900;
-	tm.tm_gmtoff=gmtoff;
 	tm.tm_isdst=-1;
 
 	if(month>0) {
 		/* Add a time_t */
 		d->status.mission_ts.clock=mktime(&tm);
 		/* Adjust for the gmt offset */
-		d->status.mission_ts.clock+=gmtoff;
+		d->status.mission_ts.clock+=findGMTOffset();
 
 		/* Stick it in the structure */
 		d->status.mission_ts.year=year;
@@ -312,7 +297,7 @@ void printDS1921(struct ds1921_data d)
 	for(i=0; i<d.n_samples; i++) {
 		float temp=ctof(d.samples[i]);
 		if(temp>-40.0) {
-			printf("\tSample %03d from %s is %.2ff (%.2fc)\n",
+			printf("\tSample %04d from %s is %.2ff (%.2fc)\n",
 				i, ds1921_sample_time(i, d), temp, d.samples[i]);
 		}
 	}

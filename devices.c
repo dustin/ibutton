@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: devices.c,v 1.13 2000/07/16 21:35:22 dustin Exp $
+ * $Id: devices.c,v 1.14 2000/07/19 21:55:57 dustin Exp $
  */
 
 #include <stdio.h>
@@ -35,6 +35,26 @@ ftoc(float in)
 	return(ret);
 }
 
+int
+findGMTOffset(void)
+{
+	struct tm *tm;
+	int i;
+	time_t t, tmp;
+
+	t = time(NULL);
+	tmp = t;
+	tm=gmtime(&t);
+	t = mktime(tm);
+
+	i=(int)tmp - (int)t;
+	tm=localtime(&t);
+
+	if(tm->tm_isdst > 0) {
+		i+=3600;
+	}
+	return(i);
+}
 
 /* Dump a block for debugging */
 void dumpBlock(uchar *buffer, int size)

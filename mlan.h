@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: mlan.h,v 1.13 2000/07/14 18:17:57 dustin Exp $
+ * $Id: mlan.h,v 1.14 2000/07/19 21:56:01 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -267,5 +267,9 @@ float ctof(float);
 float ftoc(float);
 void binDumpBlock(uchar *buffer, int size, int start_addr);
 void dumpBlock(uchar *buffer, int size);
+
+/* GMT offset (in seconds) */
+int findGMTOffset(void); 
+
 
 #endif /* MLAN_H */

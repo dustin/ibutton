@@ -344,7 +344,6 @@ _sighup(int sig)
 	if(logfile != NULL) {
 		fclose(logfile);
 	}
-	need_to_reinit=1;
 	assert(strlen(logfilename) < 1000);
 	sprintf(logfiletmp, "%s.old", logfilename);
 	rename(logfilename, logfiletmp);

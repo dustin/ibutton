@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
  *
- * $Id: sample_devices.c,v 1.3 1999/12/09 08:17:07 dustin Exp $
+ * $Id: sample_devices.c,v 1.4 2000/07/13 07:26:18 dustin Exp $
  */
 
 #include <stdio.h>
@@ -18,6 +18,8 @@
 /* Globals because I have to move it out of the way in a signal handler */
 FILE		*logfile=NULL;
 char		*logfilename=NULL;
+
+/* Prototype */
 static void setsignals();
 
 /* NOTE:  The initialization may be called more than once */

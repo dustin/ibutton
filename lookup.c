@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <mlan.h>
 
 int main(int argc, char **argv)
 {
-	MLan *mlan;
+	MLan *mlan=NULL;
 	uchar serial[MLAN_SERIAL_SIZE];
-	char *serial_in=NULL, *s=NULL;
+	char *serial_in=NULL, *s=NULL, *dev=NULL;
 	int i;
 
 	if(argc<2) {
@@ -16,7 +17,14 @@ int main(int argc, char **argv)
 	}
 	serial_in=argv[1];
 
-	mlan=mlan_init("/dev/tty00", PARMSET_9600);
+
+	if(getenv("MLAN_DEVICE")) {
+		dev=getenv("MLAN_DEVICE");
+	} else {
+		dev="/dev/tty00";
+	}
+	mlan=mlan_init(dev, PARMSET_9600);
+
 	assert(mlan);
 	mlan->debug=0;
 

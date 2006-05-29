@@ -444,10 +444,10 @@ msend(const char *msg)
 
 /* Parse the serial number if it looks like a serial number, else return a
  * serial number beginning with 0x00 */
-char *
+uchar *
 sdParseSerial(char *in, uchar *out)
 {
-	char *rv=NULL;
+	uchar *rv=NULL;
 
 	/* Validate the size */
 	if(strlen(in) == (MLAN_SERIAL_SIZE*2)) {
@@ -745,7 +745,7 @@ mainLoop()
 			if(FD_ISSET(serverSocket, &rfdset)) {
 				int client=0;
 				struct sockaddr_in fsin;
-				int fromlen=sizeof(fsin);
+				socklen_t fromlen=sizeof(fsin);
 
 				client=accept(serverSocket, (struct sockaddr *)&fsin, &fromlen);
 				if(client < 0) {

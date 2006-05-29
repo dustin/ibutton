@@ -16,9 +16,6 @@
 #define CLIENT_CONTINUE 0 
 #define CLIENT_DONE 1
 
-/* Command pointers */
-extern struct cmdPointer cmdPointers[];
-
 /* Possible TCP client states */
 enum client_state {
 	CONNECTED, /* Connected, ready to talk. */
@@ -52,6 +49,9 @@ struct cmdPointer {
 	int (*cmd)(MLan *mlan, struct client *client, int argc, char **argv);
 };
 
+/* Command pointers */
+extern struct cmdPointer cmdPointers[];
+
 /* Prototypes */
 void log_error(char *str, ...);
 void log_info(char *str, ...);
@@ -59,7 +59,7 @@ void handleNewConnection(struct client*, struct sockaddr_in);
 int getServerSocket(int port);
 int handleRead(MLan *mlan, struct client *client);
 void handleWrite(struct client *client);
-char *sdParseSerial(char *in, uchar *out);
+uchar *sdParseSerial(char *in, uchar *out);
 
 /* Free a client message */
 void freeClientMessage(struct client_msg *msg);

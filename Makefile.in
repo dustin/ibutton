@@ -28,7 +28,8 @@ all:
 distclean: clean
 	cd collection && make clean
 	rm -f Makefile config.cache config.status config.log \
-		collection/Makefile mlan/Makefile
+		collection/Makefile mlan/Makefile commands/Makefile
+	rmdir mlan/stringlib mlan/mymalloc
 
 clean:
 	rm -f $(PROGS) $(PROGO)

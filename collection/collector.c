@@ -212,7 +212,8 @@ mainloop()
 {
 	char   msgbuf[256];
 	struct sockaddr_in addr;
-	int    nbytes=0, addrlen=0;
+	int    nbytes=0;
+	socklen_t addrlen=0;
 
 	/* now just enter a read-print loop */
 	addrlen = sizeof(addr);

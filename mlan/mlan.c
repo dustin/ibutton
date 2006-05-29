@@ -112,7 +112,7 @@ h2b(int size, char *buf, uchar *outbuf)
 }
 
 /* External API for parsing serial numbers */
-char *
+uchar *
 parseSerial(char *in, uchar *out)
 {
 	assert(in);
@@ -122,7 +122,7 @@ parseSerial(char *in, uchar *out)
 }
 
 /* Parse a serial number */
-static char *
+static uchar *
 _mlan_parseSerial(MLan *mlan, char *in, uchar *out)
 {
 	return(parseSerial(in, out));

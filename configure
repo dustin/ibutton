@@ -2423,8 +2423,9 @@ fi
 
 if test "$GCC" = "yes"
 then
-	echo "GCC, setting -Wall"
+	echo "GCC, setting -Wall and -Werror"
 	CPPFLAGS="$CPPFLAGS -Wall"
+	CFLAGs="$CFLAGS -Werror"
 fi
 
 if test "$GUILECONF" = ""
@@ -4884,7 +4885,7 @@ fi
 done
 
 
-CFLAGS="$CFLAGS $CPPFLAGS"
+CFLAGS="$CFLAGS $CPPFLAGS $EXTRACFLAGS"
 
                                         ac_config_files="$ac_config_files Makefile collection/Makefile mlan/Makefile commands/Makefile"
 cat >confcache <<\_ACEOF

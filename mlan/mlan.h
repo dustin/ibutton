@@ -81,7 +81,7 @@ struct __mlan {
 	void (*copySerial)(MLan *mlan, uchar *in);
 	char *(*serialLookup)(MLan *mlan, int which);
 	void (*registerSerial)(MLan *mlan, int id, char *value);
-	char *(*parseSerial)(MLan *mlan, char *serial, uchar *output);
+	uchar *(*parseSerial)(MLan *mlan, char *serial, uchar *output);
 	int (*getBlock)(MLan *mlan, uchar *serial, int page, int pages, uchar *);
 	int (*writeScratchpad)(MLan *mlan, uchar *serial, int page, int, uchar *);
 	int (*copyScratchpad)(MLan *mlan, uchar *serial, int page, int size);
@@ -103,7 +103,7 @@ char *get_sample(MLan *mlan, uchar *serial);
 
 void binDumpBlock(uchar *buffer, int size, int start_addr);
 void dumpBlock(uchar *buffer, int size);
-char *parseSerial(char *in, uchar *out);
+uchar *parseSerial(char *in, uchar *out);
 
 /* Common functions */
 int recall(MLan *mlan, uchar *serial);

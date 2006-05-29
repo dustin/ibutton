@@ -416,7 +416,7 @@ processClientData(MLan *mlan, struct client *client)
 	char *latest=NULL;
 
 	/* Skip over leading whitespace */
-	while(*p != NULL && isspace(*p)) {
+	while(*p != 0x00 && isspace(*p)) {
 		p++;
 	}
 

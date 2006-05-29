@@ -47,7 +47,7 @@
 /* Globals because I have to move it out of the way in a signal handler */
 static FILE		*logfile=NULL;
 static char		*logfilename=NULL;
-static int			need_to_reinit=1;
+static int		 need_to_reinit=1, need_to_rotate=0;
 static char		*busdev=NULL;
 static char		*curdir=NULL;
 
@@ -339,8 +339,13 @@ log_info(char *fmt, ...)
 void
 _sighup(int sig)
 {
+	need_to_rotate=1;
+}
+
+static void rotateLogs()
+{
 	char logfiletmp[1024];
-	log_error("Got SIGHUP\n");
+	log_info("Rotating logs.\n");
 	if(logfile != NULL) {
 		fclose(logfile);
 	}
@@ -350,6 +355,7 @@ _sighup(int sig)
 	logfile=fopen(logfilename, "w");
 	assert(logfile);
 	setsignals();
+	need_to_rotate=0;
 }
 
 void
@@ -791,6 +797,9 @@ mainLoop()
 				mlan=mlanReinit(mlan);
 			}
 			lastTime=thisTime;
+		}
+		if(need_to_rotate) {
+			rotateLogs();
 		}
 	}
 	/* NOT REACHED */

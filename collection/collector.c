@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
- *
- * $Id: collector.c,v 1.10 2002/01/29 23:07:16 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -318,7 +316,3 @@ int main(int argc, char *argv[])
 	mainloop();
 	return(0);
 }
-
-/*
- * arch-tag: BBD6CC16-13E5-11D8-8785-000393CFE6B8
- */

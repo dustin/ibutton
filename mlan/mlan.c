@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
- *
- * $Id: mlan.c,v 1.28 2002/01/30 09:51:18 dustin Exp $
  */
 
 #include <stdio.h>
@@ -905,7 +903,3 @@ char *mlan_get_port()
 	}
 	return(rv);
 }
-
-/*
- * arch-tag: 20466FD1-13E5-11D8-BE72-000393CFE6B8
- */

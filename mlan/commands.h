@@ -1,7 +1,5 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
- *
- * $Id: commands.h,v 1.4 2001/08/29 09:27:50 dustin Exp $
  */
 
 #ifndef COMMANDS_H
@@ -43,7 +41,3 @@
 #define DS2438READ_SCRATCHPAD 0xbe
 
 #endif /* COMMANDS_H */
-
-/*
- * arch-tag: 200C3FEE-13E5-11D8-9303-000393CFE6B8
- */

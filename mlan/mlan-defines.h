@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
- *
- * $Id: mlan.h,v 1.22 2002/01/30 09:51:20 dustin Exp $
  */
 
 #ifndef MLAN_UTILITY_H
@@ -207,7 +205,3 @@
 #define FTOC(a) (((float)a-32.0)*5.0/9.0)
 
 #endif /* MLAN_UTILITY_H */
-
-/*
- * arch-tag: 221-92-118-93-0030187026
- */

@@ -1,7 +1,5 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
- *
- * $Id: ds1921.h,v 1.10 2002/01/29 10:33:10 dustin Exp $
  */
 
 #ifndef DS1921_H
@@ -126,7 +124,3 @@ int ds1921_mission(MLan *mlan, uchar *serial, struct ds1921_data data);
 #define ds1921temp_convert_in(a) ( ((a)*2) + 80)
 
 #endif /* DS1921_H */
-
-/*
- * arch-tag: 20235CA4-13E5-11D8-90C8-000393CFE6B8
- */

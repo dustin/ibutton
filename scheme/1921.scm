@@ -1,8 +1,6 @@
 #!./mlanscm -s
 !#
 ; Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
-; $Id: 1921.scm,v 1.2 2002/01/30 09:22:12 dustin Exp $
-; arch-tag: F78710DA-13E5-11D8-BEC7-000393CFE6B8
 
 ; Temperature conversion for 1921's
 (define (ds1921-convert-out x)

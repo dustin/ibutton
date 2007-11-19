@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
- *
- * $Id: mlan.h,v 1.22 2002/01/30 09:51:20 dustin Exp $
  */
 
 #ifndef MLAN_H
@@ -113,7 +111,3 @@ int findGMTOffset(void);
 
 
 #endif /* MLAN_H */
-
-/*
- * arch-tag: 204AD731-13E5-11D8-A732-000393CFE6B8
- */

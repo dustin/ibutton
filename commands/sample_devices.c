@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
- *
- * $Id: sample_devices.c,v 1.32 2002/01/30 00:46:21 dustin Exp $
  */
 
 /*{{{ Includes */
@@ -904,6 +902,5 @@ main(int argc, char **argv)
 /*}}}*/
 
 /*
- * arch-tag: 205805D4-13E5-11D8-ADF3-000393CFE6B8
  * vim: foldmethod=marker
  */

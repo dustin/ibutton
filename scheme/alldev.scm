@@ -1,7 +1,5 @@
 ; (define (l) (load "alldev.scm"))
 ; Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
-; $Id: alldev.scm,v 1.2 2001/12/10 08:23:16 dustin Exp $
-; arch-tag: FD6D3437-13E5-11D8-AB58-000393CFE6B8
 (load "1920.scm")
 
 (define ds-serial-table '(

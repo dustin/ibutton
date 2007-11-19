@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
- *
- * $Id: mlanscm.c,v 1.10 2002/01/30 08:18:13 dustin Exp $
  */
 
 #include <stdio.h>
@@ -401,7 +399,3 @@ int main(int argc, char **argv)
 	gh_enter(argc, argv, inner_main);
 	return(0);
 }
-
-/*
- * arch-tag: 204F3926-13E5-11D8-92C5-000393CFE6B8
- */

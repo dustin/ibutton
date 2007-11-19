@@ -1,8 +1,6 @@
 # Makefile for the 1wire commands
 #
 # Copyright (c) 2004  Dustin Sallings <dustin@spy.net>
-#
-# arch-tag: 00905-43-118-82-0030187026
 
 SHELL=/bin/sh
 AR=@AR@

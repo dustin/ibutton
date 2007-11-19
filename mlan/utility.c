@@ -1,8 +1,6 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
  *
- * $Id: utility.c,v 1.1 2002/01/23 23:56:04 dustin Exp $
- *
  * This file deals with stuff that's missing on some systems.
  */
 
@@ -43,7 +41,3 @@ get_serial(uchar *serial)
 	r[j]=0x00;
 	return(r);
 }
-
-/*
- * arch-tag: 206E5026-13E5-11D8-ABCC-000393CFE6B8
- */

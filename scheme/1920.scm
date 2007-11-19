@@ -1,8 +1,6 @@
 #!./mlanscm -s
 !#
 ; Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
-; $Id: 1920.scm,v 1.3 2001/12/11 08:26:07 dustin Exp $
-; arch-tag: EA4E2E69-13E5-11D8-ADF0-000393CFE6B8
 
 (define ds1920-convert-temperature #x44)
 (define ds1920-read-scratchpad #xbe)

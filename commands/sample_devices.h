@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2004  Dustin Sallings <dustin@spy.net>
- *
- * arch-tag: 35564-48-118-82-0030187026
  */
 
 #ifndef SAMPLE_DEVICES_H

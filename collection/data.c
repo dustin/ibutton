@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
- *
- * $Id: data.c,v 1.15 2002/01/31 00:53:03 dustin Exp $
  */
 
 #include <stdio.h>
@@ -275,7 +273,3 @@ int main(int argc, char **argv)
 	disposeOfLogEntry(entry);
 }
 #endif
-
-/*
- * arch-tag: BBE0839E-13E5-11D8-A265-000393CFE6B8
- */

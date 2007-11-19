@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
- *
- * $Id: collection.h,v 1.3 2002/01/30 09:52:07 dustin Exp $
  */
 
 #ifndef COLLECTION_H
@@ -32,7 +30,3 @@ extern int col_verbose;
 #define verboseprint(a, b) if(col_verbose>=a) { printf b; }
 
 #endif /* COLLECTION_H */
-
-/*
- * arch-tag: BBEE73A9-13E5-11D8-9CB1-000393CFE6B8
- */

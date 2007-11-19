@@ -1,7 +1,5 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
- *
- * $Id: ds1920.h,v 1.3 2000/07/16 21:35:25 dustin Exp $
  */
 
 #ifndef DS1920_H
@@ -28,7 +26,3 @@ int setDS1920Params(MLan *mlan, uchar *serial, struct ds1920_data d);
 #define ds1920temp_convert_in(a) ( (int) (((a)+0.25)*2) )
 
 #endif /* DS1920_H */
-
-/*
- * arch-tag: 201AEEC1-13E5-11D8-A823-000393CFE6B8
- */

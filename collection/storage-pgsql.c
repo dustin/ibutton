@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2002  Dustin Sallings <dustin@spy.net>
- *
- * $Id: storage-pgsql.c,v 1.4 2002/01/29 21:36:11 dustin Exp $
  */
 
 #include <sys/types.h>
@@ -129,7 +127,3 @@ saveDataPostgres(struct log_datum *p)
 	}
 }
 #endif /* HAVE_LIBPQ_FE_H */
-
-/*
- * arch-tag: BBE5FB3C-13E5-11D8-BC82-000393CFE6B8
- */

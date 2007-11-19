@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
- *
- * $Id: com.c,v 1.11 2000/07/15 23:12:17 dustin Exp $
  */
 
 #include <stdio.h>
@@ -331,7 +329,3 @@ void _com_cbreak(MLan *mlan)
 	}
 	/* mlan_debug(mlan, 2, ("Returning from break\n")); */
 }
-
-/*
- * arch-tag: 200A752B-13E5-11D8-BF6D-000393CFE6B8
- */

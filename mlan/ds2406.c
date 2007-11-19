@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
- *
- * $Id: ds2406.c,v 1.1 2000/09/17 09:20:09 dustin Exp $
  */
 
 #include <stdio.h>
@@ -147,7 +145,3 @@ int setDS2406Switch(MLan *mlan, uchar *serial, int switchPort, int onoff)
 	rv=setDS2406Status(mlan, serial, status);
 	return(rv);
 }
-
-/*
- * arch-tag: 2027C0E2-13E5-11D8-8AA9-000393CFE6B8
- */

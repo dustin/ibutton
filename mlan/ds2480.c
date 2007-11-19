@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 1999  Dustin Sallings <dustin@spy.net>
- *
- * $Id: ds2480.c,v 1.9 1999/12/09 08:48:04 dustin Exp $
  */
 
 #include <stdio.h>
@@ -109,7 +107,3 @@ int _ds2480_changebaud(MLan *mlan, uchar newbaud)
 
 	return(mlan->baud);
 }
-
-/*
- * arch-tag: 203B61AE-13E5-11D8-BD00-000393CFE6B8
- */

@@ -630,6 +630,5 @@ getServerSocket(int port)
 /* }}}1 */
 
 /*
- * arch-tag: 623333-49-118-82-0030187026
  * vim: foldmethod=marker
  */

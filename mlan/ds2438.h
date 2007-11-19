@@ -1,7 +1,5 @@
 /*
  * Copyright (c) Dustin Sallings <dustin@spy.net>
- *
- * $Id: ds2438.h,v 1.1 2001/08/29 09:27:55 dustin Exp $
  */
  
 #ifndef DS2438_H
@@ -20,7 +18,3 @@ struct ds2438_data {
 struct ds2438_data getDS2438Data(MLan *mlan, uchar *serial);
 
 #endif /* DS2438_H */
-
-/*
- * arch-tag: 203729CB-13E5-11D8-921A-000393CFE6B8
- */

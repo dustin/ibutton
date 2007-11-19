@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2001  Dustin Sallings <dustin@spy.net>
- *
- * $Id: ds1921.c,v 1.30 2002/01/30 09:22:08 dustin Exp $
  */
 #include <stdio.h>
 #include <assert.h>
@@ -596,7 +594,3 @@ struct ds1921_data getDS1921Data(MLan *mlan, uchar *serial)
 	finished:
 	return(data);
 }
-
-/*
- * arch-tag: 201EF4BC-13E5-11D8-BA49-000393CFE6B8
- */

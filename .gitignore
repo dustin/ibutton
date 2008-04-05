@@ -1,3 +1,15 @@
 *.o
+*.a
 Makefile
 config.*
+collection/collector
+commands/1920
+commands/1921dump
+commands/1921mission
+commands/2406
+commands/2438
+commands/lookup
+commands/sample_devices
+commands/search
+commands/slew
+commands/storage

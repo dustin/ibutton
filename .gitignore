@@ -2,6 +2,7 @@
 *.a
 Makefile
 config.*
+configure.lineno
 collection/collector
 commands/1920
 commands/1921dump

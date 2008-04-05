@@ -1,0 +1,6 @@
+[submodule "stringlib"]
+	path = stringlib
+	url = git://gitorious.org/stringlib/mainline.git
+[submodule "mymalloc"]
+	path = mymalloc
+	url = git://gitorious.org/mymalloc/mainline.git

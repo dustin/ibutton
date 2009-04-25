@@ -342,18 +342,20 @@ _sighup(int sig)
 
 static void rotateLogs()
 {
-    char logfiletmp[1024];
-    log_info("Rotating logs.\n");
-    if(logfile != NULL) {
-        fclose(logfile);
+    if (logfilename) {
+        char logfiletmp[1024];
+        log_info("Rotating logs.\n");
+        if(logfile != NULL) {
+            fclose(logfile);
+        }
+        assert(strlen(logfilename) < 1000);
+        sprintf(logfiletmp, "%s.old", logfilename);
+        rename(logfilename, logfiletmp);
+        logfile=fopen(logfilename, "w");
+        assert(logfile);
+        setsignals();
+        need_to_rotate=0;
     }
-    assert(strlen(logfilename) < 1000);
-    sprintf(logfiletmp, "%s.old", logfilename);
-    rename(logfilename, logfiletmp);
-    logfile=fopen(logfilename, "w");
-    assert(logfile);
-    setsignals();
-    need_to_rotate=0;
 }
 
 void
@@ -481,7 +483,9 @@ static int dealWith1920(MLan *mlan, uchar *serial)
                  data.temp, data.temp_low,
                  data.temp_hi);
         /* Log it */
-        fprintf(logfile, "%s\n", data_str);
+        if (logfile) {
+            fprintf(logfile, "%s\n", data_str);
+        }
         /* Multicast it */
         msend(data_str);
         /* Now record the current */
@@ -523,7 +527,9 @@ dealWith1921(MLan *mlan, uchar *serial)
                          (int)data.status.mission_ts.clock,
                          data.status.sample_rate);
                 /* Log it */
-                fprintf(logfile, "%s\n", data_str);
+                if (logfile) {
+                    fprintf(logfile, "%s\n", data_str);
+                }
                 /* Multicast it */
                 msend(data_str);
             }
@@ -787,7 +793,9 @@ mainLoop()
             }
 
             /* Write the log */
-            fflush(logfile);
+            if (logfile) {
+                fflush(logfile);
+            }
 
             if(failures>0 || need_to_reinit != 0) {
                 /* Wait five seconds before reopening the device. */
@@ -808,7 +816,7 @@ mainLoop()
 static void
 usage(const char *name)
 {
-    fprintf(stderr, "Usage:  %s -b busdev -l logfile -c logdir "
+    fprintf(stderr, "Usage:  %s -b busdev -c logdir [-l logfile] "
             "[-m multigroup] [-p multiport] [-t multittl] [-s serverPort]\n", name);
     fprintf(stderr, "  busdev - serial device containing the bus to poll\n");
     fprintf(stderr, "  logfile - file to write log entries\n");
@@ -865,7 +873,7 @@ getoptions(int argc, char **argv)
     }
 
     /* Make sure the required options are supplied */
-    if(busdev==NULL || logfilename==NULL || curdir==NULL) {
+    if(busdev==NULL || curdir==NULL) {
         usage(argv[0]);
     }
 
@@ -887,8 +895,10 @@ main(int argc, char **argv)
     getoptions(argc, argv);
 
     /* Deal with the arguments. */
-    logfile = fopen(logfilename, "a");
-    assert(logfile);
+    if (logfilename) {
+        logfile = fopen(logfilename, "a");
+        assert(logfile);
+    }
     /* Set signal handlers */
     setsignals();
 

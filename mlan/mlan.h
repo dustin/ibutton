@@ -5,6 +5,8 @@
 #ifndef MLAN_H
 #define MLAN_H 1
 
+#include <sys/types.h>
+
 #ifdef MYMALLOC
 # include <mymalloc.h>
 #endif

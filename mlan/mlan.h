@@ -18,78 +18,78 @@ struct __mlan;
 typedef struct __mlan MLan;
 
 struct __mlan {
-	int debug;		/* Debug Level */
-	char *port;		/* The device we opened */
-	int fd;			/* File descriptor holding the 1-wire protocol. */
+    int   debug;                /* Debug Level */
+    char *port;                 /* The device we opened */
+    int   fd;                   /* File descriptor holding the 1-wire protocol. */
 
-	/* Status stuff */
-	int mode;		/* DS2480 Mode */
-	int baud;		/* DS2480 Baud rate */
-	int speed;	/* DS2480 speed */
-	int level;	/* DS2480 level */
+    /* Status stuff */
+    int mode;                   /* DS2480 Mode */
+    int baud;                   /* DS2480 Baud rate */
+    int speed;                  /* DS2480 speed */
+    int level;                  /* DS2480 level */
 
-	/* config stuff */
-	int	usec_per_byte;
-	int slew_rate;
+    /* config stuff */
+    int usec_per_byte;
+    int slew_rate;
 
-	/* Search stuff */
-	int LastDiscrepancy;
-	int LastDevice;
-	int LastFamilyDiscrepancy;
+    /* Search stuff */
+    int LastDiscrepancy;
+    int LastDevice;
+    int LastFamilyDiscrepancy;
 
-	/* Timeouts */
-	int readTimeout;
-	int writeTimeout;
+    /* Timeouts */
+    int readTimeout;
+    int writeTimeout;
 
-	unsigned short CRC16;	/* Storage for CRC 16 */
-	uchar SerialNum[MLAN_SERIAL_SIZE];		/* Serial numbers */
-	uchar DOWCRC;			/* more CRC stuff */
-	int ProgramAvailable;	/* Whether programming is available. */
+    unsigned short CRC16;       /* Storage for CRC 16 */
+    uchar          SerialNum[MLAN_SERIAL_SIZE]; /* Serial numbers */
+    uchar          DOWCRC;      /* more CRC stuff */
+    int            ProgramAvailable; /* Whether programming is available. */
 
-	/* Tear the thing down */
-	void (*destroy)(MLan *mlan);
+    /* Tear the thing down */
+    void (*destroy)(MLan *mlan);
 
-	/* Serial Functions */
-	void (*setbaud)(MLan *mlan, int newbaud); /* Set the baud rate */
-	void (*flush)(MLan *mlan);
-	int (*write)(MLan *mlan, int outlen, uchar *outbuf);
-	int (*read)(MLan *mlan, int inlen, uchar *inbuf);
-	void (*cbreak)(MLan *mlan);
+    /* Serial Functions */
+    void (*setbaud)(MLan *mlan, int newbaud); /* Set the baud rate */
+    void (*flush)(MLan *mlan);
+    int (*write)(MLan *mlan, int outlen, uchar *outbuf);
+    int (*read)(MLan *mlan, int inlen, uchar *inbuf);
+    void (*cbreak)(MLan *mlan);
 
-	/* DS2480 functions */
-	int (*ds2480detect)(MLan *mlan);
-	int (*ds2480changebaud)(MLan *mlan, uchar new_baud);
+    /* DS2480 functions */
+    int (*ds2480detect)(MLan *mlan);
+    int (*ds2480changebaud)(MLan *mlan, uchar new_baud);
 
-	/* Search functions */
-	int (*first)(MLan *mlan, int DoReset, int OnlyAlarmingDevices);
-	int (*next)(MLan *mlan, int DoReset, int OnlyAlarmingDevices);
+    /* Search functions */
+    int (*first)(MLan *mlan, int DoReset, int OnlyAlarmingDevices);
+    int (*next)(MLan *mlan, int DoReset, int OnlyAlarmingDevices);
 
-	/* MLAN functions */
-	int (*access)(MLan *mlan, uchar *serial);
-	int (*block)(MLan *mlan, int doreset, uchar *buf, int len);
-	int (*reset)(MLan *mlan);
+    /* MLAN functions */
+    int (*access)(MLan *mlan, uchar *serial);
+    int (*block)(MLan *mlan, int doreset, uchar *buf, int len);
+    int (*reset)(MLan *mlan);
 
-	/* Misc commands and stuff */
-	int (*setlevel)(MLan *mlan,int newlevel);
-	int (*touchbit)(MLan *mlan, int sendbit);
-	int (*writebyte)(MLan *mlan, int sendbyte);
-	int (*readbyte)(MLan *mlan);
-	int (*touchbyte)(MLan *mlan, int sendbyte);
-	int (*setspeed)(MLan *mlan, int newspeed);
-	int (*programpulse)(MLan *mlan);
-	void (*msDelay)(MLan *mlan, int t);
-	void (*copySerial)(MLan *mlan, uchar *in);
-	char *(*serialLookup)(MLan *mlan, int which);
-	void (*registerSerial)(MLan *mlan, int id, char *value);
-	uchar *(*parseSerial)(MLan *mlan, char *serial, uchar *output);
-	int (*getBlock)(MLan *mlan, uchar *serial, int page, int pages, uchar *);
-	int (*writeScratchpad)(MLan *mlan, uchar *serial, int page, int, uchar *);
-	int (*copyScratchpad)(MLan *mlan, uchar *serial, int page, int size);
-	int (*clearMemory)(MLan *mlan, uchar *serial);
+    /* Misc commands and stuff */
+    int (*setlevel)(MLan *mlan,int newlevel);
+    int (*touchbit)(MLan *mlan, int sendbit);
+    int (*writebyte)(MLan *mlan, int sendbyte);
+    int (*readbyte)(MLan *mlan);
+    int (*touchbyte)(MLan *mlan, int sendbyte);
+    int (*setspeed)(MLan *mlan, int newspeed);
+    int (*programpulse)(MLan *mlan);
+    void (*msDelay)(MLan *mlan, int t);
+    void (*copySerial)(MLan *mlan, uchar *in);
+    char *(*serialLookup)(MLan *mlan, int which);
+    void (*registerSerial)(MLan *mlan, int id, char *value);
+    uchar *(*parseSerial)(MLan *mlan, char *serial, uchar *output);
+    int (*getBlock)(MLan *mlan, uchar *serial, int page, int pages, uchar *);
+    int (*writeScratchpad)(MLan *mlan, uchar *serial, int page, int, uchar *);
+    int (*copyScratchpad)(MLan *mlan, uchar *serial, int page, int size);
+    int (*clearMemory)(MLan *mlan, uchar *serial);
 
-	/* misc crap */
-	uchar (*dowcrc)(MLan *mlan, uchar x);
-	ushort (*docrc16)(MLan *mlan, ushort x);
+    /* misc crap */
+    uchar (*dowcrc)(MLan *mlan, uchar x);
+    ushort (*docrc16)(MLan *mlan, ushort x);
 };
 
 /* Get the default mlan port */
@@ -109,7 +109,7 @@ uchar *parseSerial(char *in, uchar *out);
 int recall(MLan *mlan, uchar *serial);
 
 /* GMT offset (in seconds) */
-int findGMTOffset(void); 
+int findGMTOffset(void);
 
 
 #endif /* MLAN_H */

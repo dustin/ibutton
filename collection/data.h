@@ -15,38 +15,38 @@
 
 /* 1920 specific attributes */
 struct dev_1920_specific {
-	float low;
-	float high;
+    float low;
+    float high;
 };
 
 /* 1921 specific attributes */
 struct dev_1921_specific {
-	time_t mission_ts;
-	int sample_rate;
+    time_t mission_ts;
+    int sample_rate;
 };
 
 /* A union for recording device specific attributes in the log */
 union dev_specific {
-	struct dev_1920_specific dev_1920;
-	struct dev_1921_specific dev_1921;
+    struct dev_1920_specific dev_1920;
+    struct dev_1921_specific dev_1921;
 };
 
 /* Represents a log entry */
 struct log_datum {
-	struct timeval tv;
-	char *serial;
-	float reading;
-	short type;
-	union dev_specific dev;
+    struct timeval tv;
+    char *serial;
+    float reading;
+    short type;
+    union dev_specific dev;
 
-	int isValid:2;
-	/* If isValid is false, there'll be an error here describing why. */
-	char *errorMsg;
+    int isValid:2;
+    /* If isValid is false, there'll be an error here describing why. */
+    char *errorMsg;
 };
 
 struct data_queue {
-	char *line;
-	struct data_queue *next;
+    char *line;
+    struct data_queue *next;
 };
 
 /* log parsing and disposal */

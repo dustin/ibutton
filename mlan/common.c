@@ -17,22 +17,22 @@
 int
 recall(MLan *mlan, uchar *serial)
 {
-	uchar send_buffer[16];
-	int send_cnt=0;
-	assert(mlan);
-	assert(serial);
+    uchar send_buffer[16];
+    int send_cnt=0;
+    assert(mlan);
+    assert(serial);
 
-	if(!mlan->access(mlan, serial)) {
-		fprintf(stderr, "Error accessing device for recall command.\n");
-		return(FALSE);
-	}
+    if(!mlan->access(mlan, serial)) {
+        fprintf(stderr, "Error accessing device for recall command.\n");
+        return(FALSE);
+    }
 
-	send_buffer[send_cnt++]=RECALL;
-	if(! (mlan->block(mlan, FALSE, send_buffer, send_cnt))) {
-		fprintf(stderr, "Error issuing recall command!\n");
-		return(FALSE);
-	}
+    send_buffer[send_cnt++]=RECALL;
+    if(! (mlan->block(mlan, FALSE, send_buffer, send_cnt))) {
+        fprintf(stderr, "Error issuing recall command!\n");
+        return(FALSE);
+    }
 
-	return(TRUE);
+    return(TRUE);
 }
 

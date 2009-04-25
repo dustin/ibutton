@@ -11,35 +11,35 @@
 
 int main(int argc, char **argv)
 {
-	MLan *mlan=NULL;
-	uchar serial[MLAN_SERIAL_SIZE];
-	char *serial_in=NULL;
-	struct ds2438_data data;
+    MLan *mlan=NULL;
+    uchar serial[MLAN_SERIAL_SIZE];
+    char *serial_in=NULL;
+    struct ds2438_data data;
 
-	if(argc<2) {
-		fprintf(stderr, "Usage:  %s serial_number\n", argv[0]);
-		exit(1);
-	}
-	serial_in=argv[1];
+    if(argc<2) {
+        fprintf(stderr, "Usage:  %s serial_number\n", argv[0]);
+        exit(1);
+    }
+    serial_in=argv[1];
 
-	mlan=mlan_init(mlan_get_port(), PARMSET_9600);
+    mlan=mlan_init(mlan_get_port(), PARMSET_9600);
 
-	assert(mlan);
-	mlan->debug=0;
+    assert(mlan);
+    mlan->debug=0;
 
-	mlan->parseSerial(mlan, serial_in, serial);
+    mlan->parseSerial(mlan, serial_in, serial);
 
-	if(mlan->ds2480detect(mlan)!=TRUE) {
-		printf("Found no DS2480\n");
-		exit(-1);
-	}
+    if(mlan->ds2480detect(mlan)!=TRUE) {
+        printf("Found no DS2480\n");
+        exit(-1);
+    }
 
-	data=getDS2438Data(mlan, serial);
+    data=getDS2438Data(mlan, serial);
 
-	printf("Vdd=%f, Vad=%f, Temp=%f, Humidity=%f%%\n", data.Vdd, data.Vad,
-		data.temp, data.humidity);
+    printf("Vdd=%f, Vad=%f, Temp=%f, Humidity=%f%%\n", data.Vdd, data.Vad,
+           data.temp, data.humidity);
 
-	mlan->destroy(mlan);
+    mlan->destroy(mlan);
 
-	exit(0);
+    exit(0);
 }

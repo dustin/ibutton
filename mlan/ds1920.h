@@ -8,14 +8,14 @@
 /* The structure we keep the DS1920 data in */
 
 struct ds1920_data {
-	float temp;
-	int valid;
+    float temp;
+    int valid;
 
-	float temp_hi;
-	float temp_low;
+    float temp_hi;
+    float temp_low;
 
-	char reading_f[80];
-	char reading_c[80];
+    char reading_f[80];
+    char reading_c[80];
 };
 
 struct ds1920_data getDS1920Data(MLan *, uchar *);

@@ -10,12 +10,12 @@
 #endif
 
 #define WRITE_FUNCTION 1
-#define READ_FUNCTION  0   
+#define READ_FUNCTION  0
 
 #define READ_ERROR    -1
-#define INVALID_DIR   -2       
-#define NO_FILE       -3    
-#define WRITE_ERROR   -4   
+#define INVALID_DIR   -2
+#define NO_FILE       -3
+#define WRITE_ERROR   -4
 #define WRONG_TYPE    -5
 #define FILE_TOO_BIG  -6
 
@@ -25,36 +25,36 @@
 #endif
 
 /* The devices */
-#define DEVICE_UNKNOWN 0x00
-#define DEVICE_1990 0x01
-#define DEVICE_1991 0x02
-#define DEVICE_1992 0x04
-#define DEVICE_9097 0x09
-#define DEVICE_1995 0x0a
-#define DEVICE_1985 0x0b
+#define DEVICE_UNKNOWN  0x00
+#define DEVICE_1990     0x01
+#define DEVICE_1991     0x02
+#define DEVICE_1992     0x04
+#define DEVICE_9097     0x09
+#define DEVICE_1995     0x0a
+#define DEVICE_1985     0x0b
 #define DEVICE_1986_MEM 0x0c
 #define DEVICE_1986_ADD 0x0c
-#define DEVICE_1920 0x10
-#define DEVICE_2406 0x12
-#define DEVICE_1971 0x14
-#define DEVICE_1962 0x18
-#define DEVICE_1963 0x1a
-#define DEVICE_1921 0x21
-#define DEVICE_2438 0x26
-#define DEVICE_1973 0x23
-#define DEVICE_199550 0x96
+#define DEVICE_1920     0x10
+#define DEVICE_2406     0x12
+#define DEVICE_1971     0x14
+#define DEVICE_1962     0x18
+#define DEVICE_1963     0x1a
+#define DEVICE_1921     0x21
+#define DEVICE_2438     0x26
+#define DEVICE_1973     0x23
+#define DEVICE_199550   0x96
 
 /* DS2480 modes */
-#define MODE_DATA                      0xE1
-#define MODE_COMMAND                   0xE3
-#define MODE_STOP_PULSE                0xF1
+#define MODE_DATA       0xE1
+#define MODE_COMMAND    0xE3
+#define MODE_STOP_PULSE 0xF1
 
 /* Return byte values */
 #define RB_CHIPID_MASK                 0x1C
 #define RB_RESET_MASK                  0x03
 #define RB_1WIRESHORT                  0x00
 #define RB_PRESENCE                    0x01
-#define RB_ALARMPRESENCE               0x02 
+#define RB_ALARMPRESENCE               0x02
 #define RB_NOPRESENCE                  0x03
 
 #define RB_BIT_MASK                    0x03
@@ -189,13 +189,13 @@
 
 /* Data sizes */
 
-#define MLAN_SERIAL_SIZE				8
-#define MAX_SERIAL_NUMS					200
+#define MLAN_SERIAL_SIZE                8
+#define MAX_SERIAL_NUMS                 200
 
 /* Tweaking stuff */
 
 /* Default amount of time before we give up on a read or write */
-#define MLAN_DEFAULT_TIMEOUT			5
+#define MLAN_DEFAULT_TIMEOUT            5
 
 #ifndef mlan_debug
 #define mlan_debug(a, b, c) if(a->debug > b) { printf c; }

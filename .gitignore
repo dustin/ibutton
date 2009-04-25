@@ -14,3 +14,4 @@ commands/sample_devices
 commands/search
 commands/slew
 commands/storage
+autom4te.cache

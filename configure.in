@@ -65,13 +65,6 @@ then
 	LDFLAGS="$LDFLAGS -L/usr/local/lib"
 fi
 
-if test "$GCC" = "yes"
-then
-	echo "GCC, setting -Wall and -Werror"
-	CPPFLAGS="$CPPFLAGS -Wall"
-	CFLAGs="$CFLAGS -Werror"
-fi
-
 dnl If there's guile, build the guile stuff.
 if test "$GUILECONF" = ""
 then
@@ -135,6 +128,13 @@ dnl Checks for library functions.
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS(getopt vsprintf vsnprintf snprintf sprintf strerror utime utimes)
 AC_CHECK_FUNCS(vasprintf)
+
+if test "$GCC" = "yes"
+then
+	echo "GCC, setting -Wall and -Werror"
+	CPPFLAGS="$CPPFLAGS -Wall"
+	CFLAGS="$CFLAGS -Werror"
+fi
 
 CFLAGS="$CFLAGS $CPPFLAGS $EXTRACFLAGS"
 

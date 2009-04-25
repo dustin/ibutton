@@ -83,7 +83,9 @@ static void _com_debug_attr(MLan *mlan, char *message) {
     PRINT_FLAG(com.c_cflag, CS7);
     PRINT_FLAG(com.c_cflag, CS8);
     PRINT_FLAG(com.c_cflag, CREAD);
+#ifdef CRTS_IFLOW
     PRINT_FLAG(com.c_cflag, CRTS_IFLOW);
+#endif
     PRINT_FLAG(com.c_cflag, CRTSCTS);
     PRINT_FLAG(com.c_cflag, CSIZE);
     PRINT_FLAG(com.c_cflag, CSTOPB);

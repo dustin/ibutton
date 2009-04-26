@@ -127,7 +127,6 @@ AC_STRUCT_TM
 dnl Checks for library functions.
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS(getopt vsprintf vsnprintf snprintf sprintf strerror utime utimes)
-AC_CHECK_FUNCS(vasprintf)
 
 if test "$GCC" = "yes"
 then

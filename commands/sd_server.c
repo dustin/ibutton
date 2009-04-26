@@ -493,30 +493,18 @@ static int
 writeToClient(struct client *client, const char *fmt, ...)
 {
     va_list ap;
-#ifdef HAVE_VASPRINTF
-    char *aptr;
-#else
     char buf[CLIENT_BUF_SIZE];
-#endif
     int toWrite=0;
     struct client_msg *newmsg, *lastmsg;
 
     va_start(ap, fmt);
-#ifdef HAVE_VASPRINTF
-    toWrite=vasprintf(&aptr, fmt, ap);
-#else
     toWrite=vsnprintf(buf, CLIENT_BUF_SIZE, fmt, ap);
     assert(toWrite < CLIENT_BUF_SIZE);
-#endif
     va_end(ap);
 
     /* OK, now append that to the messages list */
     newmsg=calloc(1, sizeof(struct client_msg));
-#ifdef HAVE_VASPRINTF
-    newmsg->data=aptr;
-#else
     newmsg->data=strdup(buf);
-#endif
     newmsg->offset=0;
     newmsg->toWrite=toWrite;
 
